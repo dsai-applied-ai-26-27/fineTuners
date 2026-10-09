@@ -1,0 +1,25 @@
+# --- course data: raw material AND AI-written content live here, outside git ---
+/courses/
+/reference/
+
+# --- derived from courses/ by `manage.py sync_content`; safe to delete ---
+/db.sqlite3
+/db.sqlite3-journal
+/media/
+
+# --- python ---
+.venv/
+__pycache__/
+*.py[cod]
+.ruff_cache/
+
+# --- django ---
+/staticfiles/
+.env
+
+# --- editors / os ---
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+desktop.ini

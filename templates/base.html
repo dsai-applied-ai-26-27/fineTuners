@@ -1,0 +1,95 @@
+{% load static ui %}<!doctype html>
+{# Every page extends this file and fills its blocks. --hue colours the whole page. #}
+<html lang="en" style="--hue: {{ hue|default:255 }}" data-icons="{% static 'icons.svg' %}" data-course="{{ course.slug|default:'' }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>{% block title %}dsai.pages{% endblock %}</title>
+  {# Runs before first paint so a saved light/dark choice never flashes the other theme. #}
+  <script>try{var t=localStorage.getItem("dsai:theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
+  <link rel="preload" href="{% static 'fonts/google-sans-flex-latin-rond-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{% static 'fonts/fonts.css' %}">
+  <link rel="stylesheet" href="{% static 'vendor/katex/katex.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  <link rel="stylesheet" href="{% static 'css/components.css' %}">
+  <link rel="stylesheet" href="{% static 'css/prose.css' %}">
+  <link rel="stylesheet" href="{% static 'css/study.css' %}">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%234b63c9'/%3E%3Cpath d='M9 22V10h5.2c3.4 0 5.8 2.4 5.8 6s-2.4 6-5.8 6z' fill='none' stroke='white' stroke-width='2.6'/%3E%3C/svg%3E">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<div class="app" x-data="shell" :data-drawer="drawer ? 'open' : 'closed'" @keydown.window="onKey($event)" @keydown.escape.window="drawer = false">
+  <nav class="rail" aria-label="Main">
+    <a class="brand" href="{% url 'catalog:home' %}">
+      <span class="brand__mark" aria-hidden="true">ds</span>
+      <span>dsai<span class="brand__dot">.pages</span></span>
+    </a>
+
+    {% block rail %}
+    <a class="nav-item" href="{% url 'catalog:home' %}"{% if active == "home" %} aria-current="page"{% endif %}>
+      {% icon "home" %}<span class="label">Courses</span>
+    </a>
+    {% if nav_courses %}<p class="rail__label">Active</p>{% endif %}
+    {% for item in nav_courses %}
+    <a class="nav-item tone" style="--hue: {{ item.hue }}" href="{{ item.get_absolute_url }}">
+      <span class="dot"></span><span class="label">{{ item.title }}</span><span class="count">{{ item.code }}</span>
+    </a>
+    {% endfor %}
+    {% endblock %}
+
+    <div class="rail__foot">
+      <a class="nav-item" href="{% url 'catalog:search' %}"{% if active == "search" %} aria-current="page"{% endif %}>
+        {% icon "search" %}<span class="label">Search</span><span class="kbd">/</span>
+      </a>
+      <a class="nav-item" href="{% url 'catalog:settings' %}"{% if active == "settings" %} aria-current="page"{% endif %}>
+        {% icon "settings" %}<span class="label">Settings</span>
+      </a>
+      <p class="rail__saved" :data-state="$store.progress.persistent ? 'on' : 'off'" x-text="$store.progress.persistent ? 'Progress saved in this browser' : 'Storage blocked: progress is not saved'">Progress saved in this browser</p>
+    </div>
+  </nav>
+  <div class="scrim" @click="drawer = false"></div>
+
+  <div class="shell">
+    <header class="topbar">
+      <button class="icon-btn topbar__menu" type="button" @click="drawer = !drawer" aria-label="Open menu">{% icon "menu" %}</button>
+      <nav class="crumbs" aria-label="Breadcrumb">{% block crumbs %}<span>Courses</span>{% endblock %}</nav>
+
+      <form class="search no-print" action="{% url 'catalog:search' %}" role="search">
+        {% icon "search" %}
+        <input type="search" name="q" placeholder="Search" aria-label="Search" x-ref="search" autocomplete="off">
+        {% if course %}<input type="hidden" name="course" value="{{ course.slug }}">{% endif %}
+      </form>
+      {% include "components/timer.html" %}
+      {% block ring %}{% endblock %}
+      <button class="icon-btn" type="button" @click="cycleTheme()" :aria-label="'Theme: ' + theme + '. Change theme'" :title="'Theme: ' + theme">
+        <span x-show="theme === 'auto'">{% icon "auto" %}</span>
+        <span x-show="theme === 'light'" x-cloak>{% icon "light" %}</span>
+        <span x-show="theme === 'dark'" x-cloak>{% icon "dark" %}</span>
+      </button>
+    </header>
+
+    <main class="page" id="main">
+      <div class="page__inner {% block inner_class %}{% endblock %}">
+        {% if stale %}
+        <div class="banner" role="status">
+          {% icon "sync" %}
+          <span>Files for this course changed after the last sync. Run <code>manage.py sync_content {{ course.slug }}</code> to see them.</span>
+        </div>
+        {% endif %}
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+  </div>
+
+  {% include "components/dialogs.html" %}
+</div>
+
+{# json_script prints data as JSON inside an inert <script> tag, safely escaped. #}
+{% block data %}{% endblock %}
+<script defer src="{% static 'vendor/katex/katex.min.js' %}"></script>
+<script type="module" src="{% static 'js/app.js' %}"></script>
+</body>
+</html>

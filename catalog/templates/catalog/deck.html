@@ -1,0 +1,140 @@
+{% extends "catalog/course_base.html" %}
+{% load ui %}
+
+{% block title %}{{ heading }} · {{ course.title }}{% endblock %}
+{% block crumbs %}<a href="{% url 'catalog:home' %}">Courses</a>{% icon "next" %}<a href="{{ course.get_absolute_url }}">{{ course.title }}</a>{% icon "next" %}<a href="{% url 'catalog:cards' course.slug %}">Flashcards</a>{% icon "next" %}<span>{{ heading }}</span>{% endblock %}
+
+{% block content %}
+{# The cards arrive as JSON (bottom of the page); static/js/components/flashcards.js runs the session. #}
+<div class="player" x-data="flashcards" @keydown.window="key($event)">
+  <header class="player__head">
+    <div>
+      <p class="overline">{% if deck %}Deck{% if deck.topic %} · {{ deck.topic.label }}{% endif %}{% else %}Review{% endif %}</p>
+      <h1>{{ heading }}</h1>
+    </div>
+    <div class="row">
+      <span class="chip chip--tonal num" x-text="position">0 / 0</span>
+      <button class="btn btn--tonal btn--small" type="button" @click="shuffleDeck()">{% icon "shuffle" %}Shuffle</button>
+    </div>
+  </header>
+
+  <div class="chips player__filters" role="toolbar" aria-label="Which cards">
+    <template x-for="f in filters" :key="f.key">
+      <button class="chip" type="button" :aria-pressed="filter === f.key" @click="setFilter(f.key)">
+        <span x-text="f.label"></span><span class="n" x-text="f.count"></span>
+      </button>
+    </template>
+    <template x-if="mode === 'review' && topics.length > 1">
+      <span class="player__sep" aria-hidden="true"></span>
+    </template>
+    <template x-for="t in (mode === 'review' && topics.length > 1 ? topics : [])" :key="t.key">
+      <button class="chip" type="button" :aria-pressed="topic === t.key" @click="setTopic(t.key)" x-text="t.title"></button>
+    </template>
+  </div>
+
+  <div class="player__stage">
+    <div class="player__main">
+      <article class="flash" x-show="card && !finished" :data-grade="grade">
+        <header class="flash__meta">
+          <span class="gdot" :data-g="grade"></span>
+          <span class="faint" x-show="mode === 'review'" x-text="card?.deckTitle"></span>
+          <span class="chip chip--key" x-show="card?.hy">{% icon "key" %}Key</span>
+          <span class="chip chip--tonal" x-show="card?.kind === 'steps'">{% icon "steps" %}Derivation</span>
+          <span class="chip chip--tonal" x-show="card?.kind === 'cloze'">{% icon "cloze" %}Cloze</span>
+          <span class="spacer"></span>
+          <button class="btn btn--small" type="button" x-show="grade" @click="mark(0)">Clear grade</button>
+        </header>
+
+        <p class="flash__cue" x-text="card?.kind === 'cloze' ? 'Fill the blanks out loud' : 'Answer out loud first'"></p>
+        <div class="flash__front md" x-math="card ? card.front : ''" :data-cloze="card?.kind === 'cloze' && !revealed ? 'hidden' : 'shown'"></div>
+
+        <ol class="steps" x-show="shownSteps.length">
+          <template x-for="(step, i) in shownSteps" :key="card.id + i">
+            <li class="step">
+              <div class="md" x-math="step.do"></div>
+              <div class="step__why md" x-show="step.why" x-math="step.why"></div>
+            </li>
+          </template>
+        </ol>
+
+        <div class="flash__back" x-show="revealed">
+          <div class="answer" x-show="card?.back">
+            <p class="answer__label">{% icon "paper" %}Write this</p>
+            <div class="md" x-math="card ? card.back : ''"></div>
+          </div>
+          <div class="flash__note md" x-show="card?.note" x-math="card ? card.note : ''"></div>
+          <div class="hookline" x-show="card?.hook">
+            {% icon "hook" %}
+            <div class="md" x-math="card ? card.hook : ''"></div>
+          </div>
+        </div>
+
+        <footer class="flash__actions">
+          <div class="row" x-show="!revealed">
+            <button class="btn btn--filled btn--large" type="button" @click="advance()">
+              <span x-text="revealLabel">Show answer</span><span class="kbd">space</span>
+            </button>
+            <button class="btn" type="button" x-show="stepsLeft > 0" @click="revealAll()">Show all</button>
+          </div>
+          <div class="grades" x-show="revealed">
+            <template x-for="g in grades" :key="g.s">
+              <button class="grade" type="button" :class="'grade--' + g.cls" :aria-pressed="grade === g.s" @click="mark(g.s)">
+                <strong x-text="g.name"></strong><span x-text="g.hint"></span><span class="kbd" x-text="g.s"></span>
+              </button>
+            </template>
+          </div>
+        </footer>
+      </article>
+
+      <div class="card card--primary player__done" x-show="finished" x-cloak>
+        <p class="overline">End of this run</p>
+        <h2>That was the last card</h2>
+        <div class="chips mt-4">
+          <span class="chip chip--solid"><span x-text="session[3]"></span> solid</span>
+          <span class="chip chip--shaky"><span x-text="session[2]"></span> shaky</span>
+          <span class="chip chip--missed"><span x-text="session[1]"></span> missed</span>
+        </div>
+        <div class="row mt-5">
+          <button class="btn btn--filled" type="button" x-show="session[1] + session[2] > 0" @click="setFilter('weak')">Go again on the weak ones</button>
+          <a class="btn btn--tonal" href="{% url 'catalog:cards' course.slug %}">All decks</a>
+        </div>
+      </div>
+
+      <div class="empty" x-show="!card" x-cloak>
+        {% icon "done" %}
+        <strong>Nothing in this filter</strong>
+        <p>If you were on Due, Weak or Missed, that is the good outcome.</p>
+        <button class="btn btn--tonal" type="button" @click="setFilter('all')">Show all cards</button>
+      </div>
+    </div>
+
+    <aside class="player__side no-print">
+      <div class="card">
+        <p class="overline">Cards</p>
+        <div class="dots">
+          <template x-for="(c, i) in deck" :key="c.id">
+            <button class="gdot" type="button" :data-g="status(c)" :aria-current="i === index ? 'true' : null" :aria-label="'Card ' + (i + 1)" @click="go(i)"></button>
+          </template>
+        </div>
+        <div class="legend">
+          <span><i class="gdot" data-g="3"></i>Solid</span>
+          <span><i class="gdot" data-g="2"></i>Shaky</span>
+          <span><i class="gdot" data-g="1"></i>Missed</span>
+          <span><i class="gdot"></i>Unseen</span>
+        </div>
+      </div>
+      <div class="card keys">
+        <p class="overline">Keys</p>
+        <dl>
+          <dt><span class="kbd">space</span></dt><dd>Reveal, next step</dd>
+          <dt><span class="kbd">1</span><span class="kbd">2</span><span class="kbd">3</span></dt><dd>Grade</dd>
+          <dt><span class="kbd">&larr;</span><span class="kbd">&rarr;</span></dt><dd>Move</dd>
+          <dt><span class="kbd">s</span></dt><dd>Shuffle</dd>
+        </dl>
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}
+
+{% block data %}{{ block.super }}{{ player|json_script:"player-data" }}{% endblock %}

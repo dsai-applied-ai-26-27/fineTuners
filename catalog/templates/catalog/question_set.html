@@ -1,0 +1,200 @@
+{% extends "catalog/course_base.html" %}
+{% load ui l10n %}
+
+{% block title %}{{ question_set.title }} · {{ course.title }}{% endblock %}
+{% block crumbs %}
+<a href="{% url 'catalog:home' %}">Courses</a>{% icon "next" %}<a href="{{ course.get_absolute_url }}">{{ course.title }}</a>{% icon "next" %}
+{% if assessment %}<a href="{{ assessment.get_absolute_url }}">{{ assessment.title }}</a>{% else %}<a href="{% url 'catalog:problems' course.slug %}">Problems</a>{% endif %}
+{% icon "next" %}<span>{{ question_set.title }}</span>
+{% endblock %}
+{% block inner_class %}page__inner--narrow{% endblock %}
+
+{% block content %}
+{# One template for practice sets, past papers and mock exams. The questions are printed
+   here by Django; static/js/components/paper.js adds checking, the clock and marking. #}
+<div class="paper" x-data="paper" :data-phase="phase">
+  <header class="page-head">
+    <p class="overline">{{ question_set.get_kind_display }}{% if assessment %} · {{ assessment.title }}{% endif %}{% if question_set.date %} · sat {{ question_set.date|date:"j M Y" }}{% endif %}</p>
+    <div class="page-head__row">
+      <h1>{{ question_set.title }}</h1>
+      {% if assessment %}
+      <div class="segmented no-print" role="group" aria-label="Mode">
+        <button type="button" :aria-pressed="mode === 'study'" @click="setMode('study')">Study</button>
+        <button type="button" :aria-pressed="mode === 'sit'" @click="setMode('sit')">Sit</button>
+      </div>
+      {% endif %}
+    </div>
+    <div class="chips mt-4">
+      <span class="chip chip--tonal">{{ questions|length }} question{{ questions|length|pluralize }}</span>
+      {% if question_set.total_points %}<span class="chip chip--tonal">{{ question_set.total_points|trim_zero }} points</span>{% endif %}
+      {% if question_set.duration_min %}<span class="chip chip--tonal">{% icon "timer" %}{{ question_set.duration_min }} min</span>{% endif %}
+      {% if question_set.negative_marking %}<span class="chip chip--missed">&minus;{{ question_set.negative_marking|trim_zero }} per wrong choice</span>{% endif %}
+    </div>
+    {% if question_set.instructions_html %}<div class="md muted mt-4">{{ question_set.instructions_html|safe }}</div>{% endif %}
+  </header>
+
+  {% if assessment %}
+  <section class="card card--primary sit-start" x-show="mode === 'sit' && phase === 'ready'" x-cloak>
+    <h2>Sit this paper</h2>
+    <p>{% if question_set.duration_min %}{{ question_set.duration_min }} minutes on the clock. {% endif %}Closed book, on paper. Solutions stay hidden until you finish; then choice questions are marked for you and you mark the rest against the solutions.</p>
+    <div class="row mt-5">
+      <button class="btn btn--filled btn--large" type="button" @click="start()">{% icon "play" %}Start the clock</button>
+    </div>
+    <template x-if="attempts.length">
+      <div class="attempts">
+        <p class="overline">Earlier attempts</p>
+        <template x-for="a in attempts" :key="a.t">
+          <p class="num"><strong x-text="`${a.score} / ${a.max}`"></strong> · <span x-text="when(a)"></span> · <span x-text="took(a)"></span></p>
+        </template>
+      </div>
+    </template>
+  </section>
+
+  <div class="sit-bar no-print" x-show="phase === 'running'" x-cloak :data-low="low">
+    {% icon "timer" %}<strong class="num" x-text="clock">00:00</strong>
+    <span class="spacer"></span>
+    <button class="btn btn--filled btn--small" type="button" @click="finish()">Finish and mark</button>
+  </div>
+
+  <section class="card result" x-show="phase === 'marking' || phase === 'done'" x-cloak>
+    <p class="overline" x-text="phase === 'done' ? 'Attempt saved' : 'Mark your paper'"></p>
+    <p class="result__score num"><span x-text="+score.toFixed(2)"></span><small> / <span x-text="max"></span></small></p>
+    <p class="muted" x-show="phase === 'marking' && unmarked > 0">Choice questions are already marked. Read each solution below and award yourself points on the <span x-text="unmarked"></span> open one<span x-show="unmarked !== 1">s</span> left.</p>
+    <div class="row mt-4">
+      <button class="btn btn--filled" type="button" x-show="phase === 'marking'" :disabled="unmarked > 0" @click="save()">Save this attempt</button>
+      <button class="btn btn--tonal" type="button" x-show="phase === 'done'" @click="setMode('sit')">Sit again</button>
+      <a class="btn" href="{{ assessment.get_absolute_url }}" x-show="phase === 'done'">Back to {{ assessment.title }}</a>
+    </div>
+  </section>
+  {% endif %}
+
+  <ol class="questions" x-show="mode === 'study' || phase !== 'ready'">
+    {% for q in questions %}
+    <li class="question" id="{{ q.key }}" :data-grade="status('{{ q.key }}')">
+      <header class="question__head">
+        <span class="question__no">{{ q.number }}</span>
+        <div class="question__title">
+          <h2>{% if q.title %}{{ q.title }}{% else %}Question {{ q.number }}{% endif %}</h2>
+          <div class="chips">
+            {% if q.points %}<span class="chip chip--tonal">{{ q.points|trim_zero }} pt{{ q.points|pluralize }}</span>{% endif %}
+            {% if q.kind != "open" %}<span class="chip chip--tonal">{{ q.get_kind_display }}</span>{% endif %}
+            {% if q.topic %}<a class="chip" href="{% url 'catalog:topic' course.slug q.topic.key %}">{{ q.topic.label }}</a>{% endif %}
+          </div>
+        </div>
+      </header>
+
+      <div class="md">{{ q.prompt_html|safe }}</div>
+
+      {% if q.kind == "tf" %}
+      <div class="choices choices--tf">
+        <button class="choice" type="button" :data-verdict="verdict('{{ q.key }}', 1)" :disabled="locked('{{ q.key }}')" @click="pick('{{ q.key }}', 1)"><span class="choice__mark">T</span>True</button>
+        <button class="choice" type="button" :data-verdict="verdict('{{ q.key }}', 0)" :disabled="locked('{{ q.key }}')" @click="pick('{{ q.key }}', 0)"><span class="choice__mark">F</span>False</button>
+      </div>
+      {% elif q.choices %}
+      <ul class="choices">
+        {% for choice in q.choices %}
+        <li>
+          <button class="choice" type="button" :data-verdict="verdict('{{ q.key }}', {{ forloop.counter0 }})" :disabled="locked('{{ q.key }}')" @click="pick('{{ q.key }}', {{ forloop.counter0 }})">
+            <span class="choice__mark">{{ forloop.counter0|letter }}</span><span class="md">{{ choice.text|safe }}</span>
+          </button>
+          {% if choice.why %}<div class="choice__why md" x-show="shown('{{ q.key }}')" x-cloak>{{ choice.why|safe }}</div>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+
+      {% if q.kind != "open" %}
+      <div class="row question__check" x-show="mode === 'study'">
+        <button class="btn btn--tonal btn--small" type="button" x-show="!checked['{{ q.key }}']" :disabled="!answered('{{ q.key }}')" @click="check('{{ q.key }}')">Check</button>
+        <template x-if="checked['{{ q.key }}']">
+          <span class="chip" :class="isRight('{{ q.key }}') ? 'chip--solid' : 'chip--missed'" x-text="isRight('{{ q.key }}') ? 'Correct' : 'Not right'"></span>
+        </template>
+        <button class="btn btn--small" type="button" x-show="checked['{{ q.key }}']" x-cloak @click="retry('{{ q.key }}')">Try again</button>
+      </div>
+      {% endif %}
+
+      {% if q.parts %}
+      <ol class="parts">
+        {% for part in q.parts %}
+        <li class="part">
+          <div class="part__q">
+            <span class="part__label">{{ part.label }}</span>
+            <div class="md">{{ part.q|safe }}</div>
+            {% if part.points %}<span class="chip chip--tonal">{{ part.points|trim_zero }}</span>{% endif %}
+          </div>
+          {% if part.solution %}
+          <div class="reveal" x-show="revealed">
+            <button class="btn btn--small" type="button" :aria-expanded="isOpen('{{ q.key }}:{{ forloop.counter0 }}')" @click="toggle('{{ q.key }}:{{ forloop.counter0 }}')">
+              <span x-text="isOpen('{{ q.key }}:{{ forloop.counter0 }}') ? 'Hide solution' : 'Solution {{ part.label|escapejs }}'">Solution {{ part.label }}</span>
+            </button>
+            <div class="solution md" x-show="isOpen('{{ q.key }}:{{ forloop.counter0 }}')" x-cloak>{{ part.solution|safe }}</div>
+          </div>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ol>
+      {% endif %}
+
+      {% if q.steps %}
+      <div class="reveal" x-show="revealed">
+        <ol class="steps">
+          {% for step in q.steps %}
+          <li class="step" x-show="stepsShown('{{ q.key }}') > {{ forloop.counter0 }}" x-cloak>
+            <div class="md">{{ step.do|safe }}</div>
+            {% if step.why %}<div class="step__why md">{{ step.why|safe }}</div>{% endif %}
+          </li>
+          {% endfor %}
+        </ol>
+        <button class="btn btn--tonal btn--small" type="button" x-show="stepsShown('{{ q.key }}') < {{ q.steps|length }}" @click="nextStep('{{ q.key }}')">
+          {% icon "steps" %}<span x-text="stepsShown('{{ q.key }}') ? 'Next step' : 'Show step 1'">Show step 1</span>
+          <span class="n" x-text="`${stepsShown('{{ q.key }}')} / {{ q.steps|length }}`"></span>
+        </button>
+      </div>
+      {% endif %}
+
+      {% if q.solution_html or q.answer_html %}
+      <div class="reveal" x-show="revealed">
+        <button class="btn btn--small" type="button" :aria-expanded="isOpen('{{ q.key }}')" @click="toggle('{{ q.key }}')">
+          <span x-text="isOpen('{{ q.key }}') ? 'Hide' : '{% if q.solution_html %}Show solution{% else %}Show answer{% endif %}'">Show solution</span>
+        </button>
+        <div x-show="isOpen('{{ q.key }}') || phase === 'marking' || phase === 'done'" x-cloak>
+          {% if q.solution_html %}<div class="solution md">{{ q.solution_html|safe }}</div>{% endif %}
+          {% if q.answer_html %}
+          <div class="answer">
+            <p class="answer__label">{% icon "paper" %}Answer</p>
+            <div class="md">{{ q.answer_html|safe }}</div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if q.source_html %}<div class="question__source md">{{ q.source_html|safe }}</div>{% endif %}
+
+      <footer class="question__foot no-print">
+        {% if q.kind == "open" %}
+        <div class="selfgrade" x-show="mode === 'study'">
+          <span class="faint">How did it go?</span>
+          <button class="chip" type="button" :class="status('{{ q.key }}') === 1 && 'chip--missed'" @click="selfGrade('{{ q.key }}', 1)">Missed</button>
+          <button class="chip" type="button" :class="status('{{ q.key }}') === 2 && 'chip--shaky'" @click="selfGrade('{{ q.key }}', 2)">Shaky</button>
+          <button class="chip" type="button" :class="status('{{ q.key }}') === 3 && 'chip--solid'" @click="selfGrade('{{ q.key }}', 3)">Solid</button>
+        </div>
+        <div class="award" x-show="phase === 'marking'" x-cloak>
+          <span class="faint">Award yourself, out of {{ q.points|default:0|trim_zero }}:</span>
+          {% for label, fraction in award_steps %}
+          {# unlocalize: these numbers are read by JavaScript, so they must use a decimal point in every locale. #}
+          <button class="chip" type="button" :class="awarded['{{ q.key }}'] === +({{ q.points|default:0|unlocalize }} * {{ fraction|unlocalize }}).toFixed(2) && 'chip--on'" @click="award('{{ q.key }}', {{ fraction|unlocalize }})">{{ label }}</button>
+          {% endfor %}
+        </div>
+        {% endif %}
+        <p class="earned num" x-show="phase === 'marking' || phase === 'done'" x-cloak>
+          <template x-if="earned('{{ q.key }}') !== null"><span><strong x-text="earned('{{ q.key }}')"></strong> / {{ q.points|default:0|trim_zero }}</span></template>
+        </p>
+      </footer>
+    </li>
+    {% endfor %}
+  </ol>
+</div>
+{% endblock %}
+
+{% block data %}{{ block.super }}{{ paper|json_script:"paper-data" }}{% endblock %}

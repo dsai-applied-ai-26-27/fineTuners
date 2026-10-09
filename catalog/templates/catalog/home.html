@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block title %}Courses · dsai.pages{% endblock %}
+
+{% block content %}
+<header class="page-head">
+  <div class="page-head__row">
+    <div>
+      <p class="overline">Study</p>
+      <h1>Courses</h1>
+    </div>
+    <div class="today" x-data="today">
+      <div class="today__item"><strong class="num" x-text="minutes">0</strong><span>min focused today</span></div>
+      <div class="today__item"><strong class="num" x-text="cards">0</strong><span>cards today</span></div>
+      <div class="today__item" :data-on="streak > 0">{% icon "streak" %}<strong class="num" x-text="streak">0</strong><span>day streak</span></div>
+    </div>
+  </div>
+</header>
+
+{# One next action, always: computed in the browser from progress (static/js/components/nextup.js). #}
+<section class="next tone" x-data="nextUp" x-show="item" x-cloak :style="item ? `--hue: ${item.hue}` : ''">
+  <div class="next__body">
+    <p class="overline"><span x-text="item?.course"></span> · next up</p>
+    <h2 x-text="item?.title"></h2>
+    <p x-text="item?.detail"></p>
+  </div>
+  <a class="btn btn--filled btn--large" :href="item?.url"><span x-text="item?.action">Continue</span>{% icon "forward" %}</a>
+</section>
+
+<section class="activity" x-data="activity" aria-label="Activity in the last 14 days">
+  <template x-for="day in days" :key="day.date">
+    <div class="activity__day" :title="day.title" :data-today="day.today">
+      <i :style="`height:${day.level}%`"></i>
+      <span x-text="day.label"></span>
+    </div>
+  </template>
+</section>
+
+{% for group in years %}
+<section class="section">
+  <div class="section-head"><h2>{{ group.year }}</h2></div>
+  <div class="grid">
+    {% for c in group.courses %}{% include "components/course_card.html" %}{% endfor %}
+  </div>
+</section>
+{% empty %}
+{% if not archived %}
+<div class="empty">
+  {% icon "empty" %}
+  <strong>No courses yet</strong>
+  <p>Create one with <code>manage.py startcourse rl --title "Reinforcement Learning"</code>,<br>then run <code>manage.py sync_content</code>.</p>
+</div>
+{% endif %}
+{% endfor %}
+
+{% if archived %}
+<details class="section archived"{% if not years %} open{% endif %}>
+  <summary class="section-head"><h2>Archived <span class="faint">{{ archived|length }}</span></h2>{% icon "expand" %}</summary>
+  <div class="grid">
+    {% for c in archived %}{% include "components/course_card.html" %}{% endfor %}
+  </div>
+</details>
+{% endif %}
+{% endblock %}
+
+{% block data %}{{ manifests|json_script:"all-manifests" }}{% endblock %}

@@ -1,0 +1,123 @@
+{
+  "$defs": {
+    "TopicSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "Permanent id, e.g. `ch5` or `bayes`.",
+          "maxLength": 64,
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "title": {
+          "description": "Full name of the chapter or unit.",
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "short": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Shorter label for chips; defaults to title.",
+          "title": "Short"
+        }
+      },
+      "required": [
+        "id",
+        "title"
+      ],
+      "title": "TopicSpec",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "What the course is, and its list of topics.",
+  "properties": {
+    "title": {
+      "description": "Full course name.",
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "code": {
+      "description": "Short code shown on the course card, e.g. `MLPR`.",
+      "maxLength": 20,
+      "minLength": 1,
+      "title": "Code",
+      "type": "string"
+    },
+    "year": {
+      "default": "",
+      "description": "Academic year in quotes, e.g. \"2026-27\".",
+      "title": "Year",
+      "type": "string"
+    },
+    "semester": {
+      "default": "",
+      "enum": [
+        "",
+        "winter",
+        "summer"
+      ],
+      "title": "Semester",
+      "type": "string"
+    },
+    "status": {
+      "default": "active",
+      "description": "`archived` moves the course to the bottom of the dashboard.",
+      "enum": [
+        "active",
+        "archived"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "hue": {
+      "default": 250,
+      "description": "Colour of the course, 0-359 on the hue wheel.",
+      "maximum": 359,
+      "minimum": 0,
+      "title": "Hue",
+      "type": "integer"
+    },
+    "order": {
+      "default": 0,
+      "description": "Position among courses of the same year.",
+      "minimum": 0,
+      "title": "Order",
+      "type": "integer"
+    },
+    "description": {
+      "default": "",
+      "description": "One or two sentences shown under the title.",
+      "title": "Description",
+      "type": "string"
+    },
+    "topics": {
+      "description": "Chapters or units, in teaching order. Everything else refers to these.",
+      "items": {
+        "$ref": "#/$defs/TopicSpec"
+      },
+      "title": "Topics",
+      "type": "array"
+    }
+  },
+  "required": [
+    "title",
+    "code"
+  ],
+  "title": "CourseFile",
+  "type": "object"
+}

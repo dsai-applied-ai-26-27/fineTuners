@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block title %}Settings · dsai.pages{% endblock %}
+{% block crumbs %}<a href="{% url 'catalog:home' %}">Courses</a>{% icon "next" %}<span>Settings</span>{% endblock %}
+{% block inner_class %}page__inner--narrow{% endblock %}
+
+{% block content %}
+<div x-data="settingsPanel">
+  <header class="page-head">
+    <p class="overline">This browser</p>
+    <h1>Settings</h1>
+  </header>
+
+  <section class="section mt-0">
+    <div class="section-head"><h2>{% icon "sync" %}Your progress</h2></div>
+    <div class="card">
+      <p>Grades, read marks, exam attempts and activity are stored in this browser only. Nothing is sent anywhere.</p>
+      <p class="faint mt-2"><span x-text="totals.records">0</span> items graded or marked · activity on <span x-text="totals.days">0</span> day<span x-show="totals.days !== 1">s</span></p>
+      <div class="row mt-5">
+        <button class="btn btn--filled" type="button" @click="exportFile()">{% icon "download" %}Export to a file</button>
+        <button class="btn btn--tonal" type="button" @click="$refs.file.click()">{% icon "upload" %}Import and merge</button>
+        <input type="file" accept="application/json,.json" hidden x-ref="file" @change="importFile($event)">
+        <span class="spacer"></span>
+        <button class="btn" type="button" @click="resetAll()">{% icon "delete" %}Clear everything</button>
+      </div>
+      <p class="faint mt-4">Import never overwrites: for each item the more recent grade wins, so you can move between two computers in either direction.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head"><h2>{% icon "course" %}Courses</h2></div>
+    {% if courses %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Course</th><th>Content</th><th>Cards graded</th><th>Last sync</th><th></th></tr></thead>
+        <tbody>
+          {% for item in courses %}
+          <tr>
+            <td><a class="link" href="{{ item.get_absolute_url }}">{{ item.code }}</a><br><span class="faint">{{ item.title }}</span></td>
+            <td class="faint">{{ item.counts.lectures }} lectures<br>{{ item.counts.cards }} cards · {{ item.counts.questions }} questions</td>
+            <td class="num"><span x-text="courseStats('{{ item.slug }}').graded">0</span> / {{ item.counts.cards }}</td>
+            <td class="faint">{% if item.synced_at %}{{ item.synced_at|date:"j M Y, H:i" }}{% else %}never{% endif %}</td>
+            <td><button class="btn btn--small" type="button" @click="resetCourse('{{ item.slug }}', '{{ item.title|escapejs }}')">Clear</button></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="faint mt-4">Content comes from the files under <code>courses/</code>. After changing them run <code>manage.py sync_content</code>.</p>
+    {% else %}
+    <div class="empty">{% icon "empty" %}<strong>No courses yet</strong></div>
+    {% endif %}
+  </section>
+
+  <section class="section">
+    <div class="section-head"><h2>{% icon "tune" %}Appearance and keys</h2></div>
+    <div class="card stack">
+      <div class="row">
+        <div><strong>Theme</strong><p class="faint">Automatic follows your system.</p></div>
+        <span class="spacer"></span>
+        <button class="btn btn--tonal" type="button" @click="cycleTheme()">{% icon "auto" %}<span x-text="'Now: ' + theme">Now: auto</span></button>
+      </div>
+      <div class="row">
+        <div><strong>Keyboard shortcuts</strong><p class="faint">Press <span class="kbd">?</span> on any page.</p></div>
+        <span class="spacer"></span>
+        <button class="btn btn--tonal" type="button" @click="$refs.shortcuts.showModal()">{% icon "keyboard" %}Show the list</button>
+      </div>
+    </div>
+  </section>
+
+  <dialog class="dialog" x-ref="confirm">
+    <h2 x-text="confirm?.title"></h2>
+    <p class="muted" x-text="confirm?.body"></p>
+    <div class="actions">
+      <button class="btn" type="button" @click="$refs.confirm.close()">Cancel</button>
+      <button class="btn btn--filled" type="button" @click="proceed()">Clear</button>
+    </div>
+  </dialog>
+</div>
+{% endblock %}
+
+{% block data %}{{ manifests|json_script:"all-manifests" }}{% endblock %}

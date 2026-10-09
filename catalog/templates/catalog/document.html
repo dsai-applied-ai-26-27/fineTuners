@@ -1,0 +1,84 @@
+{% extends "catalog/course_base.html" %}
+{% load ui %}
+
+{% block title %}{{ doc.title }} · {{ course.title }}{% endblock %}
+{% block crumbs %}<a href="{% url 'catalog:home' %}">Courses</a>{% icon "next" %}<a href="{{ course.get_absolute_url }}">{{ course.title }}</a>{% icon "next" %}<a href="{{ list_url }}">{{ section_title }}</a>{% icon "next" %}<span>{{ doc.title }}</span>{% endblock %}
+
+{% block content %}
+<div class="doc" x-data="reader('{{ doc.progress_key }}')">
+  <article class="doc__main">
+    <header class="page-head">
+      <p class="overline">
+        {{ doc.get_kind_display }}{% if doc.number is not None and kind != "guide" %} {{ doc.number }}{% endif %}{% if doc.date %} · {{ doc.date|date:"j M Y" }}{% endif %}{% if doc.reading_minutes %} · {{ doc.reading_minutes }} min read{% endif %}{% if doc.status == "draft" %} · draft{% endif %}
+      </p>
+      <h1>{{ doc.title }}</h1>
+      {% if doc.summary %}<p class="lead">{{ doc.summary }}</p>{% endif %}
+      {% if topics or sources or doc.due %}
+      <div class="chips mt-4">
+        {% if doc.due %}<span class="chip chip--shaky">{% icon "schedule" %}Due {{ doc.due|date:"j M Y" }}</span>{% endif %}
+        {% topic_chips course topics %}
+        {% for source in sources %}
+        {% if source.url %}<a class="chip" href="{{ source.url }}" target="_blank" rel="noopener">{% icon "source" %}{{ source.name }}</a>
+        {% else %}<span class="chip">{% icon "source" %}{{ source.name }}</span>{% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+    </header>
+
+    {% if doc.takeaways %}
+    <aside class="takeaways">
+      <p class="overline">If you remember nothing else</p>
+      <ul>
+        {# |safe: this HTML was produced by ingest/markdown.py with raw HTML disabled. #}
+        {% for item in doc.takeaways %}<li class="md">{{ item|safe }}</li>{% endfor %}
+      </ul>
+    </aside>
+    {% endif %}
+
+    <div class="prose">{{ doc.body_html|safe }}</div>
+
+    <footer class="doc__foot no-print">
+      <div class="read-box" :data-read="read">
+        <div>
+          <strong x-text="read ? 'Marked as read' : 'Finished reading?'">Finished reading?</strong>
+          <p class="faint" x-text="read ? 'It counts towards this course on the dashboard.' : 'Mark it, then test yourself while it is fresh.'"></p>
+        </div>
+        <button class="btn" :class="read ? 'btn--tonal' : 'btn--filled'" type="button" @click="toggle()">
+          <span x-show="!read">{% icon "check" %}</span>
+          <span x-text="read ? 'Mark unread' : 'Mark as read'">Mark as read</span>
+        </button>
+      </div>
+
+      {% if decks or problem_sets or assessments %}
+      <div class="practice">
+        <p class="overline">Practise this</p>
+        <div class="chips">
+          {% for deck in decks %}<a class="chip chip--primary" href="{{ deck.get_absolute_url }}">{% icon "cards" %}{{ deck.title }}</a>{% endfor %}
+          {% for set in problem_sets %}<a class="chip chip--primary" href="{{ set.get_absolute_url }}">{% icon "problems" %}{{ set.title }}</a>{% endfor %}
+          {% for exam in assessments %}<a class="chip" href="{{ exam.get_absolute_url }}">{% icon "exam" %}{{ exam.title }}</a>{% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if previous or next %}
+      <nav class="pager" aria-label="{{ section_title }}">
+        {% if previous %}<a href="{{ previous.get_absolute_url }}"><span class="overline">Previous</span><strong>{{ previous.title }}</strong></a>{% endif %}
+        {% if next %}<a class="next" href="{{ next.get_absolute_url }}"><span class="overline">Next</span><strong>{{ next.title }}</strong></a>{% endif %}
+      </nav>
+      {% endif %}
+    </footer>
+  </article>
+
+  {% if doc.toc %}
+  <aside class="toc no-print" x-data="toc" aria-label="On this page">
+    <p class="overline">On this page</p>
+    <ol>
+      {% for entry in doc.toc %}
+      <li data-level="{{ entry.level }}"><a href="#{{ entry.id }}" :aria-current="current === '{{ entry.id }}' ? 'true' : null">{{ entry.text }}</a></li>
+      {% endfor %}
+    </ol>
+    <div class="bar bar--thin"><i class="fill" :style="`width:${progress}%`"></i></div>
+  </aside>
+  {% endif %}
+</div>
+{% endblock %}

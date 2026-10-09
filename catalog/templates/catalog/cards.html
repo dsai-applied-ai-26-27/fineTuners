@@ -1,0 +1,49 @@
+{% extends "catalog/course_base.html" %}
+{% load ui %}
+
+{% block title %}Flashcards · {{ course.title }}{% endblock %}
+{% block crumbs %}<a href="{% url 'catalog:home' %}">Courses</a>{% icon "next" %}<a href="{{ course.get_absolute_url }}">{{ course.title }}</a>{% icon "next" %}<span>Flashcards</span>{% endblock %}
+
+{% block content %}
+<header class="page-head">
+  <p class="overline">Retrieve first</p>
+  <h1>Flashcards</h1>
+  <p class="lead">Answer out loud before you reveal. Shaky is the grade that matters: use it whenever you got there slowly, or with a gap you had to paper over.</p>
+</header>
+
+{% url 'catalog:review' course.slug as review_url %}
+<div class="smart">
+  <a class="smart__tile smart__tile--primary" href="{{ review_url }}?filter=due" x-data="smartDeck('due')">
+    {% icon "due" %}<strong class="num" x-text="count">0</strong><span>Due now</span>
+  </a>
+  <a class="smart__tile" href="{{ review_url }}?filter=weak" x-data="smartDeck('weak')">
+    {% icon "flag" %}<strong class="num" x-text="count">0</strong><span>Weak</span>
+  </a>
+  <a class="smart__tile" href="{{ review_url }}?filter=unseen" x-data="smartDeck('unseen')">
+    {% icon "visible" %}<strong class="num" x-text="count">0</strong><span>Unseen</span>
+  </a>
+  <a class="smart__tile" href="{{ review_url }}?filter=key" x-data="smartDeck('key')">
+    {% icon "key" %}<strong class="num" x-text="count">0</strong><span>Key cards</span>
+  </a>
+  <a class="smart__tile" href="{{ review_url }}">
+    {% icon "cards" %}<strong class="num">{{ counts.cards }}</strong><span>All cards</span>
+  </a>
+</div>
+
+<section class="section">
+  <div class="section-head"><h2>Decks</h2></div>
+  <div class="grid">
+    {% for deck in decks %}
+    <a class="card deck-card" href="{{ deck.get_absolute_url }}" x-data="deckBar('{{ deck.slug }}')">
+      <p class="overline">{% if deck.topic %}{{ deck.topic.label }}{% else %}Deck{% endif %}</p>
+      <h3 class="card__title">{{ deck.title }}</h3>
+      {% if deck.description %}<p class="muted">{{ deck.description }}</p>{% endif %}
+      <div class="bar" role="img" :aria-label="label">
+        <i class="solid" :style="`width:${pct('solid')}%`"></i><i class="shaky" :style="`width:${pct('shaky')}%`"></i><i class="missed" :style="`width:${pct('missed')}%`"></i>
+      </div>
+      <p class="faint">{{ deck.n_cards }} card{{ deck.n_cards|pluralize }} · <span x-text="label"></span></p>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

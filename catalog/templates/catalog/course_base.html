@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load ui %}
+{# Shared by every page inside a course: swaps the rail for the course's own navigation
+   and adds the progress ring. `nav`, `manifest` and `active` come from load_course(). #}
+
+{% block rail %}
+<a class="nav-item" href="{% url 'catalog:home' %}">{% icon "back" %}<span class="label">All courses</span></a>
+<a class="rail__course" href="{{ course.get_absolute_url }}">
+  <span class="overline">{{ course.code }}{% if course.year %} · {{ course.year }}{% endif %}</span>
+  <strong>{{ course.title }}</strong>
+</a>
+<a class="nav-item" href="{{ course.get_absolute_url }}"{% if active == "overview" %} aria-current="page"{% endif %}>
+  {% icon "course" %}<span class="label">Overview</span>
+</a>
+{% for group in nav %}
+<p class="rail__label">{{ group.title }}</p>
+{% for item in group.items %}
+<a class="nav-item" href="{{ item.url }}"{% if active == item.key %} aria-current="page"{% endif %}>
+  {% icon item.icon %}<span class="label">{{ item.label }}</span><span class="count">{{ item.count }}</span>
+</a>
+{% endfor %}
+{% endfor %}
+{% endblock %}
+
+{% block ring %}
+{% if counts.cards %}
+<a class="ring-btn no-print" href="{% url 'catalog:cards' course.slug %}" x-data="ring" :title="title" aria-label="Flashcard progress">
+  <svg class="ring" width="30" height="30" viewBox="0 0 36 36" aria-hidden="true">
+    <circle class="track" cx="18" cy="18" r="15"></circle>
+    <circle class="solid" cx="18" cy="18" r="15" :stroke-dasharray="arc('solid')" :stroke-dashoffset="offset('solid')"></circle>
+    <circle class="shaky" cx="18" cy="18" r="15" :stroke-dasharray="arc('shaky')" :stroke-dashoffset="offset('shaky')"></circle>
+    <circle class="missed" cx="18" cy="18" r="15" :stroke-dasharray="arc('missed')" :stroke-dashoffset="offset('missed')"></circle>
+  </svg>
+  <span x-text="percent + '%'">0%</span>
+</a>
+{% endif %}
+{% endblock %}
+
+{% block data %}{{ manifest|json_script:"course-manifest" }}{% endblock %}

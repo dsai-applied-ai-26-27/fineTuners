@@ -1,0 +1,56 @@
+{% extends "catalog/course_base.html" %}
+{% load ui %}
+
+{% block title %}Glossary · {{ course.title }}{% endblock %}
+{% block crumbs %}<a href="{% url 'catalog:home' %}">Courses</a>{% icon "next" %}<a href="{{ course.get_absolute_url }}">{{ course.title }}</a>{% icon "next" %}<span>Glossary</span>{% endblock %}
+{% block inner_class %}page__inner--narrow{% endblock %}
+
+{% block content %}
+<div x-data="cover">
+  <header class="page-head">
+    <div class="page-head__row">
+      <div>
+        <p class="overline">{{ terms|length }} term{{ terms|length|pluralize }}</p>
+        <h1>Glossary</h1>
+      </div>
+      <div class="row no-print">
+        <button class="btn btn--tonal" type="button" :aria-pressed="covered" @click="toggleCover()">{% icon "cover" %}<span x-text="covered ? 'Show all' : 'Cover and recall'">Cover and recall</span></button>
+      </div>
+    </div>
+    <label class="search search--wide no-print mt-4">
+      {% icon "search" %}
+      <input type="search" placeholder="Filter terms" x-model="query" aria-label="Filter terms">
+    </label>
+    {% if scope_label %}
+    <div class="chips mt-4 no-print">
+      <span class="chip chip--primary">{% icon "filter" %}Only: {{ scope_label }}</span>
+      <a class="chip" href="{% url 'catalog:glossary' course.slug %}">Show all</a>
+    </div>
+    {% endif %}
+  </header>
+
+  <dl class="terms">
+    {% for term in terms %}
+    <div class="term" id="{{ term.key }}" x-show="match('{{ term.term|escapejs }}')" :data-hidden="hidden('{{ term.key }}')" :data-grade="status('{{ term.key }}')" @click="reveal('{{ term.key }}')">
+      <dt>
+        {{ term.term }}
+        {% if term.topic %}<span class="faint">{{ term.topic.label }}</span>{% endif %}
+      </dt>
+      <dd>
+        <div class="md">{{ term.definition_html|safe }}</div>
+        {% if term.see %}
+        <p class="faint term__see">See also {% for other in term.see %}<a class="link" href="#{{ other.key }}" @click.stop>{{ other.term }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+        {% endif %}
+      </dd>
+      <div class="mini-grades no-print" x-show="covered && shown['{{ term.key }}']" x-cloak @click.stop>
+        <button class="gdot" type="button" data-g="1" :aria-pressed="status('{{ term.key }}') === 1" aria-label="Missed" @click="mark('{{ term.key }}', 1)"></button>
+        <button class="gdot" type="button" data-g="2" :aria-pressed="status('{{ term.key }}') === 2" aria-label="Shaky" @click="mark('{{ term.key }}', 2)"></button>
+        <button class="gdot" type="button" data-g="3" :aria-pressed="status('{{ term.key }}') === 3" aria-label="Solid" @click="mark('{{ term.key }}', 3)"></button>
+      </div>
+    </div>
+    {% empty %}
+    <div class="empty">{% icon "empty" %}<strong>No terms for this selection</strong></div>
+    {% endfor %}
+  </dl>
+</div>
+{% endblock %}

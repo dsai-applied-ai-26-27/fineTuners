@@ -1,0 +1,40 @@
+{% load ui %}
+{# Native <dialog>: the browser handles focus trapping, Escape and the backdrop. #}
+<dialog class="dialog" id="timer-alert" x-ref="timerAlert">
+  <h2 x-text="$store.timer.alert.title">Block done</h2>
+  <p class="muted" x-text="$store.timer.alert.body"></p>
+  <div class="actions">
+    <button class="btn" type="button" @click="$store.timer.dismiss()">Dismiss</button>
+    <button class="btn btn--filled" type="button" @click="$store.timer.next()" x-text="$store.timer.alert.action">Start</button>
+  </div>
+</dialog>
+
+<dialog class="dialog dialog--wide" id="shortcuts" x-ref="shortcuts">
+  <h2>Keyboard shortcuts</h2>
+  <div class="shortcuts">
+    <div>
+      <p class="overline">Anywhere</p>
+      <dl>
+        <dt><span class="kbd">/</span></dt><dd>Search</dd>
+        <dt><span class="kbd">t</span></dt><dd>Start or pause the timer</dd>
+        <dt><span class="kbd">d</span></dt><dd>Light, dark or automatic theme</dd>
+        <dt><span class="kbd">?</span></dt><dd>This list</dd>
+      </dl>
+    </div>
+    <div>
+      <p class="overline">Flashcards and palaces</p>
+      <dl>
+        <dt><span class="kbd">space</span></dt><dd>Reveal, or show the next step</dd>
+        <dt><span class="kbd">1</span> <span class="kbd">2</span> <span class="kbd">3</span></dt><dd>Missed, shaky, solid</dd>
+        <dt><span class="kbd">0</span></dt><dd>Clear the grade</dd>
+        <dt><span class="kbd">&larr;</span> <span class="kbd">&rarr;</span></dt><dd>Previous and next card</dd>
+        <dt><span class="kbd">s</span></dt><dd>Shuffle</dd>
+      </dl>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="btn btn--tonal" type="button" @click="$refs.shortcuts.close()">Close</button>
+  </div>
+</dialog>
+
+<p class="snackbar" x-show="$store.ui.toast" x-cloak x-transition.opacity x-text="$store.ui.toast" role="status"></p>

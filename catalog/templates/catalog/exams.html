@@ -1,0 +1,39 @@
+{% extends "catalog/course_base.html" %}
+{% load ui %}
+
+{% block title %}Exam prep · {{ course.title }}{% endblock %}
+{% block crumbs %}<a href="{% url 'catalog:home' %}">Courses</a>{% icon "next" %}<a href="{{ course.get_absolute_url }}">{{ course.title }}</a>{% icon "next" %}<span>Exam prep</span>{% endblock %}
+
+{% block content %}
+<header class="page-head">
+  <p class="overline">{{ course.code }}</p>
+  <h1>Exam prep</h1>
+  <p class="lead">One page per exam: what it covers, how to spend the time before it, and papers to sit.</p>
+</header>
+
+<div class="grid grid--wide">
+  {% for exam in assessments %}
+  <a class="card exam-card" href="{{ exam.get_absolute_url }}">
+    <div class="row">
+      <span class="chip chip--primary">{{ exam.get_kind_display }}</span>
+      {% if exam.date %}
+      <span class="chip chip--tonal" x-data="countdown('{{ exam.date|date:'Y-m-d' }}')" :class="soon && 'chip--shaky'">{% icon "calendar" %}<span x-text="label">{{ exam.date|date:"j M Y" }}</span></span>
+      <span class="faint">{{ exam.date|date:"j M Y" }}</span>
+      {% endif %}
+    </div>
+    <h2 class="card__title mt-4">{{ exam.title }}</h2>
+    <p class="muted">
+      {% for topic in exam.topics.all %}{{ topic.label }}{% if not forloop.last %} · {% endif %}{% empty %}No topics in scope yet{% endfor %}
+    </p>
+    <div class="row mt-4">
+      {% with papers=exam.papers.all %}
+      {% if papers %}<span class="faint">{{ papers|length }} paper{{ papers|length|pluralize }}</span>{% endif %}
+      {% endwith %}
+      {% if exam.plan.phases %}
+      <span class="faint" x-data="phases('{{ exam.slug }}', {{ exam.plan.phases|length }})"><span x-text="finished">0</span> / {{ exam.plan.phases|length }} plan phases done</span>
+      {% endif %}
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% endblock %}

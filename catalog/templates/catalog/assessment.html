@@ -1,0 +1,176 @@
+{% extends "catalog/course_base.html" %}
+{% load ui %}
+
+{% block title %}{{ exam.title }} · {{ course.title }}{% endblock %}
+{% block crumbs %}<a href="{% url 'catalog:home' %}">Courses</a>{% icon "next" %}<a href="{{ course.get_absolute_url }}">{{ course.title }}</a>{% icon "next" %}<a href="{% url 'catalog:exams' course.slug %}">Exam prep</a>{% icon "next" %}<span>{{ exam.title }}</span>{% endblock %}
+
+{% block content %}
+{% url 'catalog:review' course.slug as review_url %}
+<header class="page-head">
+  <div class="row">
+    <span class="chip chip--primary">{{ exam.get_kind_display }}</span>
+    {% if exam.date %}
+    <span class="chip chip--tonal" x-data="countdown('{{ exam.date|date:'Y-m-d' }}')" :class="soon && 'chip--shaky'">{% icon "calendar" %}<span x-text="label">{{ exam.date|date:"j M Y" }}</span></span>
+    <span class="faint">{{ exam.date|date:"l j F Y" }}</span>
+    {% endif %}
+  </div>
+  <h1>{{ exam.title }}</h1>
+  {% if exam.format_html %}<div class="md muted exam-format">{{ exam.format_html|safe }}</div>{% endif %}
+</header>
+
+{# ---- scope: derived from topics, never listed by hand ------------------------------ #}
+<section class="scope" x-data="scopeStats({{ exam_data.topics }})">
+  <div class="scope__main card">
+    <p class="overline">What it covers</p>
+    <div class="chips mt-4">
+      {% topic_chips course topics %}
+      {% for other in includes %}<a class="chip chip--tonal" href="{{ other.get_absolute_url }}">{% icon "exam" %}includes {{ other.title }}</a>{% endfor %}
+    </div>
+    {% if lectures %}
+    <p class="faint mt-4">Lectures:
+      {% for lecture in lectures %}<a class="link" href="{{ lecture.get_absolute_url }}">{% if lecture.number is not None %}{{ lecture.number }}. {% endif %}{{ lecture.title }}</a>{% if not forloop.last %} · {% endif %}{% endfor %}
+    </p>
+    {% endif %}
+    {% if n_cards %}
+    <div class="scope__cards">
+      <div class="bar"><i class="solid" :style="`width:${pct('solid')}%`"></i><i class="shaky" :style="`width:${pct('shaky')}%`"></i><i class="missed" :style="`width:${pct('missed')}%`"></i></div>
+      <p class="faint"><span x-text="stats.solid">0</span> of {{ n_cards }} cards in scope solid · <span x-text="stats.unseen">0</span> unseen</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="scope__drill card card--primary">
+    <p class="overline">Drill the scope</p>
+    {% if n_cards %}
+    <div class="stack mt-4">
+      <a class="btn btn--filled" href="{{ review_url }}?scope={{ exam.slug }}&filter=weak">{% icon "flag" %}Weak cards<span class="n" x-text="stats.missed + stats.shaky"></span></a>
+      <a class="btn btn--tonal" href="{{ review_url }}?scope={{ exam.slug }}&filter=unseen">Unseen<span class="n" x-text="stats.unseen"></span></a>
+      {% if n_key_cards %}<a class="btn btn--tonal" href="{{ review_url }}?scope={{ exam.slug }}&filter=key">{% icon "key" %}Key cards<span class="n">{{ n_key_cards }}</span></a>{% endif %}
+      <a class="btn" href="{{ review_url }}?scope={{ exam.slug }}">All {{ n_cards }} cards</a>
+    </div>
+    {% else %}
+    <p class="mt-4">No flashcards are tagged with these topics yet.</p>
+    {% endif %}
+  </div>
+</section>
+
+{% if problem_sets or n_formulas or n_terms or n_hooks %}
+<div class="chips mt-5">
+  {% for set in problem_sets %}<a class="chip" href="{{ set.get_absolute_url }}">{% icon "problems" %}{{ set.title }}</a>{% endfor %}
+  {% if n_formulas %}<a class="chip" href="{% url 'catalog:formulas' course.slug %}?scope={{ exam.slug }}">{% icon "formulas" %}{{ n_formulas }} formula{{ n_formulas|pluralize }}</a>{% endif %}
+  {% if n_terms %}<a class="chip" href="{% url 'catalog:glossary' course.slug %}?scope={{ exam.slug }}">{% icon "glossary" %}{{ n_terms }} term{{ n_terms|pluralize }}</a>{% endif %}
+  {% if n_hooks %}<a class="chip" href="{% url 'catalog:memory' course.slug %}?scope={{ exam.slug }}">{% icon "hook" %}{{ n_hooks }} hook{{ n_hooks|pluralize }}</a>{% endif %}
+</div>
+{% endif %}
+
+{# ---- what the paper tests ----------------------------------------------------------- #}
+{% if exam.weights %}
+<section class="section">
+  <div class="section-head"><h2>{% icon "target" %}What the paper tests</h2></div>
+  <div class="weights">
+    {% for row in exam.weights %}
+    <div class="weight">
+      <a class="weight__topic" href="{% url 'catalog:topic' course.slug row.topic %}">{{ row.title }}</a>
+      <div class="weight__bar" role="img" aria-label="Weight {{ row.weight }} of 5">{% for step in "12345" %}<i{% if forloop.counter <= row.weight %} data-on{% endif %}></i>{% endfor %}</div>
+      {% if row.note %}<div class="weight__note md">{{ row.note|safe }}</div>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{# ---- the plan ----------------------------------------------------------------------- #}
+{% if exam.plan.phases %}
+<section class="section" id="plan" x-data="phases('{{ exam.slug }}', {{ exam.plan.phases|length }})">
+  <div class="section-head">
+    <h2>{% icon "route" %}The plan</h2>
+    <span class="faint"><span x-text="finished">0</span> of {{ exam.plan.phases|length }} done</span>
+  </div>
+  {% if exam.plan.intro %}<div class="md muted">{{ exam.plan.intro|safe }}</div>{% endif %}
+  <ol class="plan">
+    {% for phase in exam.plan.phases %}
+    <li class="phase" :data-done="done({{ forloop.counter0 }})">
+      <button class="phase__check" type="button" @click="toggle({{ forloop.counter0 }})" :aria-pressed="done({{ forloop.counter0 }})" aria-label="Mark {{ phase.label }} done">
+        <span x-show="!done({{ forloop.counter0 }})">{{ forloop.counter }}</span>
+        <span x-show="done({{ forloop.counter0 }})" x-cloak>{% icon "check" %}</span>
+      </button>
+      <div class="phase__body">
+        <p class="overline">{{ phase.label }}{% if phase.minutes %} · about {{ phase.minutes }} min{% endif %}</p>
+        <h3>{{ phase.title }}</h3>
+        {% if phase.why %}<div class="md muted">{{ phase.why|safe }}</div>{% endif %}
+        {% if phase.tasks %}
+        <ul class="tasks">
+          {% for task in phase.tasks %}
+          <li class="task">
+            {% if task.tag %}<span class="task__tag">{{ task.tag }}</span>{% endif %}
+            <div>
+              <div class="md">{{ task.text|safe }}</div>
+              {% if task.links %}
+              <div class="chips mt-2">
+                {% for link in task.links %}<a class="chip chip--primary" href="{{ link.url }}">{{ link.label }}{% icon "forward" %}</a>{% endfor %}
+              </div>
+              {% endif %}
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </div>
+    </li>
+    {% endfor %}
+  </ol>
+  {% if exam.plan.skip %}
+  <aside class="skip">
+    <p class="overline">What to skip, deliberately</p>
+    <div class="md">{{ exam.plan.skip|safe }}</div>
+  </aside>
+  {% endif %}
+</section>
+{% endif %}
+
+{# ---- likely questions ---------------------------------------------------------------- #}
+{% if exam.predictions %}
+<section class="section">
+  <div class="section-head"><h2>{% icon "trend" %}Likely questions</h2></div>
+  <div class="stack">
+    {% for item in exam.predictions %}
+    <article class="prediction" data-likelihood="{{ item.likelihood }}">
+      <span class="chip {% if item.likelihood == 'high' %}chip--key{% elif item.likelihood == 'low' %}chip--tonal{% else %}chip--shaky{% endif %}">{{ item.likelihood|title }}</span>
+      <div>
+        <div class="md prediction__q">{{ item.q|safe }}</div>
+        {% if item.why %}<div class="md muted">{{ item.why|safe }}</div>{% endif %}
+        {% if item.refs %}
+        <div class="chips mt-2">{% for link in item.refs %}<a class="chip" href="{{ link.url }}">{{ link.label }}</a>{% endfor %}</div>
+        {% endif %}
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{# ---- papers -------------------------------------------------------------------------- #}
+{% if past_papers or mock_papers %}
+<section class="section">
+  <div class="section-head"><h2>{% icon "exam" %}Papers</h2></div>
+  <div class="grid">
+    {% for paper in mock_papers %}
+    <a class="card paper-card" href="{{ paper.get_absolute_url }}" x-data="attemptSummary('{{ paper.slug }}')">
+      <span class="chip chip--primary">Mock</span>
+      <h3 class="card__title">{{ paper.title }}</h3>
+      <p class="faint">{% if paper.duration_min %}{{ paper.duration_min }} min · {% endif %}{{ paper.total_points|trim_zero }} points</p>
+      <p class="paper-card__state num" x-text="label">Not attempted</p>
+    </a>
+    {% endfor %}
+    {% for paper in past_papers %}
+    <a class="card paper-card" href="{{ paper.get_absolute_url }}" x-data="attemptSummary('{{ paper.slug }}')">
+      <span class="chip chip--tonal">Past paper</span>
+      <h3 class="card__title">{{ paper.title }}</h3>
+      <p class="faint">{% if paper.date %}{{ paper.date|date:"M Y" }} · {% endif %}{% if paper.duration_min %}{{ paper.duration_min }} min · {% endif %}{{ paper.total_points|trim_zero }} points</p>
+      <p class="paper-card__state num" x-text="label">Not attempted</p>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

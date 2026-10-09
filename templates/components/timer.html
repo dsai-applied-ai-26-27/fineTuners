@@ -1,0 +1,41 @@
+{% load ui %}
+{# Focus timer. State lives in the Alpine store "timer" (static/js/store/timer.js). #}
+<div class="timer-chip no-print" :data-running="$store.timer.running" :data-phase="$store.timer.phase">
+  <button class="icon-btn" type="button" @click="$store.timer.toggle()" :aria-label="$store.timer.running ? 'Pause timer' : 'Start timer'">
+    <span x-show="!$store.timer.running">{% icon "play" %}</span>
+    <span x-show="$store.timer.running" x-cloak>{% icon "pause" %}</span>
+  </button>
+  <button class="time" type="button" popovertarget="timer-pop" x-text="$store.timer.display" aria-label="Timer settings">25:00</button>
+</div>
+
+<div id="timer-pop" class="popover timer-pop" popover>
+  <div class="row">
+    <strong x-text="$store.timer.phase === 'focus' ? 'Focus block' : 'Break'">Focus block</strong>
+    <span class="spacer"></span>
+    <button class="btn btn--small" type="button" @click="$store.timer.reset()">{% icon "reset" %} Reset</button>
+  </div>
+
+  <div class="field mt-4">
+    <span>Focus minutes</span>
+    <div class="segmented">
+      <template x-for="m in [15, 25, 45, 50]" :key="m">
+        <button type="button" :aria-pressed="$store.timer.focusMin === m" @click="$store.timer.setLength('focus', m)" x-text="m"></button>
+      </template>
+    </div>
+  </div>
+  <div class="field mt-4">
+    <span>Break minutes</span>
+    <div class="segmented">
+      <template x-for="m in [5, 10, 15]" :key="m">
+        <button type="button" :aria-pressed="$store.timer.breakMin === m" @click="$store.timer.setLength('break', m)" x-text="m"></button>
+      </template>
+    </div>
+  </div>
+
+  <div class="stack mt-5">
+    <label class="switch"><span>Chime when a block ends</span><input type="checkbox" x-model="$store.timer.sound" @change="$store.timer.save()"></label>
+    <label class="switch"><span>Roll straight into the next block</span><input type="checkbox" x-model="$store.timer.auto" @change="$store.timer.save()"></label>
+    <label class="switch"><span>Hide the countdown</span><input type="checkbox" x-model="$store.timer.hidden" @change="$store.timer.save()"></label>
+  </div>
+  <p class="faint mt-4"><span x-text="$store.timer.todayMinutes"></span> focused minutes today</p>
+</div>

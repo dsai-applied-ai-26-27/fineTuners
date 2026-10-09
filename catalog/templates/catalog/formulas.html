@@ -1,0 +1,56 @@
+{% extends "catalog/course_base.html" %}
+{% load ui %}
+
+{% block title %}Formula sheet · {{ course.title }}{% endblock %}
+{% block crumbs %}<a href="{% url 'catalog:home' %}">Courses</a>{% icon "next" %}<a href="{{ course.get_absolute_url }}">{{ course.title }}</a>{% icon "next" %}<span>Formula sheet</span>{% endblock %}
+
+{% block content %}
+<div x-data="cover">
+  <header class="page-head">
+    <div class="page-head__row">
+      <div>
+        <p class="overline">Know these without notes</p>
+        <h1>Formula sheet</h1>
+      </div>
+      <div class="row no-print">
+        <button class="btn btn--tonal" type="button" :aria-pressed="covered" @click="toggleCover()">{% icon "cover" %}<span x-text="covered ? 'Show all' : 'Cover and recall'">Cover and recall</span></button>
+        <button class="btn" type="button" onclick="window.print()">{% icon "print" %}Print</button>
+      </div>
+    </div>
+    <p class="lead no-print" x-show="covered" x-cloak>Say each formula from its name, then click the row to check. Grade it if you want it to count.</p>
+    {% if scope_label %}
+    <div class="chips mt-4 no-print">
+      <span class="chip chip--primary">{% icon "filter" %}Only: {{ scope_label }}</span>
+      <a class="chip" href="{% url 'catalog:formulas' course.slug %}">Show all</a>
+    </div>
+    {% endif %}
+  </header>
+
+  {% for section in sections %}
+  <section class="section sheet">
+    <div class="section-head">
+      <h2>{{ section.title }}</h2>
+      {% if section.topic %}<a class="chip no-print" href="{% url 'catalog:topic' course.slug section.topic.key %}">{% icon "topic" %}{{ section.topic.label }}</a>{% endif %}
+    </div>
+    <div class="formulas">
+      {% for formula in section.formulas.all %}
+      <article class="formula" id="{{ formula.key }}" :data-hidden="hidden('{{ formula.key }}')" :data-grade="status('{{ formula.key }}')" @click="reveal('{{ formula.key }}')">
+        <h3 class="formula__name">{{ formula.name }}</h3>
+        <div class="formula__body">
+          <div class="md">{{ formula.body_html|safe }}</div>
+          {% if formula.note_html %}<div class="formula__note md">{{ formula.note_html|safe }}</div>{% endif %}
+        </div>
+        <div class="mini-grades no-print" x-show="covered && shown['{{ formula.key }}']" x-cloak @click.stop>
+          <button class="gdot" type="button" data-g="1" :aria-pressed="status('{{ formula.key }}') === 1" aria-label="Missed" @click="mark('{{ formula.key }}', 1)"></button>
+          <button class="gdot" type="button" data-g="2" :aria-pressed="status('{{ formula.key }}') === 2" aria-label="Shaky" @click="mark('{{ formula.key }}', 2)"></button>
+          <button class="gdot" type="button" data-g="3" :aria-pressed="status('{{ formula.key }}') === 3" aria-label="Solid" @click="mark('{{ formula.key }}', 3)"></button>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+  {% empty %}
+  <div class="empty">{% icon "empty" %}<strong>No formulas for this selection</strong></div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block title %}{% if query %}{{ query }} · {% endif %}Search · dsai.pages{% endblock %}
+{% block crumbs %}<a href="{% url 'catalog:home' %}">Courses</a>{% icon "next" %}<span>Search</span>{% endblock %}
+{% block inner_class %}page__inner--narrow{% endblock %}
+
+{% block content %}
+<header class="page-head">
+  <p class="overline">Notes, cards, questions, formulas, terms, hooks</p>
+  <h1>Search</h1>
+  {# A GET form: the query ends up in the address (?q=…), so a search can be bookmarked. #}
+  <form class="search-form mt-4" action="{% url 'catalog:search' %}">
+    <label class="search search--wide">
+      {% icon "search" %}
+      <input type="search" name="q" value="{{ query }}" placeholder="Search everything" aria-label="Search" autofocus>
+    </label>
+    <select class="select" name="course" aria-label="Course" onchange="this.form.submit()">
+      <option value="">All courses</option>
+      {% for item in courses %}<option value="{{ item.slug }}"{% if item.slug == course_slug %} selected{% endif %}>{{ item.code }} · {{ item.title }}</option>{% endfor %}
+    </select>
+    <button class="btn btn--filled" type="submit">Search</button>
+  </form>
+</header>
+
+{% if query|length >= 2 %}
+<p class="faint">{{ total }} result{{ total|pluralize }} for “{{ query }}”</p>
+<div class="hits mt-4">
+  {% for row in page %}
+  <a class="hit tone" style="--hue: {{ row.course.hue }}" href="{{ row.url }}">
+    <div class="row">
+      <span class="chip chip--primary">{{ row.kind }}</span>
+      <span class="faint">{{ row.course.code }}</span>
+    </div>
+    <strong>{{ row.title|highlight:query }}</strong>
+    <p class="muted">{{ row.snippet|highlight:query }}</p>
+  </a>
+  {% empty %}
+  <div class="empty">{% icon "search" %}<strong>Nothing found</strong><p>Search looks at the text of notes, cards, questions, formulas, terms and hooks.</p></div>
+  {% endfor %}
+</div>
+
+{% if page.has_other_pages %}
+<nav class="pager" aria-label="Result pages">
+  {% if page.has_previous %}<a href="?q={{ query|urlencode }}&course={{ course_slug }}&page={{ page.previous_page_number }}"><span class="overline">Previous</span><strong>Page {{ page.previous_page_number }}</strong></a>{% endif %}
+  {% if page.has_next %}<a class="next" href="?q={{ query|urlencode }}&course={{ course_slug }}&page={{ page.next_page_number }}"><span class="overline">Next</span><strong>Page {{ page.next_page_number }} of {{ page.paginator.num_pages }}</strong></a>{% endif %}
+</nav>
+{% endif %}
+{% elif query %}
+<div class="empty">{% icon "search" %}<strong>Type at least two characters</strong></div>
+{% endif %}
+{% endblock %}

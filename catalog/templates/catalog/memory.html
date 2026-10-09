@@ -1,0 +1,66 @@
+{% extends "catalog/course_base.html" %}
+{% load ui %}
+
+{% block title %}Memory · {{ course.title }}{% endblock %}
+{% block crumbs %}<a href="{% url 'catalog:home' %}">Courses</a>{% icon "next" %}<a href="{{ course.get_absolute_url }}">{{ course.title }}</a>{% icon "next" %}<span>Hooks and palaces</span>{% endblock %}
+
+{% block content %}
+<header class="page-head">
+  <p class="overline">Scaffolding, not content</p>
+  <h1>Hooks and palaces</h1>
+  <p class="lead">A hook gets the real thing out of your head under pressure. Once it is out, write the real thing: never the hook.</p>
+  {% if scope_label %}
+  <div class="chips mt-4">
+    <span class="chip chip--primary">{% icon "filter" %}Only: {{ scope_label }}</span>
+    <a class="chip" href="{% url 'catalog:memory' course.slug %}">Show all</a>
+  </div>
+  {% endif %}
+</header>
+
+{% if palaces %}
+<section class="section mt-0">
+  <div class="section-head"><h2>{% icon "palace" %}Memory palaces</h2></div>
+  <div class="grid">
+    {% for palace in palaces %}
+    <a class="card palace-card" href="{{ palace.get_absolute_url }}">
+      <p class="overline">{% if palace.topic %}{{ palace.topic.label }} · {% endif %}{{ palace.n_loci }} stops</p>
+      <h3 class="card__title">{{ palace.title }}</h3>
+      {% if palace.encodes_html %}<div class="md muted">{{ palace.encodes_html|safe }}</div>{% endif %}
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if hooks %}
+<section class="section" x-data="cover">
+  <div class="section-head">
+    <h2>{% icon "hook" %}Every hook in one place</h2>
+    <button class="btn btn--tonal btn--small" type="button" :aria-pressed="covered" @click="toggleCover()">{% icon "cover" %}<span x-text="covered ? 'Show all' : 'Cover what they recover'">Cover what they recover</span></button>
+  </div>
+  <p class="muted" x-show="covered" x-cloak>Read the hook, say what it brings back, then click the row.</p>
+  <div class="hooks">
+    {% for hook in hooks %}
+    <article class="hook" id="{{ hook.key }}" :data-hidden="hidden('{{ hook.key }}')" @click="reveal('{{ hook.key }}')">
+      <div class="hook__hook">
+        <span class="chip chip--tonal">{{ hook.get_kind_display }}</span>
+        <div class="md">{{ hook.hook_html|safe }}</div>
+      </div>
+      <div class="hook__target">
+        <p class="hook__for">{{ hook.target }}</p>
+        {% if hook.explain_html %}<div class="md muted">{{ hook.explain_html|safe }}</div>{% endif %}
+        <div class="chips">
+          {% if hook.card %}<a class="chip" href="{% url 'catalog:deck' course.slug hook.card.deck.slug %}?card={{ hook.card.key }}" @click.stop>{% icon "cards" %}Open the card</a>{% endif %}
+          {% for link in hook.refs %}<a class="chip" href="{{ link.url }}" @click.stop>{{ link.label }}</a>{% endfor %}
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if not hooks and not palaces %}
+<div class="empty">{% icon "empty" %}<strong>Nothing for this selection</strong></div>
+{% endif %}
+{% endblock %}

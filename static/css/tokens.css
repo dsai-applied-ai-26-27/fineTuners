@@ -1,0 +1,128 @@
+/* Design tokens: every colour, size and curve the site uses is named here.
+
+   The palette follows Material 3's roles (surface, container, on-*) but is computed rather
+   than listed: every role is an OKLCH colour built from one number, --hue. A course sets
+   its own --hue, so its pages, cards and chips take its colour with no further CSS.
+   light-dark() picks the first value in light mode and the second in dark mode. */
+
+@layer reset, tokens, base, layout, components, prose, study, pages, utilities;
+
+@layer tokens {
+  :root {
+    color-scheme: light dark;
+    --hue: 255;
+  }
+  :root[data-theme="light"] { color-scheme: light; }
+  :root[data-theme="dark"] { color-scheme: dark; }
+
+  /* Custom properties are resolved where they are declared. Repeating the palette on .tone
+     lets any element carry its own --hue (a course card on the dashboard, for instance). */
+  :root,
+  .tone {
+    --surface: light-dark(oklch(98.4% 0.006 var(--hue)), oklch(16.5% 0.012 var(--hue)));
+    --surface-dim: light-dark(oklch(95.6% 0.009 var(--hue)), oklch(13.5% 0.01 var(--hue)));
+    --surface-low: light-dark(oklch(96.9% 0.009 var(--hue)), oklch(19.2% 0.014 var(--hue)));
+    --surface-mid: light-dark(oklch(95.2% 0.012 var(--hue)), oklch(21.8% 0.016 var(--hue)));
+    --surface-high: light-dark(oklch(93.2% 0.016 var(--hue)), oklch(24.8% 0.018 var(--hue)));
+    --surface-highest: light-dark(oklch(91% 0.02 var(--hue)), oklch(28.2% 0.02 var(--hue)));
+    --surface-raised: light-dark(oklch(100% 0 0), oklch(20.6% 0.015 var(--hue)));
+
+    --on-surface: light-dark(oklch(22% 0.02 var(--hue)), oklch(93% 0.01 var(--hue)));
+    --on-surface-variant: light-dark(oklch(41% 0.026 var(--hue)), oklch(79% 0.02 var(--hue)));
+    --on-surface-faint: light-dark(oklch(52% 0.022 var(--hue)), oklch(67% 0.02 var(--hue)));
+    --outline: light-dark(oklch(66% 0.022 var(--hue)), oklch(54% 0.02 var(--hue)));
+    --outline-variant: light-dark(oklch(87.5% 0.018 var(--hue)), oklch(31% 0.018 var(--hue)));
+
+    --primary: light-dark(oklch(46% 0.13 var(--hue)), oklch(82% 0.09 var(--hue)));
+    --on-primary: light-dark(oklch(99% 0.004 var(--hue)), oklch(23% 0.07 var(--hue)));
+    --primary-container: light-dark(oklch(91.5% 0.052 var(--hue)), oklch(33% 0.075 var(--hue)));
+    --on-primary-container: light-dark(oklch(27% 0.09 var(--hue)), oklch(92% 0.045 var(--hue)));
+    --secondary-container: light-dark(oklch(92.8% 0.028 var(--hue)), oklch(29.5% 0.03 var(--hue)));
+    --on-secondary-container: light-dark(oklch(28% 0.04 var(--hue)), oklch(91% 0.025 var(--hue)));
+
+    --tertiary-hue: calc(var(--hue) + 55);
+    --tertiary: light-dark(oklch(47% 0.11 var(--tertiary-hue)), oklch(83% 0.08 var(--tertiary-hue)));
+    --tertiary-container: light-dark(
+      oklch(92.5% 0.045 var(--tertiary-hue)),
+      oklch(32% 0.06 var(--tertiary-hue))
+    );
+    --on-tertiary-container: light-dark(
+      oklch(28% 0.08 var(--tertiary-hue)),
+      oklch(92% 0.04 var(--tertiary-hue))
+    );
+
+    --state-hover: color-mix(in oklch, var(--on-surface) 7%, transparent);
+    --state-press: color-mix(in oklch, var(--on-surface) 12%, transparent);
+    --focus: var(--primary);
+  }
+
+  /* Grades and other meanings keep the same hue in every course: red is always "missed". */
+  :root {
+    --missed: light-dark(oklch(51% 0.17 25), oklch(78% 0.11 25));
+    --missed-container: light-dark(oklch(93.5% 0.038 25), oklch(31% 0.07 25));
+    --on-missed-container: light-dark(oklch(33% 0.12 25), oklch(92% 0.04 25));
+
+    --shaky: light-dark(oklch(50% 0.11 72), oklch(82% 0.11 80));
+    --shaky-container: light-dark(oklch(93.5% 0.055 85), oklch(31% 0.055 75));
+    --on-shaky-container: light-dark(oklch(33% 0.075 65), oklch(92% 0.05 85));
+
+    --solid: light-dark(oklch(46% 0.11 158), oklch(80% 0.11 160));
+    --solid-container: light-dark(oklch(93% 0.045 160), oklch(30% 0.055 160));
+    --on-solid-container: light-dark(oklch(30% 0.075 160), oklch(92% 0.045 160));
+
+    --key: light-dark(oklch(48% 0.15 305), oklch(80% 0.1 305));
+    --key-container: light-dark(oklch(93.5% 0.04 305), oklch(31% 0.07 305));
+    --on-key-container: light-dark(oklch(32% 0.11 305), oklch(92% 0.04 305));
+
+    --unseen: light-dark(oklch(84% 0.012 var(--hue)), oklch(38% 0.014 var(--hue)));
+
+    /* Syntax colours for code blocks (classes come from Pygments). */
+    --syn-keyword: light-dark(oklch(45% 0.16 300), oklch(80% 0.11 300));
+    --syn-string: light-dark(oklch(44% 0.11 150), oklch(80% 0.11 150));
+    --syn-number: light-dark(oklch(48% 0.13 50), oklch(80% 0.1 60));
+    --syn-comment: light-dark(oklch(54% 0.02 250), oklch(64% 0.02 250));
+    --syn-function: light-dark(oklch(45% 0.14 250), oklch(80% 0.1 245));
+    --syn-builtin: light-dark(oklch(46% 0.1 200), oklch(80% 0.08 200));
+
+    --font-ui: "Google Sans Flex Variable", "Roboto Flex", system-ui, -apple-system, "Segoe UI",
+      sans-serif;
+    --font-read: "Literata Variable", Georgia, "Times New Roman", serif;
+    --font-mono: "JetBrains Mono Variable", ui-monospace, "Cascadia Code", Consolas, monospace;
+
+    --text-xs: 0.75rem;
+    --text-s: 0.8125rem;
+    --text-m: 0.9375rem;
+    --text-l: 1.0625rem;
+    --text-xl: 1.3125rem;
+    --text-2xl: 1.625rem;
+    --text-3xl: 2.125rem;
+
+    --s1: 0.25rem;
+    --s2: 0.5rem;
+    --s3: 0.75rem;
+    --s4: 1rem;
+    --s5: 1.5rem;
+    --s6: 2rem;
+    --s7: 3rem;
+    --s8: 4rem;
+
+    --r-xs: 6px;
+    --r-s: 10px;
+    --r-m: 14px;
+    --r-l: 20px;
+    --r-xl: 28px;
+    --r-full: 999px;
+
+    /* Depth comes from tone first; shadows are kept for things that float. */
+    --shadow-1: 0 1px 2px oklch(0% 0 0 / 0.05), 0 1px 3px oklch(0% 0 0 / 0.07);
+    --shadow-2: 0 2px 6px oklch(0% 0 0 / 0.07), 0 10px 28px oklch(0% 0 0 / 0.1);
+
+    --ease: cubic-bezier(0.2, 0, 0, 1);
+    --dur-1: 120ms;
+    --dur-2: 220ms;
+
+    --rail: 17.5rem;
+    --topbar: 4rem;
+    --read: 46rem;
+  }
+}

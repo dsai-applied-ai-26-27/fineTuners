@@ -1,0 +1,20 @@
+{% extends "catalog/course_base.html" %}
+{% load ui %}
+
+{% block title %}{{ doc.title }} · {{ course.title }}{% endblock %}
+{% block crumbs %}<a href="{% url 'catalog:home' %}">Courses</a>{% icon "next" %}<a href="{{ course.get_absolute_url }}">{{ course.title }}</a>{% icon "next" %}<span>{{ doc.title }}</span>{% endblock %}
+
+{% block content %}
+<header class="page-head">
+  <div class="page-head__row">
+    <div>
+      <p class="overline">{{ course.code }} · one page</p>
+      <h1>{{ doc.title }}</h1>
+    </div>
+    <button class="btn btn--tonal no-print" type="button" onclick="window.print()">{% icon "print" %}Print</button>
+  </div>
+  {% if doc.summary %}<p class="lead">{{ doc.summary }}</p>{% endif %}
+</header>
+
+<div class="prose cheatsheet">{{ doc.body_html|safe }}</div>
+{% endblock %}

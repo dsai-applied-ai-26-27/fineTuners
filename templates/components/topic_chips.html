@@ -1,0 +1,4 @@
+{% load ui %}
+{% for topic in topics %}
+<a class="chip" href="{% url 'catalog:topic' course.slug topic.key %}">{% icon "topic" %}{{ topic.label }}</a>
+{% endfor %}

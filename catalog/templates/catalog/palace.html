@@ -1,0 +1,85 @@
+{% extends "catalog/course_base.html" %}
+{% load ui %}
+
+{% block title %}{{ palace.title }} · {{ course.title }}{% endblock %}
+{% block crumbs %}<a href="{% url 'catalog:home' %}">Courses</a>{% icon "next" %}<a href="{{ course.get_absolute_url }}">{{ course.title }}</a>{% icon "next" %}<a href="{% url 'catalog:memory' course.slug %}">Hooks and palaces</a>{% icon "next" %}<span>{{ palace.title }}</span>{% endblock %}
+{% block inner_class %}page__inner--narrow{% endblock %}
+
+{% block content %}
+<div class="palace" x-data="palaceWalk" @keydown.window="onKey($event)">
+  <header class="page-head">
+    <p class="overline">Memory palace{% if palace.topic %} · {{ palace.topic.label }}{% endif %} · {{ loci|length }} stops</p>
+    <div class="page-head__row">
+      <h1>{{ palace.title }}</h1>
+      <div class="row no-print">
+        <button class="btn btn--filled" type="button" x-show="!walking" @click="start()">{% icon "route" %}Walk it from memory</button>
+        <button class="btn btn--tonal" type="button" x-show="walking" x-cloak @click="stop()">Back to the route</button>
+      </div>
+    </div>
+    {% if palace.encodes_html %}<div class="md lead">{{ palace.encodes_html|safe }}</div>{% endif %}
+  </header>
+
+  {# ---- the route, laid out ---------------------------------------------------------- #}
+  <div x-show="index === -1">
+    {% if palace.intro_html %}<div class="md muted palace__intro">{{ palace.intro_html|safe }}</div>{% endif %}
+    <ol class="route">
+      {% for locus in loci %}
+      <li class="station" :data-grade="status('{{ locus.key }}')">
+        <span class="station__no">{{ forloop.counter }}</span>
+        <div class="station__body">
+          <h2 class="station__place">{% icon "place" %}{{ locus.place }}</h2>
+          <div class="md station__image">{{ locus.image_html|safe }}</div>
+          <div class="md station__meaning">{{ locus.meaning_html|safe }}</div>
+          {% if locus.refs %}
+          <div class="chips">{% for link in locus.refs %}<a class="chip" href="{{ link.url }}">{{ link.label }}</a>{% endfor %}</div>
+          {% endif %}
+        </div>
+      </li>
+      {% endfor %}
+    </ol>
+    <p class="faint mt-5"><span x-text="solid">0</span> of {{ loci|length }} stops solid on your last walk.</p>
+  </div>
+
+  {# ---- walking it ------------------------------------------------------------------- #}
+  <section class="walk" x-show="walking" x-cloak>
+    <div class="walk__dots">
+      <template x-for="(l, i) in loci" :key="l.id">
+        <span class="gdot" :data-g="status(l.id)" :aria-current="i === index ? 'true' : null"></span>
+      </template>
+    </div>
+    <article class="flash">
+      <p class="flash__cue">Stop <span x-text="index + 1"></span> of {{ loci|length }}. Picture yourself here.</p>
+      <h2 class="walk__place">{% icon "place" %}<span x-text="locus?.place"></span></h2>
+
+      <div class="walk__part" x-show="stage >= 1">
+        <p class="overline">What you see</p>
+        <div class="md" x-math="locus ? locus.image : ''"></div>
+      </div>
+      <div class="answer" x-show="stage >= 2">
+        <p class="answer__label">{% icon "paper" %}What it means</p>
+        <div class="md" x-math="locus ? locus.meaning : ''"></div>
+      </div>
+
+      <footer class="flash__actions">
+        <button class="btn btn--filled btn--large" type="button" x-show="stage < 2" @click="advance()"><span x-text="label">Show the image</span><span class="kbd">space</span></button>
+        <div class="grades" x-show="stage >= 2">
+          <button class="grade grade--missed" type="button" @click="mark(1)"><strong>Missed</strong><span>nothing came</span><span class="kbd">1</span></button>
+          <button class="grade grade--shaky" type="button" @click="mark(2)"><strong>Shaky</strong><span>image, not meaning</span><span class="kbd">2</span></button>
+          <button class="grade grade--solid" type="button" @click="mark(3)"><strong>Solid</strong><span>both, at once</span><span class="kbd">3</span></button>
+        </div>
+      </footer>
+    </article>
+  </section>
+
+  <div class="card card--primary player__done" x-show="done" x-cloak>
+    <p class="overline">End of the route</p>
+    <h2><span x-text="solid">0</span> of {{ loci|length }} stops solid</h2>
+    <div class="row mt-5">
+      <button class="btn btn--filled" type="button" @click="start()">Walk it again</button>
+      <button class="btn btn--tonal" type="button" @click="stop()">See the route</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block data %}{{ block.super }}{{ walk|json_script:"walk-data" }}{% endblock %}

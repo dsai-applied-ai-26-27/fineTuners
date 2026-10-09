@@ -1,0 +1,15 @@
+# One file per course. Field reference: docs/content-types/course.md
+title: $title
+code: $code
+year: $year
+semester: $semester
+status: active          # active | archived
+hue: $hue                # course colour, 0-359 on the hue wheel
+order: $order
+description: ""
+
+# Chapters or units, in teaching order. Lectures, cards, problems and exams all point at
+# these ids, so add a topic here before using it anywhere else. Ids are permanent.
+topics: []
+#  - id: intro
+#    title: Introduction

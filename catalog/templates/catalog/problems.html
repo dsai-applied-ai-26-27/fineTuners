@@ -1,0 +1,27 @@
+{% extends "catalog/course_base.html" %}
+{% load ui %}
+
+{% block title %}Problems · {{ course.title }}{% endblock %}
+{% block crumbs %}<a href="{% url 'catalog:home' %}">Courses</a>{% icon "next" %}<a href="{{ course.get_absolute_url }}">{{ course.title }}</a>{% icon "next" %}<span>Problems</span>{% endblock %}
+{% block inner_class %}page__inner--narrow{% endblock %}
+
+{% block content %}
+<header class="page-head">
+  <p class="overline">Write it before you read it</p>
+  <h1>Problems</h1>
+  <p class="lead">Work each problem on paper first. Opening a solution before you have written something is the one way to waste this page.</p>
+</header>
+
+<div class="list">
+  {% for set in problem_sets %}
+  <a class="list-item list-item--tall" href="{{ set.get_absolute_url }}">
+    <span class="list-item__lead">{% icon "problems" %}</span>
+    <span class="list-item__body">
+      <strong>{{ set.title }}</strong>
+      <span class="faint">{{ set.n_questions }} question{{ set.n_questions|pluralize }}{% if set.total_points %} · {{ set.total_points|trim_zero }} points{% endif %}{% if set.topic %} · {{ set.topic.label }}{% endif %}</span>
+    </span>
+    <span class="list-item__meta" x-data="setDone('{{ set.slug }}')"><span x-text="done">0</span> / {{ set.n_questions }} worked</span>
+  </a>
+  {% endfor %}
+</div>
+{% endblock %}
