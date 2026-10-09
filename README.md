@@ -1,4 +1,4 @@
-# dsai.pages
+# DSAI Vault
 
 One site for all your courses: lecture notes, labs, flashcards with honest grading,
 practice problems, exam prep (plans, past papers, timed mocks), formula sheets and memory

@@ -1,4 +1,4 @@
-# dsai.pages
+# DSAI Vault
 
 A study site for university courses. Course material is turned into notes, flashcards,
 problems and exam prep written as Markdown/YAML files; a Django app validates those files,

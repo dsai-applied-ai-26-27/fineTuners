@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>{% block title %}dsai.pages{% endblock %}</title>
+  <title>{% block title %}DSAI Vault{% endblock %}</title>
   {# Runs before first paint so a saved light/dark choice never flashes the other theme. #}
   <script>try{var t=localStorage.getItem("dsai:theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
   <link rel="preload" href="{% static 'fonts/google-sans-flex-latin-rond-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
@@ -24,8 +24,8 @@
 <div class="app" x-data="shell" :data-drawer="drawer ? 'open' : 'closed'" @keydown.window="onKey($event)" @keydown.escape.window="drawer = false">
   <nav class="rail" aria-label="Main">
     <a class="brand" href="{% url 'catalog:home' %}">
-      <span class="brand__mark" aria-hidden="true">ds</span>
-      <span>dsai<span class="brand__dot">.pages</span></span>
+      <span class="brand__mark" aria-hidden="true">dv</span>
+      <span>DSAI<span class="brand__dot"> Vault</span></span>
     </a>
 
     {% block rail %}

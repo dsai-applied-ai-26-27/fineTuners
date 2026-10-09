@@ -10,6 +10,9 @@
 import { DAY, dayKey } from "../lib/util.js";
 
 const KEY = "dsai:v1";
+// Written into an exported file so Import can tell it is ours. The second name is what the
+// site was called before it became DSAI Vault; files exported back then still import.
+const EXPORT_IDS = ["dsai-vault", "dsai.pages"];
 // Days before a solid card comes back, by how many times in a row it was solid.
 const INTERVALS = [1, 3, 7, 14, 30];
 
@@ -179,12 +182,12 @@ export function createProgress() {
 
     // ---- moving data -----------------------------------------------------------------
     exportText() {
-      return JSON.stringify({ app: "dsai.pages", exported: new Date().toISOString(), ...state }, null, 2);
+      return JSON.stringify({ app: EXPORT_IDS[0], exported: new Date().toISOString(), ...state }, null, 2);
     },
     importText(text) {
       const incoming = JSON.parse(text);
-      if (incoming?.app !== "dsai.pages" || typeof incoming.records !== "object") {
-        throw new Error("This file is not a dsai.pages progress export.");
+      if (!EXPORT_IDS.includes(incoming?.app) || typeof incoming.records !== "object") {
+        throw new Error("This file is not a DSAI Vault progress export.");
       }
       const changed = merge(state, incoming);
       this.touch();

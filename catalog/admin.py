@@ -9,8 +9,8 @@ from django.contrib import admin
 
 from . import models
 
-admin.site.site_header = "dsai.pages content"
-admin.site.site_title = "dsai.pages"
+admin.site.site_header = "DSAI Vault content"
+admin.site.site_title = "DSAI Vault"
 admin.site.index_title = (
     "Read-only. Edit the files under courses/, then run: manage.py sync_content"
 )
