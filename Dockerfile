@@ -5,7 +5,9 @@
 # Two stages: the first has uv and builds everything, the second is what runs and receives
 # only the finished /app folder.
 
-FROM python:3.13-slim AS build
+# The official Python image, taken from Amazon's public mirror: Docker Hub limits
+# anonymous downloads per address, and CI machines share theirs with everyone.
+FROM public.ecr.aws/docker/library/python:3.13-slim AS build
 
 # uv is a single binary; copy it from its official image at the version that wrote uv.lock.
 COPY --from=ghcr.io/astral-sh/uv:0.12.16 /uv /usr/local/bin/uv
@@ -33,7 +35,7 @@ RUN DJANGO_DEBUG=0 DJANGO_SECRET_KEY=collectstatic-only DJANGO_ALLOWED_HOSTS=loc
     .venv/bin/python manage.py collectstatic --noinput
 
 
-FROM python:3.13-slim
+FROM public.ecr.aws/docker/library/python:3.13-slim
 
 # Run as an ordinary user, not root. /data is the only place the app may write.
 RUN groupadd --system --gid 10001 app \
