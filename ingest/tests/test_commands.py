@@ -1,4 +1,8 @@
+import io
+import os
+import tarfile
 from io import StringIO
+from unittest import mock
 
 from django.conf import settings
 from django.core.management import call_command
@@ -8,6 +12,7 @@ from django.test import SimpleTestCase
 from catalog.models import Course
 from ingest.fields import render_markdown
 from ingest.management.commands.export_schemas import FIELDS, TARGET, render
+from ingest.management.commands.publish import REMOTE_COMMAND, send
 from ingest.schemas import SCHEMAS
 
 from .base import CourseTestCase
@@ -90,6 +95,70 @@ class StatusCommandTests(CourseTestCase):
         self.assertIn("not written up yet (1)", text)
         self.assertIn("lectures/L2.pdf", text)
         self.assertNotIn("    lectures/L1.pdf", text)
+
+
+class PublishCommandTests(CourseTestCase):
+    """`publish` validates, packs and hands the archive to `send`, which runs ssh. Here
+    `send` is replaced by a stand-in, so the tests see exactly what would have gone out
+    without contacting anything."""
+
+    SEND = "ingest.management.commands.publish.send"
+
+    def names(self, archive):
+        with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
+            return tar.getnames()
+
+    def test_sends_course_files_but_never_source_material(self):
+        (self.course / "source/lectures").mkdir(parents=True)
+        (self.course / "source/lectures/L1.pdf").write_bytes(b"%PDF")
+        with mock.patch(self.SEND, return_value=0) as send:
+            text = run("publish", "--to", "me@server.test")
+        target, archive = send.call_args.args
+        self.assertEqual(target, "me@server.test")
+        names = self.names(archive)
+        self.assertIn("example/course.yaml", names)
+        self.assertIn("example/content/decks/least-squares.yaml", names)
+        self.assertIn("example/content/lectures/assets/residuals.svg", names)
+        self.assertEqual([name for name in names if "source" in name.split("/")], [])
+        self.assertIn("Published", text)
+        self.assertFalse(Course.objects.exists(), "publishing must not touch the local database")
+
+    def test_invalid_content_is_never_sent(self):
+        self.edit("content/decks/least-squares.yaml", "topic: lsq", "topic: nope")
+        out = StringIO()
+        with mock.patch(self.SEND) as send, self.assertRaises(CommandError) as raised:
+            call_command("publish", "--to", "me@server.test", stdout=out)
+        send.assert_not_called()
+        self.assertIn("Nothing was sent", str(raised.exception))
+        self.assertRegex(out.getvalue(), r"content/decks/least-squares\.yaml:\d+\s+topic")
+
+    def test_dry_run_sends_nothing(self):
+        with mock.patch(self.SEND) as send:
+            text = run("publish", "--dry-run")
+        send.assert_not_called()
+        self.assertRegex(text, r"Would send 1 course, \d+ files")
+
+    def test_needs_to_know_the_server(self):
+        with (
+            mock.patch.dict(os.environ, {"DSAI_PUBLISH_SSH": ""}),
+            mock.patch(self.SEND) as send,
+            self.assertRaises(CommandError) as raised,
+        ):
+            run("publish")
+        send.assert_not_called()
+        self.assertIn("DSAI_PUBLISH_SSH", str(raised.exception))
+
+    def test_a_refusal_by_the_server_is_an_error(self):
+        with mock.patch(self.SEND, return_value=1), self.assertRaises(CommandError):
+            run("publish", "--to", "me@server.test")
+
+    def test_send_pipes_the_archive_to_the_deploy_script(self):
+        with mock.patch("subprocess.run", return_value=mock.Mock(returncode=0)) as ssh:
+            self.assertEqual(send("me@server.test", b"archive"), 0)
+        command = ssh.call_args.args[0]
+        self.assertEqual((command[0], command[-2:]), ("ssh", ["me@server.test", REMOTE_COMMAND]))
+        self.assertIn("BatchMode=yes", command)
+        self.assertEqual(ssh.call_args.kwargs["input"], b"archive")
 
 
 class SchemaExportTests(SimpleTestCase):
