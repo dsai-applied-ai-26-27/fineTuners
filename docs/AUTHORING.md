@@ -48,6 +48,20 @@ Run every command from the repository root.
    ```
 6. **Report** (see [What to report](#what-to-report)).
 
+That is where a content session ends. The site you just updated is the local one.
+
+**Putting it on the live site** is a separate step, taken only when the owner asks:
+
+```
+uv run --env-file .env python manage.py publish
+```
+
+It validates every course, sends the course files (never `source/`) to the server, and the
+server loads them and prints its own report. You do not connect to the server yourself and
+you never write to a database, local or live: files are the only way in. If `publish`
+reports errors, fix the files and run it again; the live site is unchanged until it
+succeeds. More in [DEPLOYMENT.md](DEPLOYMENT.md#publishing-course-content).
+
 A new course starts with
 `uv run python manage.py startcourse <slug> --title "…" --code X --year "2026-27"`.
 
@@ -294,3 +308,5 @@ End a content session with a short report:
 3. **Assumed or unreadable:** every place you could not follow the source exactly.
 4. **Not done:** source files still unwritten (`content_status` lists them), and anything
    the site could not express.
+5. **Published or not:** say plainly whether the live site has these changes. Unless you
+   were asked to run `publish` and it succeeded, it does not.

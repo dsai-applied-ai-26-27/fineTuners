@@ -208,22 +208,46 @@ A pastel take on Material 3.
   generated docs are up to date.
 - [catalog/tests/](../catalog/tests/): every page renders for the example course; scope
   filtering; search; the source-file view cannot escape its folder; query counts.
+- [config/tests.py](../config/tests.py): the production settings refuse to start without
+  a secret key and pass `check --deploy`.
 
 `TestCase` wraps each test in a transaction that is rolled back. `SimpleTestCase` is for
 tests that need no database.
+
+## Development and production
+
+There is one [config/settings.py](../config/settings.py). It reads environment variables,
+and with none set you get local development. The server sets `DJANGO_DEBUG=0` and its own
+values; the block at the end of the file, `if not DEBUG:`, is everything that then changes.
+[DEPLOYMENT.md](DEPLOYMENT.md) covers the server; the Django side of it is this:
+
+- **WSGI.** `runserver` is a development convenience. In production
+  [gunicorn](../Dockerfile) imports `config/wsgi.py` and calls Django for each request.
+- **Static files** are part of the code. `collectstatic` gathers them into `STATIC_ROOT`
+  when the image is built, and `STORAGES["staticfiles"]`
+  ([config/storage.py](../config/storage.py)) gives each a name containing a hash of its
+  contents. `{% static 'js/app.js' %}` then prints `…/app.2bee543c4f7e.js`, and the
+  `import` lines inside the modules are rewritten the same way. WhiteNoise serves them
+  from the Django process. In DEBUG none of this happens and files are served as written.
+- **Media files** are data: images that `sync_content` copies out of course content into
+  `MEDIA_ROOT`. Django serves them only in DEBUG ([config/urls.py](../config/urls.py)); in
+  production the web server in front does.
+- **`SECURE_PROXY_SSL_HEADER`.** Django sits behind proxies that end HTTPS and pass plain
+  HTTP on. This setting names the header in which they report the original scheme, so
+  `request.is_secure()` is right and secure cookies work.
+- **`check --deploy`** is Django's own review of exactly these settings. A test
+  ([config/tests.py](../config/tests.py)) and CI keep it clean.
+- **Tests** always run with development settings, because `config/settings.py` is read
+  with no variables set. The two tests that need the production side start a second
+  Python process with the server's variables.
 
 ## Not built yet, and where it would go
 
 - **Accounts and server-side progress.** A `progress` app with one table,
   `Record(user, key, data, updated_at)`, mirroring the browser store, and one endpoint that
-  merges by timestamp. `store/progress.js` would call it after `flush()`. Third-party login:
-  `django-allauth`, or Cloudflare Access in front of the site with no code at all.
-- **Deployment.** Django cannot run on Cloudflare Pages; it runs on the VPS (gunicorn behind
-  a reverse proxy) with Cloudflare in front. WhiteNoise is already installed; switch
-  `STORAGES["staticfiles"]` to its compressed manifest storage, run `collectstatic`, set the
-  variables in [.env.example](../.env.example), and run `manage.py check --deploy`.
-  The hashed-file storage rewrites `import` paths in JavaScript only when
-  `support_js_module_import_aggregation` is enabled.
+  merges by timestamp. `store/progress.js` would call it after `flush()`. Sign-in with
+  faculty Google accounts is planned first: see
+  [DEPLOYMENT.md](DEPLOYMENT.md#next-signing-in-with-faculty-accounts).
 - **Content Security Policy.** Django's `ContentSecurityPolicyMiddleware`; Alpine then needs
   its CSP build.
 - **Files for download.** Source files are served only when `SERVE_SOURCE_FILES` is on

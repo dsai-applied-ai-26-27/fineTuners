@@ -56,5 +56,5 @@ networks:
   internal:
   # The network of the Caddy that already owns ports 80 and 443 on this server.
   front:
-    name: ${FRONT_NETWORK:-n8n_default}
+    name: ${FRONT_NETWORK:?missing in .env}
     external: true

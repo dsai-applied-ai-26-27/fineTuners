@@ -64,6 +64,18 @@ cmd_install() {
 		say "kept the existing $ROOT/.env"
 	fi
 
+	# The proxy joins the Docker network of whatever already serves port 443 here.
+	if ! grep -q '^FRONT_NETWORK=' "$ROOT/.env"; then
+		local front network
+		front="$(docker ps --filter publish=443 --format '{{.Names}}' | head -n 1)"
+		[[ -n "$front" ]] ||
+			die "no container publishes port 443; add FRONT_NETWORK=<docker network> to $ROOT/.env"
+		network="$(docker inspect "$front" \
+			--format '{{range $k, $v := .NetworkSettings.Networks}}{{println $k}}{{end}}' | head -n 1)"
+		printf 'FRONT_NETWORK=%s\n' "$network" >>"$ROOT/.env"
+		say "the proxy will join '$network', the Docker network of '$front'"
+	fi
+
 	if docker image inspect dsai-vault:live >/dev/null 2>&1; then
 		say "run 'deploy restart' for the new configuration to take effect"
 	fi
