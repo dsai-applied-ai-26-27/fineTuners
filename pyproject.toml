@@ -1,10 +1,11 @@
 [project]
-name = "dsai-pages"
+name = "dsai-vault"
 version = "0.1.0"
 description = "Courseware study site: Markdown/YAML course content, rendered by Django."
 requires-python = ">=3.13"
 dependencies = [
     "django>=6.1,<6.2",
+    "gunicorn>=26.2",
     "linkify-it-py>=2.2.0",
     "markdown-it-py>=4.2",
     "mdit-py-plugins>=0.6",

@@ -1,0 +1,60 @@
+# What runs on the server. Lives at ~/dsai-vault/compose.yaml there.
+#
+# It is put in place by hand with `deploy install` and is never replaced by an automatic
+# deploy. A push to GitHub can therefore change the code inside the image, but not which
+# folders and networks of the server the containers may reach.
+#
+# Values written ${LIKE_THIS} come from ~/dsai-vault/.env (see env.example).
+
+name: dsai-vault
+
+services:
+  # Django, served by gunicorn. Reachable only by the proxy below.
+  web:
+    image: dsai-vault:live
+    restart: unless-stopped
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?missing in .env}
+      DJANGO_ALLOWED_HOSTS: ${PUBLIC_HOST:?missing in .env}
+      DJANGO_CSRF_TRUSTED_ORIGINS: https://${PUBLIC_HOST}
+    volumes:
+      - data:/data # the database and the images copied from course content
+      - ./courses:/courses:ro # course files, replaced by `deploy content`
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - internal
+
+  # A small web server in front of Django. It refuses every request that does not carry
+  # the shared secret, serves /media/ files itself, and hands the rest to gunicorn.
+  proxy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      ORIGIN_SECRET: ${ORIGIN_SECRET:?missing in .env}
+      PUBLIC_HOST: ${PUBLIC_HOST}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - data:/srv/data:ro
+    depends_on:
+      - web
+    networks:
+      internal:
+      front:
+        aliases:
+          - dsai-vault # the name the server's main Caddy forwards to
+
+volumes:
+  data:
+
+networks:
+  internal:
+  # The network of the Caddy that already owns ports 80 and 443 on this server.
+  front:
+    name: ${FRONT_NETWORK:-n8n_default}
+    external: true
