@@ -22,6 +22,10 @@ from django.urls import include, path
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    # django-allauth: /accounts/google/login/, its callback, and /accounts/logout/.
+    path("accounts/", include("allauth.urls")),
+    path("account/", include("accounts.urls")),
+    path("api/progress/", include("progress.urls")),
     path("", include("catalog.urls")),
 ]
 
