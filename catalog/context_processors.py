@@ -2,6 +2,7 @@ from django.conf import settings
 from django.utils.functional import SimpleLazyObject
 
 from . import editions
+from .mine import mine
 from .models import Course
 from .nav import has_content
 
@@ -12,10 +13,11 @@ def site(request):
     a course replace that part of the navigation and never do."""
 
     def current():
-        # Of a course taught in several years only the latest is listed, only while
-        # that one is active, and only once there is something in it to open.
+        # The courses this person chose. Of a course taught in several years only the
+        # latest is listed, only while that one is active, and only once there is
+        # something in it to open.
         active = Course.Status.ACTIVE
-        latest = editions.latest(list(Course.objects.all()))
+        latest = mine(request, editions.latest(list(Course.objects.all())))
         return [c for c in latest if c.status == active and has_content(c)]
 
     return {

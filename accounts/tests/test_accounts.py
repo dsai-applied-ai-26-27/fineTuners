@@ -10,6 +10,7 @@ from django.core.management.base import CommandError
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
+from accounts.models import Enrollment
 from catalog.models import Course
 from progress.models import Record
 
@@ -217,6 +218,11 @@ class PeopleAdminTests(TestCase):
         response = self.client.get(self.page_of(self.ada))
         self.assertContains(response, "<td>mlpr</td><td>2</td><td>0</td><td>1</td>", html=False)
         self.assertNotContains(response, 'name="password')  # nobody has one to manage
+
+    def test_the_page_of_a_person_names_the_courses_they_chose(self):
+        self.assertContains(self.client.get(self.page_of(self.ada)), "No course chosen yet.")
+        Enrollment.objects.replace(self.ada, {"rl", "mlpr"})
+        self.assertContains(self.client.get(self.page_of(self.ada)), "mlpr, rl")
 
     def test_a_course_name_sent_by_a_browser_is_escaped(self):
         Record.objects.create(

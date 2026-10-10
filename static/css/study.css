@@ -34,6 +34,140 @@
     gap: var(--s4);
   }
 
+  .dash-head__tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s2);
+  }
+  /* Under the last section: that there is more than what was chosen. */
+  .dash-more {
+    margin-top: var(--s6);
+    padding-top: var(--s5);
+    border-top: 1px solid var(--outline-variant);
+    font-size: var(--text-s);
+    color: var(--on-surface-faint);
+  }
+
+  /* ---- choosing courses (catalog/templates/catalog/choose.html) ---------------------- */
+  .choose__error {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    margin-bottom: var(--s4);
+    padding: var(--s3) var(--s4);
+    border-radius: var(--r-m);
+    background: var(--missed-container);
+    color: var(--on-missed-container);
+    font-weight: 600;
+  }
+  .dash-head + .semester,
+  .choose__error + .semester {
+    margin-top: 0;
+  }
+  .choose__all {
+    display: flex;
+    gap: var(--s3);
+    margin-top: var(--s3);
+    & button {
+      font-size: var(--text-s);
+      font-weight: 600;
+      color: var(--primary);
+    }
+    & button:hover {
+      text-decoration: underline;
+    }
+  }
+  .choose__list {
+    display: grid;
+    gap: var(--s2);
+  }
+  /* One course to tick. The whole row is the label, so the whole row is the target. It
+     takes the course's own colour when ticked. */
+  .choose__item {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--s1) var(--s3);
+    min-height: 3.5rem;
+    padding: var(--s3) var(--s4);
+    border-radius: var(--r-m);
+    background: var(--surface-raised);
+    box-shadow: inset 0 0 0 1px var(--outline-variant);
+    cursor: pointer;
+    transition:
+      box-shadow var(--dur-1) var(--ease),
+      background var(--dur-1) var(--ease);
+    &:hover {
+      box-shadow: inset 0 0 0 1px var(--outline);
+    }
+    &:has(input:checked) {
+      background: color-mix(in oklab, var(--primary) 7%, var(--surface-raised));
+      box-shadow: inset 0 0 0 2px var(--primary);
+    }
+    &:has(input:focus-visible) {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+    & input {
+      width: 1.125rem;
+      height: 1.125rem;
+      accent-color: var(--primary);
+    }
+  }
+  .choose__title {
+    font-weight: 600;
+    line-height: 1.3;
+  }
+  .choose__meta {
+    font-size: var(--text-s);
+    white-space: nowrap;
+    color: var(--on-surface-faint);
+  }
+  /* Stays in view while the list scrolls, so the way to finish is never out of reach. */
+  .choose__foot {
+    position: sticky;
+    bottom: var(--s4);
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    margin-top: var(--s6);
+    padding: var(--s3) var(--s3) var(--s3) var(--s5);
+    border-radius: var(--r-m);
+    background: var(--surface-raised);
+    box-shadow:
+      inset 0 0 0 1px var(--outline-variant),
+      var(--shadow-2);
+    & p {
+      margin-right: auto;
+      color: var(--on-surface-variant);
+    }
+    & strong {
+      color: var(--on-surface);
+    }
+  }
+  /* On a course's own page: whether it is on the dashboard, and the button to change that. */
+  .mine {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s2) var(--s3);
+    margin-top: var(--s3);
+  }
+  .mine__state {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s1);
+    font-size: var(--text-s);
+    font-weight: 600;
+    color: var(--on-surface-faint);
+    & .icon {
+      width: 1rem;
+      height: 1rem;
+      color: var(--solid);
+    }
+  }
+
   /* "Next up", here and at the top of a course. */
   .nextup {
     display: flex;
@@ -853,6 +987,12 @@
     .dash-band,
     .semester {
       grid-template-columns: minmax(0, 1fr);
+    }
+    .choose__item {
+      grid-template-columns: auto auto minmax(0, 1fr);
+    }
+    .choose__meta {
+      grid-column: 3;
     }
     .player__stage {
       grid-template-columns: minmax(0, 1fr);

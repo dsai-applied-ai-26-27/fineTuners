@@ -71,7 +71,7 @@
         </div>
       </div>
       <h3>Watch the bar fill</h3>
-      <p>Everything you rate or grade adds to the bar of its course. It is saved to your account, so it is the same on your phone. This tour stays in Settings if you want it again.</p>
+      <p>Everything you rate or grade adds to the bar of its course. {% if user.is_authenticated %}It is saved to your account, so it is the same on your phone. This tour stays in Settings, and <strong>Choose courses</strong> on the dashboard changes which courses you see.{% else %}It is kept in this browser. This tour stays in Settings if you want it again.{% endif %}</p>
     </section>
   </div>
 

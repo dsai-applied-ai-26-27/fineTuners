@@ -4,9 +4,10 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_not_required
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 
 from .. import editions
+from ..mine import chosen, mine
 from ..models import Card, Course, Document, Formula, Hook, Question, Term
 from ..nav import course_data, has_content
 
@@ -76,7 +77,12 @@ def home(request):
         return landing(request)
     # One card per course: of a course taught in several years, the latest. Earlier
     # years are reached from the year switch on the course's own page.
-    courses = editions.latest(list(Course.objects.all()))
+    everything = editions.latest(list(Course.objects.all()))
+    # A person who has not said which courses they take is asked first; that is what
+    # happens right after the first sign-in. (Nothing to ask while there are none.)
+    if everything and chosen(request) == set():
+        return redirect("catalog:choose")
+    courses = mine(request, everything)
     for course in courses:
         data = course_data(course)
         course.counts = data["counts"]
@@ -94,6 +100,8 @@ def home(request):
             "groups": groups,
             "archived": archived,
             "manifests": [course_data(c)["manifest"] for c in courses],
+            # How many courses exist that are not on this dashboard.
+            "others": len(everything) - len(courses),
             "active": "home",
         },
     )
