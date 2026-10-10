@@ -1,4 +1,4 @@
-# dsai.pages
+# DSAI Vault
 
 One site for all your courses: lecture notes, labs, flashcards with honest grading,
 practice problems, exam prep (plans, past papers, timed mocks), formula sheets and memory
@@ -74,6 +74,8 @@ the site                     + progress in localStorage
   field reference.
 - [docs/example-course/](docs/example-course/): a complete course using every feature.
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): how the application works, for changing it.
+- [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md): how the live site runs, and how code and content
+  reach it.
 
 ## Development
 
@@ -85,3 +87,16 @@ uv run python tools/vendor_assets.py refresh the vendored front-end libraries
 ```
 
 There is no JavaScript build step: `static/js/` is loaded by the browser as written.
+
+## The live site
+
+The site is served from a VPS at https://dsai3.pages.dev.
+
+```
+git push, pull request, merge                      code:    GitHub Actions tests and deploys it
+uv run --env-file .env python manage.py publish    content: validated, sent, loaded on the server
+```
+
+Course files never go through GitHub, and nothing edits the live database: it is rebuilt
+from the files on the server, just as the local one is. See
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).

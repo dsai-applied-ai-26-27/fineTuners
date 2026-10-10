@@ -1,4 +1,4 @@
-# dsai.pages
+# DSAI Vault
 
 A study site for university courses. Course material is turned into notes, flashcards,
 problems and exam prep written as Markdown/YAML files; a Django app validates those files,
@@ -25,6 +25,29 @@ loads them into SQLite and renders them. Study progress lives in the browser.
   `manage.py export_schemas`, then updating the docs and the example course.
 - Finish with the tests and `ruff check` clean.
 
+## The live site
+
+The site also runs on a server, at https://dsai3.pages.dev.
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) is the full account; read it before touching
+anything under `deploy/`, `edge/`, `.github/` or the `Dockerfile`.
+
+- **Nothing writes to the live database directly.** Not SQL, not the admin, not a copied
+  `db.sqlite3`. Its content changes in exactly one way: course files reach the server and
+  `sync_content` runs there. Locally the rule is the same, which is why a content session
+  only ever writes files.
+- **Content goes live with `publish`**, which validates all courses, sends their files to
+  the server, and prints the server's own sync report. A content session ends at a clean
+  local `sync_content`; it runs `publish` only when the owner asks.
+- **Code goes live by merging to `main`**: GitHub Actions tests it and deploys it. Work on
+  a branch and open a pull request. Do not push to `main`, merge, or deploy by hand unless
+  the owner asks.
+- **Server addresses and secrets stay out of the repository.** They live in the local
+  `.env`, in GitHub Actions secrets and in the server's own `.env`. Never print, copy or
+  commit them, and never write the server's address into a tracked file.
+- On the server, a session may look (`deploy status`, `deploy logs`). Changing anything
+  there, or in the owner's Cloudflare or GitHub settings, is for the owner to do or to ask
+  for explicitly.
+
 ## Commands
 
 ```
@@ -34,6 +57,7 @@ uv run python manage.py content_status [course]       what exists, what is still
 uv run python manage.py sync_content [course] --check validate course files only
 uv run python manage.py sync_content [course]         validate and load into the database
 uv run python manage.py sync_content --watch          re-sync whenever a file changes
+uv run --env-file .env python manage.py publish       send all course content to the live site
 uv run python manage.py startcourse <slug> --title "…" --code X --year "2026-27"
 uv run python manage.py export_schemas                regenerate docs/schemas and fields.md
 uv run python manage.py test                          all tests
@@ -48,13 +72,17 @@ catalog/     the site: models, views, URLs, templates, template tags
 ingest/      files -> database: schemas, Markdown renderer, sync, management commands
 templates/   base page and shared fragments
 static/      CSS, JavaScript (no build step), vendored libraries, fonts, icons
-docs/        AUTHORING.md, ARCHITECTURE.md, content-types/, schemas/, example-course/
+docs/        AUTHORING.md, ARCHITECTURE.md, DEPLOYMENT.md, content-types/, schemas/, example-course/
 courses/     course folders: NOT in git (raw material and written content)
 tools/       vendor_assets.py (fetch front-end libraries), katex_check.cjs
+deploy/      what the server runs: compose file, proxy config, deploy script, setup scripts
+edge/        the Cloudflare Pages function that forwards dsai3.pages.dev to the server
+Dockerfile   the production image; .github/workflows/ci.yml tests, builds and deploys it
 ```
 
 `db.sqlite3` and `media/` are derived from `courses/`; deleting them loses nothing that
-`migrate` plus `sync_content` cannot rebuild. Progress is in the browser, not the database.
+`migrate` plus `sync_content` cannot rebuild. The same holds on the server. Progress is in
+the browser, not the database.
 
 ## Facts worth knowing before changing things
 
@@ -75,4 +103,4 @@ tools/       vendor_assets.py (fetch front-end libraries), katex_check.cjs
   lives here). Prefer the idiomatic, standard Django way over a clever one.
 - The visual direction is a pastel Material 3 look with a per-course hue. No decorative
   gradients, no glass effects, no emoji as icons. See the design section of ARCHITECTURE.md.
-- Do not commit or push unless asked.
+- Do not commit, push, publish or deploy unless asked.

@@ -1,0 +1,11 @@
+# Store and check out text files with Unix line endings on every machine. The shell
+# scripts, the Dockerfile and the Caddyfile run on Linux, where a Windows line ending is a
+# syntax error.
+* text=auto eol=lf
+
+*.woff2 binary
+*.png binary
+*.jpg binary
+*.gif binary
+*.webp binary
+*.pdf binary

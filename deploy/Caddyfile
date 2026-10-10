@@ -1,0 +1,45 @@
+# The web server inside the dsai-vault compose project (service "proxy").
+# HTTPS ends at the server's main Caddy, so this one speaks plain HTTP on the Docker network.
+# {$NAME} is replaced by the environment variable NAME when Caddy starts.
+
+{
+	admin off
+	auto_https off
+}
+
+:8080 {
+	encode zstd gzip
+
+	# Public for now, but not something search engines should list.
+	header X-Robots-Tag "noindex, nofollow"
+
+	# `route` runs what is inside it in the order written. That matters: the secret must be
+	# checked before anything is served.
+	route {
+		# Only the Cloudflare proxy knows the secret. Everyone else gets a bare 404, so
+		# the site cannot be read around Cloudflare, or under this server's own name.
+		@outsider not header X-Origin-Auth {$ORIGIN_SECRET}
+		respond @outsider 404
+
+		respond /robots.txt <<TXT
+			User-agent: *
+			Disallow: /
+			TXT 200
+
+		# Images copied from course content by `sync_content`. Their names contain a hash
+		# of their bytes, so a browser may keep them forever.
+		handle_path /media/* {
+			root * /srv/data/media
+			header Cache-Control "public, max-age=31536000, immutable"
+			file_server
+		}
+
+		reverse_proxy web:8000 {
+			# Django checks the Host header against ALLOWED_HOSTS and uses
+			# X-Forwarded-Proto to know the visitor is on HTTPS.
+			header_up Host {$PUBLIC_HOST}
+			header_up X-Forwarded-Proto https
+			header_up -X-Origin-Auth
+		}
+	}
+}

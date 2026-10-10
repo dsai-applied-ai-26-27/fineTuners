@@ -11,3 +11,6 @@ The short version:
   `uv run python manage.py sync_content <course> --check` until it reports no errors.
 - **Changing the application?** Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Run
   `uv run python manage.py test` and `uv run ruff check .` before you finish.
+- **The live site.** Nothing writes to its database directly: content reaches it as files,
+  through `manage.py publish`, and code through a merge to `main`. Do neither unless the
+  owner asks. Details in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).

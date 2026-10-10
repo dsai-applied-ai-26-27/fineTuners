@@ -15,6 +15,8 @@ import os
 import sys
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -23,20 +25,32 @@ def env_flag(name, default):
     return os.environ.get(name, "1" if default else "0").lower() in {"1", "true", "yes"}
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
+def env_list(name):
+    return [item.strip() for item in os.environ.get(name, "").split(",") if item.strip()]
 
-# SECURITY WARNING: keep the secret key used in production secret!
-# The fallback only exists so a fresh clone runs locally; set DJANGO_SECRET_KEY anywhere else.
-SECRET_KEY = os.environ.get(
-    "DJANGO_SECRET_KEY",
-    "django-insecure-)_n5w&tm29-tz3ud@5zon8jrr_(*l)3m47*xf53i_e-!b3s0&1",
-)
+
+# One settings file serves the laptop and the server. Everything that differs comes from
+# environment variables: none set means local development, and the server sets its own
+# (see deploy/env.example). https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env_flag("DJANGO_DEBUG", True)
 
-ALLOWED_HOSTS = [h for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",") if h]
+# SECURITY WARNING: keep the secret key used in production secret!
+# Sessions and CSRF tokens are signed with it. The fallback below is in the repository, so
+# anyone can read it: fine on a laptop, never on a server, hence the refusal to start.
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "")
+if not SECRET_KEY:
+    if not DEBUG:
+        raise ImproperlyConfigured("DJANGO_SECRET_KEY must be set when DJANGO_DEBUG is off.")
+    SECRET_KEY = "django-insecure-)_n5w&tm29-tz3ud@5zon8jrr_(*l)3m47*xf53i_e-!b3s0&1"
+
+# The host names this site answers to. Empty is allowed only while DEBUG is on, when Django
+# accepts localhost by itself.
+ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS")
+
+# Origins a form may be posted from, with the scheme: https://vault.example.com
+CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS")
 
 # True while `manage.py test` runs; dev-only tooling is switched off for tests.
 TESTING = "test" in sys.argv
@@ -113,7 +127,15 @@ WSGI_APPLICATION = "config.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        # On the server the file lives in a Docker volume, outside the code.
+        "NAME": Path(os.environ.get("DSAI_DB_PATH", BASE_DIR / "db.sqlite3")),
+        "OPTIONS": {
+            # Write-ahead logging: pages can be read while `sync_content` is writing.
+            "init_command": "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;",
+            # Take the write lock when a transaction starts rather than at its first write,
+            # so two writers queue up instead of one failing with "database is locked".
+            "transaction_mode": "IMMEDIATE",
+        },
     }
 }
 
@@ -157,13 +179,25 @@ STATIC_URL = "static/"
 # Project-wide assets (theme, scripts, vendored libraries) live outside any single app.
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
-# Where `collectstatic` gathers everything for a production web server.
+# Where `collectstatic` gathers everything. In production WhiteNoise serves this folder
+# from inside the Django process, so no separate web server is needed for static files.
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {
+        # Hashed file names need `collectstatic` to have run, so only outside DEBUG.
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"
+        if DEBUG
+        else "config.storage.StaticStorage",
+    },
+}
+
 # Media = files that are not part of the code. Here: images referenced by course content,
-# copied in by `manage.py sync_content`.
+# copied in by `manage.py sync_content`. Django does not serve these in production; the
+# web server in front of it does (deploy/Caddyfile).
 MEDIA_URL = "media/"
-MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_ROOT = Path(os.environ.get("DSAI_MEDIA_ROOT", BASE_DIR / "media"))
 
 
 # Email
@@ -193,3 +227,43 @@ if env_flag("DSAI_SHOW_EXAMPLE", DEBUG):
 # Lets a lecture page link to the original PDF under courses/<slug>/source/.
 # Off by default outside DEBUG: those files are usually someone else's copyright.
 SERVE_SOURCE_FILES = env_flag("DSAI_SERVE_SOURCE", DEBUG)
+
+
+# Production
+# Applied only when DEBUG is off. `manage.py check --deploy` reviews exactly these.
+
+if not DEBUG:
+    # Visitors use HTTPS, but the proxies in front pass requests on as plain HTTP and say
+    # what the original scheme was in this header. Trusting it is safe only because the
+    # app is reachable through those proxies and nothing else.
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 60 * 60 * 24 * 365
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SILENCED_SYSTEM_CHECKS = [
+        # Asks for the HSTS "preload" flag. That list is per registered domain, and the
+        # site lives on a host name it does not own (pages.dev): nothing to submit.
+        "security.W021",
+        # Objects to MAILERS printing to the console. The site sends no e-mail, so a
+        # message that does get sent should land in the logs. Remove this line when
+        # sign-in arrives and a real SMTP backend is configured.
+        "mail.E001",
+    ]
+
+    # Without this, Django reports errors only by e-mail to ADMINS when DEBUG is off.
+    # Sending them to the console puts them in `docker compose logs`.
+    LOGGING = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "handlers": {"console": {"class": "logging.StreamHandler"}},
+        "root": {"handlers": ["console"], "level": "WARNING"},
+        "loggers": {
+            "django": {
+                "handlers": ["console"],
+                "level": os.environ.get("DJANGO_LOG_LEVEL", "INFO"),
+                "propagate": False,
+            },
+        },
+    }
