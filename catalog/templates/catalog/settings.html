@@ -83,9 +83,9 @@
     <div class="section-head"><h2>{% icon "tune" %}Appearance and keys</h2></div>
     <div class="card stack">
       <div class="row">
-        <div><strong>Theme</strong><p class="faint">Automatic follows your system.</p></div>
+        <div><strong>Theme</strong><p class="faint">Follows your device until you switch it here. Choosing what your device uses anyway goes back to following it.</p></div>
         <span class="spacer"></span>
-        <button class="btn btn--tonal" type="button" @click="cycleTheme()">{% icon "auto" %}<span x-text="'Now: ' + theme">Now: auto</span></button>
+        <button class="btn btn--tonal" type="button" @click="toggleTheme()"><span x-show="theme === 'dark'">{% icon "light" %}</span><span x-show="theme === 'light'" x-cloak>{% icon "dark" %}</span><span x-text="theme === 'dark' ? 'Switch to light' : 'Switch to dark'">Switch theme</span></button>
       </div>
       <div class="row">
         <div><strong>Keyboard shortcuts</strong><p class="faint">Press <span class="kbd">?</span> on any page.</p></div>
