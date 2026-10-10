@@ -14,6 +14,7 @@ import palaceWalk from "./components/palace.js";
 import paper from "./components/paper.js";
 import settingsPanel from "./components/settings.js";
 import shell from "./components/shell.js";
+import tour from "./components/tour.js";
 import * as widgets from "./components/widgets.js";
 import { enhance, mathDirective } from "./math.js";
 import { createProgress } from "./store/progress.js";
@@ -41,6 +42,7 @@ Alpine.data("paper", paper);
 Alpine.data("palaceWalk", palaceWalk);
 Alpine.data("cover", cover);
 Alpine.data("settingsPanel", settingsPanel);
+Alpine.data("tour", tour);
 for (const [name, component] of Object.entries(widgets)) Alpine.data(name, component);
 
 // Typeset the maths that arrived in the page's HTML, then start Alpine.

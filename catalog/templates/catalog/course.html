@@ -16,18 +16,23 @@
 <div class="empty">
   {% icon "empty" %}
   <strong>Nothing here yet</strong>
+  {# How to fill it is for whoever writes the content, not for someone who came to study. #}
+  {% if user.is_staff or debug %}
   <p>Put lecture slides, labs and homework under <code>courses/{{ course.slug }}/source/</code>.<br>
   Then start a content session (see <code>docs/AUTHORING.md</code>) and run <code>manage.py sync_content {{ course.slug }}</code>.</p>
+  {% else %}
+  <p>This course has not been written up yet.</p>
+  {% endif %}
 </div>
 {% else %}
 
-<section class="next" x-data="nextUp" x-show="item" x-cloak>
-  <div class="next__body">
-    <p class="overline">Next up</p>
+<section class="nextup" x-data="nextUp" x-show="item" x-cloak aria-label="Next up">
+  <div class="nextup__body">
+    <p class="nextup__label"><i></i><span>Next up</span></p>
     <h2 x-text="item?.title"></h2>
     <p x-text="item?.detail"></p>
   </div>
-  <a class="btn btn--filled btn--large" :href="item?.url"><span x-text="item?.action">Continue</span>{% icon "forward" %}</a>
+  <a class="btn btn--filled" :href="item?.url"><span x-text="item?.action">Continue</span>{% icon "forward" %}</a>
 </section>
 
 <div class="stats mt-5" x-data="courseStats">

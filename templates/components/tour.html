@@ -1,0 +1,85 @@
+{% load ui %}
+{% comment %} The tour: five short steps on how the site is meant to be used
+   (static/js/components/tour.js). It opens by itself the first time someone reaches the
+   dashboard in a browser, and again whenever a `tour` event is dispatched: the dashboard's
+   "How it works" button and the Settings page do that.
+
+   A native <dialog>: the browser traps focus, closes it on Escape and draws the backdrop.
+   The small pictures are stand-ins made from the site's own parts, so they are hidden from
+   screen readers; the words carry the meaning. {% endcomment %}
+<dialog class="dialog tour" x-data="tour({% if active == 'home' %}true{% else %}false{% endif %})"
+        @tour.window="open()" @close="seen()" @keydown.right="next()" @keydown.left="back()"
+        aria-labelledby="tour-title">
+  <div class="tour__bar">
+    <p id="tour-title">How it works · <span x-text="step + 1">1</span> of <span x-text="count">5</span></p>
+    <button class="btn btn--small" type="button" @click="$root.close()" x-show="!last">Skip</button>
+  </div>
+
+  <div class="tour__steps">
+    <section class="tour__step" data-step :data-on="step === 0">
+      <div class="tour__figure" aria-hidden="true">
+        <div class="tour__card tone" style="--hue: 150">
+          <p class="nextup__label"><i></i><span>Next up · one of your courses</span></p>
+          <strong>12 cards due for review</strong>
+          <span class="tour__button">Review now{% icon "forward" %}</span>
+        </div>
+      </div>
+      <h3>Start with what is next</h3>
+      <p>The dashboard always names one thing to do: a lecture you have not read, cards that are due, the next step of an exam plan. Not sure where to begin? Begin there.</p>
+    </section>
+
+    <section class="tour__step" data-step :data-on="step === 1">
+      <div class="tour__figure" aria-hidden="true">
+        <div class="tour__card">
+          <strong>How well do you know this?</strong>
+          <div class="rate"><span class="rate__btn rate__btn--missed">Lost</span><span class="rate__btn rate__btn--shaky">Shaky</span><span class="rate__btn rate__btn--solid">Confident</span></div>
+        </div>
+      </div>
+      <h3>Read a note, then rate yourself</h3>
+      <p>Every lecture is written up as a note. At the end of it, say how well you know it: lost, shaky or confident. An honest answer is what makes the progress bars worth looking at.</p>
+    </section>
+
+    <section class="tour__step" data-step :data-on="step === 2">
+      <div class="tour__figure" aria-hidden="true">
+        {% include "components/recall_figure.html" %}
+      </div>
+      <h3>Grade every flashcard</h3>
+      <p>Answer out loud, reveal, then grade yourself. A missed card comes straight back, a shaky one tomorrow, a solid one after 1, 3, 7, 14 and then 30 days. On a keyboard, <span class="kbd">space</span> reveals and <span class="tour__keys"><span class="kbd">1</span> <span class="kbd">2</span> <span class="kbd">3</span></span> grade.</p>
+    </section>
+
+    <section class="tour__step" data-step :data-on="step === 3">
+      <div class="tour__figure" aria-hidden="true">
+        <div class="tour__card">
+          <p class="nextup__label"><span>Past paper</span></p>
+          <div class="tour__row">
+            <span class="tour__seg"><span>Study</span><span data-on>Sit</span></span>
+            <strong class="num">44:12</strong>
+          </div>
+        </div>
+      </div>
+      <h3>Practise before the exam</h3>
+      <p>Problems keep their solutions closed until you ask for them. A past paper can be read with worked answers or sat against the clock. Each exam has a page saying what it covers and how much each topic weighs.</p>
+    </section>
+
+    <section class="tour__step" data-step :data-on="step === 4">
+      <div class="tour__figure" aria-hidden="true">
+        <div class="tour__card tone" style="--hue: 245">
+          <div class="course-card__top"><span class="course-card__code">COURSE</span></div>
+          <div class="bar"><i class="solid" style="width: 52%"></i><i class="shaky" style="width: 21%"></i><i class="missed" style="width: 9%"></i></div>
+          <p class="course-card__progress"><strong>52% confident</strong><span>Reading 2/3 · Cards 21/40</span></p>
+          <p class="semester__key"><span><i class="solid"></i>solid</span><span><i class="shaky"></i>shaky</span><span><i class="missed"></i>missed</span></p>
+        </div>
+      </div>
+      <h3>Watch the bar fill</h3>
+      <p>Everything you rate or grade adds to the bar of its course. It is saved to your account, so it is the same on your phone. This tour stays in Settings if you want it again.</p>
+    </section>
+  </div>
+
+  <div class="tour__foot">
+    <div class="tour__dots" aria-hidden="true">
+      <template x-for="index in count" :key="index"><i :data-on="index - 1 === step"></i></template>
+    </div>
+    <button class="btn" type="button" @click="back()" x-show="step > 0" x-cloak>Back</button>
+    <button class="btn btn--filled" type="button" @click="next()" x-text="last ? 'Start studying' : 'Next'" autofocus>Next</button>
+  </div>
+</dialog>

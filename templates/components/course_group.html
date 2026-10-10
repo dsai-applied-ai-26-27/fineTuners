@@ -1,0 +1,13 @@
+{% comment %} The courses of one section of the dashboard (`group`, from catalog.views.home). Those with
+   something in them get a card. The rest are only named: an empty card would be a button
+   that leads nowhere. {% endcomment %}
+<div class="semester__body">
+  {% if group.ready %}
+  <div class="grid">
+    {% for c in group.ready %}{% include "components/course_card.html" %}{% endfor %}
+  </div>
+  {% endif %}
+  {% if group.waiting %}
+  <p class="semester__waiting">Not written up yet: {% for c in group.waiting %}<b>{{ c.title }}</b>{% if not forloop.last %}, {% endif %}{% endfor %}.</p>
+  {% endif %}
+</div>

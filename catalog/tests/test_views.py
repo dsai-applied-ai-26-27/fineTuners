@@ -146,9 +146,54 @@ class PageTests(CourseTestCase):
     def test_home_puts_the_course_under_its_semester(self):
         response = self.get("home")
         self.assertEqual([g["title"] for g in response.context["groups"]], ["Semester I"])
-        self.assertEqual(response.context["archived"], [])
+        self.assertEqual(response.context["archived"]["courses"], [])
         self.assertContains(response, "Semester I")
         self.assertContains(self.get("course", C), "Semester I")
+
+    def test_a_course_with_nothing_in_it_is_named_but_not_offered(self):
+        """It gets no card, no place in the navigation and no row in Settings: each of
+        those would be a button leading to an empty page."""
+        Course.objects.create(slug="rl", title="Reinforcement Learning", code="RL", semester=1)
+        response = self.get("home")
+        group = response.context["groups"][0]
+        self.assertEqual([c.slug for c in group["ready"]], [C])
+        self.assertEqual([c.slug for c in group["waiting"]], ["rl"])
+        self.assertContains(response, "Not written up yet: <b>Reinforcement Learning</b>.")
+        self.assertNotContains(response, 'href="/courses/rl/"')
+        self.assertEqual([c.slug for c in response.context["nav_courses"]], [])  # C is archived
+        self.assertNotContains(self.get("settings"), "Reinforcement Learning")
+
+    def test_the_navigation_lists_active_courses_that_have_content(self):
+        Course.objects.filter(slug=C).update(status="active")
+        Course.objects.create(slug="rl", title="Reinforcement Learning", code="RL")
+        response = self.get("search")
+        self.assertEqual([c.slug for c in response.context["nav_courses"]], [C])
+
+    def test_instructions_for_authors_are_shown_to_staff_only(self):
+        Course.objects.create(slug="rl", title="Reinforcement Learning", code="RL")
+        for page in (self.get("course", "rl"), self.get("home"), self.get("settings")):
+            self.assertNotContains(page, "sync_content")
+            self.assertNotContains(page, "source/")
+        self.assertContains(self.get("course", "rl"), "has not been written up yet")
+        self.user.is_staff = True
+        self.user.save()
+        self.assertContains(self.get("course", "rl"), "sync_content rl")
+        self.assertContains(self.get("settings"), "sync_content")
+
+    def test_the_tour_is_on_every_page_and_offered_on_the_dashboard(self):
+        # The dialog itself is driven by static/js/components/tour.js; what the server
+        # decides is where it is offered unasked, and where the buttons to reopen it are.
+        home, settings_page, course = self.get("home"), self.get("settings"), self.get("course", C)
+        for page in (home, settings_page, course):
+            self.assertContains(page, '<dialog class="dialog tour"')
+        self.assertContains(home, 'x-data="tour(true)"')
+        self.assertContains(settings_page, 'x-data="tour(false)"')
+        self.assertContains(course, 'x-data="tour(false)"')
+        self.assertContains(home, "How it works</button>")
+        self.assertContains(settings_page, "Show the tour</button>")
+        # Each button dispatches the event the dialog listens for.
+        self.assertContains(home, "@click=\"$dispatch('tour')\"")
+        self.assertContains(settings_page, "@click=\"$dispatch('tour')\"")
 
     def test_navigation_only_offers_what_exists(self):
         response = self.get("course", C)
