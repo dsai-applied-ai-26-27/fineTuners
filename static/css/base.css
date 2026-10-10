@@ -123,6 +123,9 @@
   .icon {
     width: 1.25rem;
     height: 1.25rem;
+    /* The reset above lets images shrink to fit their box (max-width: 100%). An icon
+       has one size; without this a tight flex row squeezes it out of shape. */
+    max-width: none;
     fill: currentColor;
     flex: none;
   }
