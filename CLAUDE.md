@@ -95,6 +95,9 @@ To sign in locally press "Development sign-in" on the landing page.
 - Ids of cards, questions, formulas, terms and hooks are permanent, and so are the file
   names of documents. Every person's progress, in their browser and on the server, is
   keyed `<course>/<id>`. Never rename them in content, and never change how keys are built.
+- One course folder is one academic year. When a course is taught again, the new year
+  is a new folder whose `course.yaml` says `series: <first folder>`; never rewrite a
+  finished year in place, because people's progress is keyed to its ids.
 - The database holds two kinds of table. `catalog_*` is a cache of the course files and may
   be rebuilt at will. Users and `progress_*` exist nowhere else: never delete `db.sqlite3`
   on the server, and write a migration for any change to those models.

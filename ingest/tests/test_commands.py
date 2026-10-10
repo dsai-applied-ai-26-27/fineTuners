@@ -80,6 +80,14 @@ class StartCourseTests(CourseTestCase):
         run("sync_content", "aai")
         self.assertIsNone(Course.objects.get(slug="aai").semester)
 
+    def test_another_year_of_a_course_names_its_series(self):
+        run("startcourse", "example-2027", "--title", "Example", "--year", "2027-28",
+            "--series", "example")  # fmt: skip
+        run("sync_content", "example-2027")
+        self.assertEqual(Course.objects.get(slug="example-2027").series, "example")
+        with self.assertRaises(CommandError):
+            run("startcourse", "x", "--title", "X", "--series", "Not A Folder")
+
     def test_refuses_to_overwrite(self):
         with self.assertRaises(CommandError):
             run("startcourse", "example", "--title", "Again")

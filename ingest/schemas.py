@@ -66,6 +66,13 @@ class CourseFile(Spec):
         Field(description="Short code shown on the course card, e.g. `MLPR`.")
     )
     year: str = Field("", description='Academic year in quotes, e.g. "2026-27".')
+    series: Id | None = Field(
+        None,
+        description="Only when this folder is another year of a course that already has a "
+        "folder: the name of that first folder, e.g. `mlpr`. Folders sharing a `series` are "
+        "one course in different years: the dashboard opens the latest, and the course page "
+        "offers every year at the top.",
+    )
     semester: int | None = Field(
         None,
         ge=1,

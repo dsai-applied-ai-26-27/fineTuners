@@ -93,14 +93,14 @@ class DashboardGroupTests(SimpleTestCase):
             self.course("bare", year=""),
             self.course("done", year="2024-25", status="archived"),
         )
-        self.assertEqual(shown, [("2026-27", ["new"]), ("Courses", ["bare"])])
+        self.assertEqual(shown, [("2026/27", ["new"]), ("Courses", ["bare"])])
         self.assertEqual(archived, ["done"])
 
     def test_section_note_names_the_years_it_spans(self):
         groups, _ = dashboard_groups(
             [self.course("a", 5, "2026-27"), self.course("b", 5, "2025-26")]
         )
-        self.assertEqual(groups[0]["note"], "2025-26 and 2026-27")
+        self.assertEqual(groups[0]["note"], "2025/26 and 2026/27")
 
 
 class PageTests(CourseTestCase):
@@ -218,9 +218,10 @@ class PageTests(CourseTestCase):
     def test_page_queries_stay_bounded(self):
         """A guard against N+1 queries: the count must not grow with the content.
 
-        Two of each are for the request itself: the session, then the signed-in user."""
+        Two of each are for the request itself: the session, then the signed-in user.
+        The course's front page has one more than before for its years."""
         self.get("course", C)  # warm the per-course cache
-        with self.assertNumQueries(8):
+        with self.assertNumQueries(9):
             self.get("course", C)
         with self.assertNumQueries(5):
             self.get("deck", C, "least-squares")

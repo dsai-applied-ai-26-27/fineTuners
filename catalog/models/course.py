@@ -15,6 +15,10 @@ class Course(models.Model):
     title = models.CharField(max_length=200)
     code = models.CharField(max_length=20)
     year = models.CharField(max_length=20, blank=True)
+    # Rows that share a series are the same course taught in different years: see
+    # catalog/editions.py. sync_content writes the `series` from course.yaml, or the
+    # course's own slug when the file has none, so a synced row never has it empty.
+    series = models.SlugField(max_length=64, blank=True)
     # Which semester of the programme (1-12). NULL means "not said", which is different
     # from any number, so the column allows NULL instead of using 0 as a stand-in.
     semester = models.PositiveSmallIntegerField(null=True, blank=True)
@@ -36,6 +40,11 @@ class Course(models.Model):
 
     def get_absolute_url(self):
         return reverse("catalog:course", args=[self.slug])
+
+    @property
+    def year_label(self):
+        """ "2025/26": the academic year as it is said, from the "2025-26" files store."""
+        return self.year.replace("-", "/")
 
     @property
     def semester_label(self):

@@ -6,7 +6,8 @@
 
 {% block content %}
 <header class="page-head">
-  <p class="overline">{{ course.code }}{% if course.year %} · {{ course.year }}{% endif %}{% if course.semester %} · {{ course.semester_label }}{% endif %}{% if course.status == "archived" %} · archived{% endif %}</p>
+  {% include "components/years.html" %}
+  <p class="overline">{{ course.code }}{% if course.semester %} · {{ course.semester_label }}{% endif %}{% if course.status == "archived" %} · archived{% endif %}</p>
   <h1>{{ course.title }}</h1>
   {% if course.description %}<p class="lead">{{ course.description }}</p>{% endif %}
 </header>

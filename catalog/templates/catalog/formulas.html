@@ -14,7 +14,7 @@
       </div>
       <div class="row no-print">
         <button class="btn btn--tonal" type="button" :aria-pressed="covered" @click="toggleCover()">{% icon "cover" %}<span x-text="covered ? 'Show all' : 'Cover and recall'">Cover and recall</span></button>
-        <button class="btn" type="button" onclick="window.print()">{% icon "print" %}Print</button>
+        <button class="btn" type="button" @click="window.print()">{% icon "print" %}Print</button>
       </div>
     </div>
     <p class="lead no-print" x-show="covered" x-cloak>Say each formula from its name, then click the row to check. Grade it if you want it to count.</p>

@@ -69,6 +69,13 @@ Take `GET /courses/mlpr/cards/ch5-fisher/`.
 [catalog/models/](../catalog/models/) is a package; `__init__.py` re-exports every model so
 Django finds them as `catalog.models.X`.
 
+- A `Course` row is one course in **one academic year**. The same course in another
+  year is another row, with its own folder, content and progress, tied to the first
+  by a shared `series`. [catalog/editions.py](../catalog/editions.py) is the only
+  place that reasons about that: `latest()` picks the newest year of each course for
+  the dashboard and the navigation, `of()` lists a course's years for the switch at
+  the top of its page. Nothing else in the code knows years exist, and adding a year
+  is adding a folder (see [content-types/course.md](content-types/course.md)).
 - [base.py](../catalog/models/base.py) has three **abstract** models. They create no table;
   subclasses inherit their fields and `Meta`. `CourseItem` (belongs to a course, has an
   order), `KeyedItem` (addressed by a permanent `key`, unique per course), `SluggedItem`
@@ -352,6 +359,11 @@ values; the block at the end of the file, `if not DEBUG:`, is everything that th
   executed and needs none. `'unsafe-eval'` is allowed because Alpine.js compiles the
   expressions in `x-data` and `@click`, and inline styles because course colours and
   KaTeX use them.
+- **Rate limits.** [config/ratelimit.py](../config/ratelimit.py) is a small middleware:
+  `RATE_LIMITS` in settings lists a path and how many calls a minute one account (or,
+  signed out, one address) may make to it; the call after that gets `429` with
+  `Retry-After`. It covers saving progress, search and starting a sign-in. The
+  browser treats a refused save like being offline and sends it with the next one.
 - **`check --deploy`** is Django's own review of exactly these settings. A test
   ([config/tests.py](../config/tests.py)) and CI keep it clean.
 - **Tests** always run with development settings, because `config/settings.py` is read
@@ -365,8 +377,12 @@ values; the block at the end of the file, `if not DEBUG:`, is everything that th
 - **Marks on more things.** Glossary terms, hooks and formulas are graded only in their
   cover-and-recall mode, and do not count towards a course's bar
   ([static/js/lib/overview.js](../static/js/lib/overview.js) lists what does).
-- **Content Security Policy.** Django's `ContentSecurityPolicyMiddleware`; Alpine then needs
-  its CSP build.
+- **A stricter Content Security Policy.** The one in place allows `'unsafe-eval'` for
+  Alpine. Dropping it means Alpine's CSP build and moving every inline expression into
+  registered components.
+- **Exact rate limits.** Counters live in each worker's memory; a shared cache (Redis,
+  or Django's file cache on a memory disk) under the name `limits` would make them
+  exact without touching [config/ratelimit.py](../config/ratelimit.py).
 - **Files for download.** Source files are served only when `SERVE_SOURCE_FILES` is on
   (debug). For production, object storage (R2) behind signed URLs.
 - **Search** is `icontains` over stored text. SQLite FTS5 is the next step.

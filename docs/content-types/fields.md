@@ -20,6 +20,7 @@ What the course is, and its list of topics.
 | `title` | text (one line) | **required** | Full course name. |
 | `code` | text (one line) | **required** | Short code shown on the course card, e.g. `MLPR`. |
 | `year` | text |  | Academic year in quotes, e.g. "2026-27". |
+| `series` | id |  | Only when this folder is another year of a course that already has a folder: the name of that first folder, e.g. `mlpr`. Folders sharing a `series` are one course in different years: the dashboard opens the latest, and the course page offers every year at the top. |
 | `semester` | whole number |  | Which semester of the programme the course belongs to, e.g. `5`. The dashboard groups courses by it. |
 | `status` | `active` \| `archived` | default `active` | `archived` is a finished course: it is left out of Next up and of the landing page, and without a `semester` it folds away at the bottom of the dashboard. |
 | `hue` | whole number | default `250` | Colour of the course, 0-359 on the hue wheel. |

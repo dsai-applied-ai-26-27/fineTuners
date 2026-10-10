@@ -1,8 +1,10 @@
 from django.conf import settings
 from django.shortcuts import get_object_or_404
+from django.utils.functional import SimpleLazyObject
 
 from ingest.discover import find_course, newest_mtime
 
+from .. import editions
 from ..models import Course
 from ..nav import course_data
 
@@ -20,6 +22,9 @@ def load_course(slug, active=""):
         "counts": data["counts"],
         "manifest": data["manifest"],
         "active": active,
+        # The years this course exists in, newest first, for the switch at the top.
+        # Lazy: only the course's front page shows the switch, so only it pays the query.
+        "editions": SimpleLazyObject(lambda: editions.of(course)),
         "stale": _files_changed(course),
     }
     return course, context

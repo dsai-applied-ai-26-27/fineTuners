@@ -6,6 +6,7 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from django.shortcuts import render
 
+from .. import editions
 from ..models import Card, Course, Document, Formula, Hook, Question, Term
 from ..nav import course_data
 
@@ -59,10 +60,10 @@ def dashboard_groups(courses):
     # groupby only joins neighbours, so the list is sorted by the same key first.
     for (semester, year), members in groupby(sorted(shown, key=section), key=section):
         members = sorted(members, key=lambda c: (c.order, c.title))
-        years = sorted({c.year for c in members if c.year})
+        years = sorted({c.year_label for c in members if c.year})
         groups.append(
             {
-                "title": members[0].semester_label or year or "Courses",
+                "title": members[0].semester_label or members[0].year_label or "Courses",
                 "note": " and ".join(years) if semester else "",
                 "courses": members,
                 "current": any(c.status == active for c in members),
@@ -78,7 +79,9 @@ def dashboard_groups(courses):
 # someone signed in. So the view itself must be reachable without a login, and decides.
 @login_not_required
 def home(request):
-    courses = list(Course.objects.all())
+    # One card per course: of a course taught in several years, the latest. Earlier
+    # years are reached from the year switch on the course's own page.
+    courses = editions.latest(list(Course.objects.all()))
     for course in courses:
         data = course_data(course)
         course.counts = data["counts"]

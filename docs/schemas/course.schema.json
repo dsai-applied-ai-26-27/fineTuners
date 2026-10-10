@@ -64,6 +64,21 @@
       "title": "Year",
       "type": "string"
     },
+    "series": {
+      "anyOf": [
+        {
+          "maxLength": 64,
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Only when this folder is another year of a course that already has a folder: the name of that first folder, e.g. `mlpr`. Folders sharing a `series` are one course in different years: the dashboard opens the latest, and the course page offers every year at the top.",
+      "title": "Series"
+    },
     "semester": {
       "anyOf": [
         {

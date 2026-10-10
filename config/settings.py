@@ -100,6 +100,8 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     # Sets request.user from the session cookie.
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    # Answers 429 to an account or address that calls a costly page in a loop (RATE_LIMITS).
+    "config.ratelimit.RateLimitMiddleware",
     # Then, for an anonymous visitor, sends every view that did not opt out to LOGIN_URL.
     *(["django.contrib.auth.middleware.LoginRequiredMiddleware"] if REQUIRE_LOGIN else []),
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -288,6 +290,33 @@ if env_flag("DSAI_SHOW_EXAMPLE", DEBUG):
 # Lets a lecture page link to the original PDF under courses/<slug>/source/.
 # Off by default outside DEBUG: those files are usually someone else's copyright.
 SERVE_SOURCE_FILES = env_flag("DSAI_SERVE_SOURCE", DEBUG)
+
+
+# Rate limits
+# (name, start of the path, calls per minute by one account or, signed out, one address).
+# The first line that matches a request is the one applied. See config/ratelimit.py.
+
+RATE_LIMITS = [
+    # A browser saves a few seconds after each grade: 20 a minute when drilling fast.
+    ("sync", "/api/progress/", 120),
+    # Six LIKE queries per search, the most expensive page there is.
+    ("search", "/search/", 40),
+    # Starting a sign-in stores a session row before anyone is known. Sized so that a
+    # whole class behind one campus address can sign in during the same minute.
+    ("sign-in", "/accounts/", 120),
+]
+
+# Django's cache framework: named stores behind one API. "default" keeps each course's
+# navigation (catalog/nav.py). "limits" holds the counters above, apart, so a burst of
+# counters can never push the navigation out. Both are memory inside the process.
+CACHES = {
+    "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"},
+    "limits": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "limits",
+        "OPTIONS": {"MAX_ENTRIES": 10_000},
+    },
+}
 
 
 # Content Security Policy

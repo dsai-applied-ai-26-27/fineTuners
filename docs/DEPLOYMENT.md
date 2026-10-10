@@ -310,7 +310,13 @@ On a new server, start at [Setting it up from scratch](#setting-it-up-from-scrat
   landing page; only a staff account signed in with Google gets further.
 - One account can store a bounded amount of progress (`LIMITS` in
   [progress/sync.py](../progress/sync.py)), so signing in is not a way to fill the disk.
-- Not done yet: rate limiting, off-server backups.
+- Saving progress, search and starting a sign-in are rate limited per account, or per
+  visitor address when signed out (`RATE_LIMITS` in
+  [config/settings.py](../config/settings.py)). The limits sit far above what a class of
+  fifty does, including all of them signing in from one campus address in the same
+  minute; they exist to stop a loop, not to manage load. The visitor's address is the
+  `CF-Connecting-IP` header, which Cloudflare sets and the proxies pass on.
+- Not done yet: off-server backups.
 
 ## Accounts
 
