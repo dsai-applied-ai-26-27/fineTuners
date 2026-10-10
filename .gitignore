@@ -4,7 +4,8 @@
 
 # --- derived from courses/ by `manage.py sync_content`; safe to delete ---
 /db.sqlite3
-/db.sqlite3-journal
+# SQLite's own side files (rollback journal, write-ahead log, shared memory index).
+/db.sqlite3-*
 /media/
 
 # --- python ---

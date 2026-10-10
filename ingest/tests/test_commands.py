@@ -71,6 +71,15 @@ class StartCourseTests(CourseTestCase):
         self.assertEqual(course.title, "Reinforcement Learning: an intro")
         self.assertEqual((course.code, course.year), ("RL", "2026-27"))
 
+    def test_semester_is_written_and_read_back(self):
+        run("startcourse", "dms", "--title", "Dynamic Modeling", "--semester", "5")
+        run("sync_content", "dms")
+        self.assertEqual(Course.objects.get(slug="dms").semester, 5)
+        # Left out, the field stays empty rather than becoming 0.
+        run("startcourse", "aai", "--title", "Applied AI")
+        run("sync_content", "aai")
+        self.assertIsNone(Course.objects.get(slug="aai").semester)
+
     def test_refuses_to_overwrite(self):
         with self.assertRaises(CommandError):
             run("startcourse", "example", "--title", "Again")

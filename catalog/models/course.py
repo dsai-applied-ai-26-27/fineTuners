@@ -3,6 +3,8 @@ from django.urls import reverse
 
 from .base import KeyedItem
 
+ROMAN = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"]
+
 
 class Course(models.Model):
     class Status(models.TextChoices):
@@ -13,7 +15,9 @@ class Course(models.Model):
     title = models.CharField(max_length=200)
     code = models.CharField(max_length=20)
     year = models.CharField(max_length=20, blank=True)
-    semester = models.CharField(max_length=20, blank=True)
+    # Which semester of the programme (1-12). NULL means "not said", which is different
+    # from any number, so the column allows NULL instead of using 0 as a stand-in.
+    semester = models.PositiveSmallIntegerField(null=True, blank=True)
     status = models.CharField(max_length=10, choices=Status, default=Status.ACTIVE)
     hue = models.PositiveSmallIntegerField(default=250)
     order = models.PositiveIntegerField(default=0)
@@ -32,6 +36,11 @@ class Course(models.Model):
 
     def get_absolute_url(self):
         return reverse("catalog:course", args=[self.slug])
+
+    @property
+    def semester_label(self):
+        """ "Semester V", the way the faculty writes it; empty when no semester is set."""
+        return f"Semester {ROMAN[self.semester]}" if self.semester else ""
 
 
 class Topic(KeyedItem):

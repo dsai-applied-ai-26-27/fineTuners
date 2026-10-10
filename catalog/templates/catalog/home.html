@@ -37,9 +37,9 @@
   </template>
 </section>
 
-{% for group in years %}
+{% for group in groups %}
 <section class="section">
-  <div class="section-head"><h2>{{ group.year }}</h2></div>
+  <div class="section-head"><h2>{{ group.title }}{% if group.note %} <span class="faint">{{ group.note }}</span>{% endif %}</h2></div>
   <div class="grid">
     {% for c in group.courses %}{% include "components/course_card.html" %}{% endfor %}
   </div>
@@ -55,7 +55,7 @@
 {% endfor %}
 
 {% if archived %}
-<details class="section archived"{% if not years %} open{% endif %}>
+<details class="section archived"{% if not groups %} open{% endif %}>
   <summary class="section-head"><h2>Archived <span class="faint">{{ archived|length }}</span></h2>{% icon "expand" %}</summary>
   <div class="grid">
     {% for c in archived %}{% include "components/course_card.html" %}{% endfor %}

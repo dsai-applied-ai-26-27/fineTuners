@@ -30,6 +30,11 @@ SLUG = re.compile(SLUG_PATTERN)
 CLOCK_SLACK_MS = 5 * 60 * 1000
 # Above this many keys, load the whole course instead of naming each key in the query.
 MANY = 500
+# The most one account may store. Anyone with a Google account can sign in and post to
+# the sync address, so without a ceiling one person could fill the server's disk. The
+# numbers are far above honest use: every item of every course is a few thousand
+# records, and 4000 days is eleven years of studying daily.
+LIMITS = {"records": 20_000, "attempts": 2_000, "days": 4_000}
 
 
 class RecordIn(BaseModel):
@@ -41,17 +46,20 @@ class RecordIn(BaseModel):
     n: int = Field(default=0, ge=0, le=10_000_000)
 
 
+# allow_inf_nan=False: JSON as Python reads it accepts NaN and Infinity, which the
+# database and the browser's JSON parser do not. One such number would make every later
+# sync of that account fail.
 class AttemptIn(BaseModel):
-    model_config = ConfigDict(extra="ignore")
+    model_config = ConfigDict(extra="ignore", allow_inf_nan=False)
 
-    score: float
-    max: float
+    score: float = Field(ge=-100_000, le=100_000)
+    max: float = Field(ge=0, le=100_000)
     seconds: float = Field(default=0, ge=0, le=10_000_000)
     t: int = Field(ge=0)
 
 
 class DayIn(BaseModel):
-    model_config = ConfigDict(extra="ignore")
+    model_config = ConfigDict(extra="ignore", allow_inf_nan=False)
 
     cards: float = Field(default=0, ge=0, le=1_000_000)
     minutes: float = Field(default=0, ge=0, le=1_000_000)
@@ -92,6 +100,16 @@ def _scope_filter(scope):
     return {} if scope == Clear.EVERYTHING else {"course": scope}
 
 
+def forget(user, scope=Clear.EVERYTHING):
+    """Clear a person's progress from the server's side: everything, or one course.
+
+    It is the instruction a device sends when its owner presses Reset, given the server's
+    own clock. So it travels like any other change: the person's devices receive it at
+    their next sync and drop their copies, instead of sending the old grades back.
+    """
+    sync(user, {"clears": {scope: int(time.time() * 1000)}})
+
+
 @transaction.atomic
 def sync(user, payload):
     """Fold `payload` into `user`'s progress; return what changed since `payload["cursor"]`.
@@ -103,6 +121,21 @@ def sync(user, payload):
     ledger, _ = Ledger.objects.get_or_create(user=user)
     stamp = ledger.version + 1
     changed = False
+    room = {}
+
+    def fits(kind, model, wanted):
+        """Trim `wanted` new rows to what this account may still store (see LIMITS).
+
+        Counting costs a query, so it happens once per kind, and only when a device
+        actually brings something new. Rows already stored can always be updated.
+        """
+        if not wanted:
+            return wanted
+        if kind not in room:
+            room[kind] = max(0, LIMITS[kind] - model.objects.filter(user=user).count())
+        kept = wanted[: room[kind]]
+        room[kind] -= len(kept)
+        return kept
 
     # -- clears, first: they decide what else is still welcome ---------------------------
     clears = {row.scope: row for row in Clear.objects.filter(user=user)}
@@ -159,6 +192,7 @@ def sync(user, payload):
             row.state, row.streak, row.count = record.s, record.k, record.n
             row.graded_at, row.version = graded_at, stamp
         # Two statements for the whole course, however many items it has.
+        new = fits("records", Record, new)
         Record.objects.bulk_create(new)
         Record.objects.bulk_update(newer, ["state", "streak", "count", "graded_at", "version"])
         changed = changed or bool(new or newer)
@@ -192,6 +226,7 @@ def sync(user, payload):
                     version=stamp,
                 )
             )
+        new = fits("attempts", Attempt, new)
         Attempt.objects.bulk_create(new)
         changed = changed or bool(new)
 
@@ -216,6 +251,8 @@ def sync(user, payload):
         cards, minutes = round(value.cards), round(value.minutes)
         row = known.get(day)
         if row is None:
+            if not fits("days", Day, [day]):
+                continue
             Day.objects.create(user=user, day=day, cards=cards, minutes=minutes, version=stamp)
         elif cards > row.cards or minutes > row.minutes:
             row.cards, row.minutes = max(row.cards, cards), max(row.minutes, minutes)

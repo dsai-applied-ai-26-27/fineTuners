@@ -20,10 +20,10 @@ What the course is, and its list of topics.
 | `title` | text (one line) | **required** | Full course name. |
 | `code` | text (one line) | **required** | Short code shown on the course card, e.g. `MLPR`. |
 | `year` | text |  | Academic year in quotes, e.g. "2026-27". |
-| `semester` | `""` \| `winter` \| `summer` |  |  |
-| `status` | `active` \| `archived` | default `active` | `archived` moves the course to the bottom of the dashboard. |
+| `semester` | whole number |  | Which semester of the programme the course belongs to, e.g. `5`. The dashboard groups courses by it. |
+| `status` | `active` \| `archived` | default `active` | `archived` is a finished course: it is left out of Next up and of the landing page, and without a `semester` it folds away at the bottom of the dashboard. |
 | `hue` | whole number | default `250` | Colour of the course, 0-359 on the hue wheel. |
-| `order` | whole number | default `0` | Position among courses of the same year. |
+| `order` | whole number | default `0` | Position among courses of the same semester. |
 | `description` | text |  | One or two sentences shown under the title. |
 | `topics` | list of [TopicSpec](#topicspec) |  | Chapters or units, in teaching order. Everything else refers to these. |
 

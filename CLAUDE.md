@@ -35,7 +35,7 @@ anything under `deploy/`, `edge/`, `.github/` or the `Dockerfile`.
 - **Nothing writes to the live database directly.** Not SQL, not the admin, not a copied
   `db.sqlite3`. Course content changes in exactly one way: course files reach the server
   and `sync_content` runs there. Accounts and progress change only by people using the
-  site. Locally the rule is the same, which is why a content session only ever writes
+  site, and by the owner through the admin's Users pages. Locally the rule is the same, which is why a content session only ever writes
   files.
 - **Content goes live with `publish`**, which validates all courses, sends their files to
   the server, and prints the server's own sync report. A content session ends at a clean
@@ -102,6 +102,10 @@ To sign in locally press "Development sign-in" on the landing page.
   is private by default; think before marking one public.
 - Stored HTML is trusted because `ingest/markdown.py` renders with raw HTML disabled. Keep it
   that way, or templates using `|safe` become an injection risk.
+- Pages are sent with a Content Security Policy (`SECURE_CSP` in `config/settings.py`):
+  everything loads from the site itself. An inline `<script>` needs
+  `nonce="{{ csp_nonce }}"`, and a font, script or image from another host will not load.
+  Vendor it under `static/` instead of widening the policy.
 - `docs/example-course/` is both the reference for authors and the fixture for the tests.
   If you change a schema, update it in the same change.
 - `docs/schemas/*.json` and `docs/content-types/fields.md` are generated. Do not edit them.

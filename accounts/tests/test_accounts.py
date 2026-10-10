@@ -1,5 +1,6 @@
 """Who gets in, and how. No course content is needed, so the database starts empty."""
 
+import re
 from io import StringIO
 
 from django.conf import settings
@@ -36,6 +37,17 @@ class LandingTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "catalog/landing.html")
         self.assertNotContains(response, "data-user")
+
+    def test_pages_carry_a_content_security_policy(self):
+        response = self.client.get("/")
+        policy = response.headers["Content-Security-Policy"]
+        self.assertIn("default-src 'self'", policy)
+        self.assertIn("frame-ancestors 'none'", policy)
+        # The one inline script of the page carries the number the header announces.
+        nonce = re.search(r"'nonce-([^']+)'", policy).group(1)
+        self.assertContains(response, f'<script nonce="{nonce}">')
+        # Signing in posts a form that Google's redirect follows; see SECURE_CSP.
+        self.assertNotIn("form-action", policy)
 
     def test_the_privacy_page_is_public_and_linked(self):
         """Google wants a privacy link before the sign-in may be offered to everyone."""
@@ -149,3 +161,98 @@ class MakeAdminTests(TestCase):
         self.assertEqual(self.client.get("/admin/").status_code, 302)  # not staff: admin's login
         call_command("make_admin", "ada@example.test", stdout=StringIO())
         self.assertEqual(self.client.get("/admin/").status_code, 200)
+
+
+class PeopleAdminTests(TestCase):
+    """The admin's pages about people (accounts/admin.py)."""
+
+    LIST = "/admin/auth/user/"
+
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            "owner", email="owner@example.test", is_staff=True, is_superuser=True
+        )
+        self.ada = User.objects.create_user("ada", email="ada@example.test", first_name="Ada")
+        self.client.force_login(self.admin)
+        for key, state in (("card-1", 3), ("card-2", 3), ("card-3", 1)):
+            Record.objects.create(
+                user=self.ada, course="mlpr", key=key, state=state, graded_at=1_760_000_000_000,
+                version=1,
+            )  # fmt: skip
+
+    def page_of(self, user):
+        return f"{self.LIST}{user.pk}/change/"
+
+    def test_the_site_links_to_the_admin_for_staff_only(self):
+        self.assertContains(self.client.get("/settings/"), 'href="/admin/"')
+        self.client.force_login(self.ada)
+        self.assertNotContains(self.client.get("/settings/"), 'href="/admin/')
+
+    def test_the_list_counts_what_each_person_graded(self):
+        response = self.client.get(self.LIST)
+        self.assertContains(response, "ada@example.test")
+        graded = {user.email: user.n_graded for user in response.context["cl"].result_list}
+        self.assertEqual(graded, {"ada@example.test": 3, "owner@example.test": None})
+
+    def test_the_page_of_a_person_sums_their_progress_by_course(self):
+        response = self.client.get(self.page_of(self.ada))
+        self.assertContains(response, "<td>mlpr</td><td>2</td><td>0</td><td>1</td>", html=False)
+        self.assertNotContains(response, 'name="password')  # nobody has one to manage
+
+    def test_a_course_name_sent_by_a_browser_is_escaped(self):
+        Record.objects.create(
+            user=self.ada, course="<b>x</b>", key="k", state=3, graded_at=1, version=1
+        )
+        response = self.client.get(self.page_of(self.ada))
+        self.assertContains(response, "&lt;b&gt;x&lt;/b&gt;")
+        self.assertNotContains(response, "<td><b>x</b></td>")
+
+    def test_a_person_can_be_renamed_and_locked_out(self):
+        response = self.client.post(
+            self.page_of(self.ada),
+            {"email": "ada@example.test", "first_name": "Ada", "last_name": "Lovelace"},
+        )  # is_active left out of the form: unticked
+        self.assertRedirects(response, self.LIST)
+        self.ada.refresh_from_db()
+        self.assertEqual(self.ada.last_name, "Lovelace")
+        self.assertFalse(self.ada.is_active)
+
+    def test_people_are_not_added_by_hand(self):
+        self.assertEqual(self.client.get(f"{self.LIST}add/").status_code, 403)
+
+    def test_an_administrator_cannot_remove_or_demote_themselves_here(self):
+        self.assertEqual(self.client.post(f"{self.LIST}{self.admin.pk}/delete/").status_code, 403)
+        self.client.post(self.page_of(self.admin), {"email": "owner@example.test"})
+        self.admin.refresh_from_db()
+        self.assertTrue(self.admin.is_staff and self.admin.is_superuser and self.admin.is_active)
+
+    def test_deleting_a_person_takes_their_progress_along(self):
+        response = self.client.post(f"{self.LIST}{self.ada.pk}/delete/", {"post": "yes"})
+        self.assertRedirects(response, self.LIST)
+        self.assertFalse(User.objects.filter(pk=self.ada.pk).exists())
+        self.assertFalse(Record.objects.exists())
+
+    def test_clearing_progress_asks_first_and_reaches_the_persons_devices(self):
+        chosen = {"action": "forget_progress", "_selected_action": [self.ada.pk]}
+        asked = self.client.post(self.LIST, chosen)
+        self.assertContains(asked, "cannot be undone")
+        self.assertEqual(Record.objects.count(), 3)  # nothing happened yet
+
+        self.assertRedirects(self.client.post(self.LIST, {**chosen, "confirmed": "yes"}), self.LIST)
+        self.assertFalse(Record.objects.exists())
+        # What the person's browser is told at its next sync: forget everything before now.
+        self.client.force_login(self.ada)
+        answer = self.client.post(
+            reverse("progress:sync"), {"cursor": 0}, content_type="application/json"
+        ).json()
+        self.assertIn("*", answer["clears"])
+
+    def test_other_people_cannot_open_any_of_it(self):
+        self.client.force_login(self.ada)
+        for path in (self.LIST, self.page_of(self.admin)):
+            with self.subTest(path=path):
+                self.assertEqual(self.client.get(path).status_code, 302)
+        self.client.post(
+            self.LIST, {"action": "forget_progress", "_selected_action": [self.ada.pk]}
+        )
+        self.assertEqual(Record.objects.count(), 3)

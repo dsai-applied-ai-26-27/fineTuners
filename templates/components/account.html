@@ -9,6 +9,7 @@
   <p class="rail__saved mt-4" :data-state="$store.progress.saveState" x-text="$store.progress.saveLabel">Saved to your account</p>
   <div class="row mt-4">
     <a class="btn btn--small btn--tonal" href="{% url 'catalog:settings' %}">{% icon "settings" %}Settings</a>
+    {% if user.is_staff %}<a class="btn btn--small btn--tonal" href="{% url 'admin:auth_user_changelist' %}">{% icon "tune" %}Users</a>{% endif %}
     <span class="spacer"></span>
     <form method="post" action="{% url 'account_logout' %}">
       {% csrf_token %}

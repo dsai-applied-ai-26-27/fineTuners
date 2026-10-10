@@ -27,7 +27,11 @@ class Command(BaseCommand):
         parser.add_argument("--code", help="Short code shown on the course card (default: SLUG).")
         parser.add_argument("--year", default="", help='Academic year, e.g. "2026-27".')
         parser.add_argument(
-            "--semester", default="", choices=["", "winter", "summer"], help="Optional."
+            "--semester",
+            type=int,
+            choices=range(1, 13),
+            metavar="N",
+            help="Semester of the programme, 1-12. The dashboard groups courses by it.",
         )
         parser.add_argument("--hue", type=int, help="Course colour, 0-359 (default: spread out).")
 
@@ -56,7 +60,7 @@ class Command(BaseCommand):
             "title": json.dumps(options["title"], ensure_ascii=False),
             "code": json.dumps(options["code"] or slug.upper(), ensure_ascii=False),
             "year": json.dumps(options["year"], ensure_ascii=False),
-            "semester": json.dumps(options["semester"]),
+            "semester": options["semester"] or "",
             "hue": hue,
             "order": len(existing),
         }

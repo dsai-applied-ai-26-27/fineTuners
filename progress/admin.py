@@ -2,7 +2,8 @@
 
 These rows are written only by `progress.sync`. A grade changed by hand here would be
 overwritten, or would overwrite the person's own, depending on its timestamp; neither is
-what anyone wants. To remove someone's progress, delete their user: it cascades.
+what anyone wants. To remove someone's progress, use the Clear action on the list of
+users (accounts/admin.py); deleting the user removes it too, by cascade.
 """
 
 from django.contrib import admin

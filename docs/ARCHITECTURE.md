@@ -87,7 +87,8 @@ changing a model run `manage.py makemigrations` then `migrate`. Commit the migra
 
 **Admin.** [catalog/admin.py](../catalog/admin.py) registers every model read-only
 (`has_change_permission` returns `False`), because an edit there would be overwritten by the
-next sync. It is a browser for what the importer produced.
+next sync. It is a browser for what the importer produced. People are the exception:
+see [Accounts and progress](#accounts-and-progress).
 
 ## The ingest pipeline
 
@@ -146,6 +147,10 @@ plugins for maths, callouts, footnotes, definition lists, task lists and attribu
 ## Pages
 
 - Views are functions, grouped by area in [catalog/views/](../catalog/views/).
+- The dashboard sorts courses into sections by `semester`
+  (`dashboard_groups` in [catalog/views/home.py](../catalog/views/home.py)): semesters with
+  an active course first, the latest on top, finished semesters after. A course without
+  a semester falls back to its year, or to the Archived fold once it is archived.
 - `load_course()` returns the course and the shared context: navigation, counts and the
   manifest. [catalog/nav.py](../catalog/nav.py) builds those once per sync and caches them
   with Django's cache framework under a key that includes the course's content hash, so a
@@ -268,6 +273,26 @@ session cookie says who, and the CSRF token (printed into `<html data-csrf>`, se
 `X-CSRFToken` header) says the request came from our own page. The payload is checked
 entry by entry with Pydantic; a malformed entry is skipped, never the whole request.
 
+Anyone with a Google account can sign in and post here, so the endpoint also guards the
+disk: an account may hold at most `LIMITS` rows of each kind
+([progress/sync.py](../progress/sync.py)), far above honest use, and Django refuses a
+request body over 2.5 MB before the view sees it (`DATA_UPLOAD_MAX_MEMORY_SIZE`).
+
+**People in the admin.** [accounts/admin.py](../accounts/admin.py) replaces Django's own
+user admin with a narrower one. The list shows each person with how much they have
+graded and when they last studied, computed by correlated subqueries (`Subquery` with
+`OuterRef`) because progress rows have no reverse link from the user. The page of one
+person sums their progress by course. An administrator can rename a person, switch
+them inactive, make them staff, delete them (progress goes along by cascade), and
+clear their progress. Clearing calls `progress.sync.forget`, which records a clear
+exactly as a device would, so the person's browsers drop their copies too. Nobody is
+added by hand, and an administrator cannot demote or delete themselves there.
+The link to the admin shows in the navigation for staff only.
+
+With Google sign-in configured, the admin's own login page (user name and password)
+is never shown: [config/urls.py](../config/urls.py) wraps it in
+`staff_member_required`, which sends a visitor to the landing page instead.
+
 **What can be marked.** Cards, questions, palace stops and formula-sheet rows always had
 three grades. Documents now have them too: the reading page asks "Lost, Shaky or
 Confident" ([catalog/templates/catalog/document.html](../catalog/templates/catalog/document.html)),
@@ -319,6 +344,14 @@ values; the block at the end of the file, `if not DEBUG:`, is everything that th
 - **`SECURE_PROXY_SSL_HEADER`.** Django sits behind proxies that end HTTPS and pass plain
   HTTP on. This setting names the header in which they report the original scheme, so
   `request.is_secure()` is right and secure cookies work.
+- **Content Security Policy.** `SECURE_CSP` in settings, sent as a header by Django's
+  `ContentSecurityPolicyMiddleware` in development and production alike, so a violation
+  shows up in the browser console while developing. Pages may load scripts, styles,
+  fonts and images from this site only. An inline `<script>` must carry
+  `nonce="{{ csp_nonce }}"`; data for scripts goes through `json_script`, which is not
+  executed and needs none. `'unsafe-eval'` is allowed because Alpine.js compiles the
+  expressions in `x-data` and `@click`, and inline styles because course colours and
+  KaTeX use them.
 - **`check --deploy`** is Django's own review of exactly these settings. A test
   ([config/tests.py](../config/tests.py)) and CI keep it clean.
 - **Tests** always run with development settings, because `config/settings.py` is read

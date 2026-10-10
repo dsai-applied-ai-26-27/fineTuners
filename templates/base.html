@@ -9,7 +9,7 @@
   <meta name="color-scheme" content="light dark">
   <title>{% block title %}DSAI Vault{% endblock %}</title>
   {# Runs before first paint so a saved light/dark choice never flashes the other theme. #}
-  <script>try{var t=localStorage.getItem("dsai:theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
+  <script nonce="{{ csp_nonce }}">try{var t=localStorage.getItem("dsai:theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
   <link rel="preload" href="{% static 'fonts/google-sans-flex-latin-rond-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{% static 'fonts/fonts.css' %}">
   <link rel="stylesheet" href="{% static 'vendor/katex/katex.min.css' %}">
@@ -49,6 +49,11 @@
       <a class="nav-item" href="{% url 'catalog:settings' %}"{% if active == "settings" %} aria-current="page"{% endif %}>
         {% icon "settings" %}<span class="label">Settings</span>
       </a>
+      {% if user.is_staff %}
+      <a class="nav-item" href="{% url 'admin:index' %}">
+        {% icon "tune" %}<span class="label">Admin</span>
+      </a>
+      {% endif %}
       <p class="rail__saved" :data-state="$store.progress.saveState" x-text="$store.progress.saveLabel">Progress saved in this browser</p>
     </div>
   </nav>

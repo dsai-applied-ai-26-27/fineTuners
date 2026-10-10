@@ -19,6 +19,7 @@ from pydantic import (
     ConfigDict,
     Field,
     StringConstraints,
+    field_validator,
     model_validator,
 )
 
@@ -65,17 +66,32 @@ class CourseFile(Spec):
         Field(description="Short code shown on the course card, e.g. `MLPR`.")
     )
     year: str = Field("", description='Academic year in quotes, e.g. "2026-27".')
-    semester: Literal["", "winter", "summer"] = ""
+    semester: int | None = Field(
+        None,
+        ge=1,
+        le=12,
+        description="Which semester of the programme the course belongs to, e.g. `5`. "
+        "The dashboard groups courses by it.",
+    )
     status: Literal["active", "archived"] = Field(
-        "active", description="`archived` moves the course to the bottom of the dashboard."
+        "active",
+        description="`archived` is a finished course: it is left out of Next up and of the "
+        "landing page, and without a `semester` it folds away at the bottom of the dashboard.",
     )
     hue: int = Field(250, ge=0, le=359, description="Colour of the course, 0-359 on the hue wheel.")
-    order: int = Field(0, ge=0, description="Position among courses of the same year.")
+    order: int = Field(0, ge=0, description="Position among courses of the same semester.")
     description: str = Field("", description="One or two sentences shown under the title.")
     topics: list[TopicSpec] = Field(
         default_factory=list,
         description="Chapters or units, in teaching order. Everything else refers to these.",
     )
+
+    @field_validator("semester", mode="before")
+    @classmethod
+    def _season_is_not_a_semester(cls, value):
+        # Until October 2026 this field held a season. Files written then still say
+        # `winter`, `summer` or "", and must keep loading: read them as "not given".
+        return None if value in ("", "winter", "summer") else value
 
 
 # ------------------------------------------- lectures / labs / homework / guides

@@ -16,6 +16,7 @@ import sys
 from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
+from django.utils.csp import CSP
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -91,6 +92,8 @@ REQUIRE_LOGIN = env_flag("DSAI_REQUIRE_LOGIN", True)
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # Adds the Content-Security-Policy header built from SECURE_CSP below.
+    "django.middleware.csp.ContentSecurityPolicyMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -127,6 +130,8 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                # {{ csp_nonce }} for the few inline <script> tags (see SECURE_CSP).
+                "django.template.context_processors.csp",
                 "catalog.context_processors.site",
             ],
         },
@@ -283,6 +288,33 @@ if env_flag("DSAI_SHOW_EXAMPLE", DEBUG):
 # Lets a lecture page link to the original PDF under courses/<slug>/source/.
 # Off by default outside DEBUG: those files are usually someone else's copyright.
 SERVE_SOURCE_FILES = env_flag("DSAI_SERVE_SOURCE", DEBUG)
+
+
+# Content Security Policy
+# A header that tells the browser where a page of this site may load things from.
+# Everything the site uses is served by the site itself (fonts, KaTeX and Alpine are
+# vendored under static/), so the answer is short: from here and nowhere else. If
+# markup from outside ever slipped past the escaping, the browser would still refuse
+# to run a script in it or to send data anywhere else.
+
+SECURE_CSP = {
+    "default-src": [CSP.SELF],
+    # CSP.NONCE: an inline <script> runs only if it carries this request's random
+    # number, which templates print as {{ csp_nonce }}. 'unsafe-eval' is the price of
+    # Alpine.js, which turns the expressions in x-data, x-show and @click into
+    # functions while the page runs.
+    "script-src": [CSP.SELF, CSP.NONCE, CSP.UNSAFE_EVAL],
+    # Inline styles are everywhere by design: style="--hue: 150" gives a course its
+    # colour, and KaTeX positions every glyph of a formula with them.
+    "style-src": [CSP.SELF, CSP.UNSAFE_INLINE],
+    "img-src": [CSP.SELF, "data:"],
+    "object-src": [CSP.NONE],
+    # No <base> tag may redirect relative links, and no other site may frame this one.
+    "base-uri": [CSP.SELF],
+    "frame-ancestors": [CSP.NONE],
+    # form-action is left out on purpose: signing in posts a form here and is then
+    # redirected to accounts.google.com, which browsers count against that directive.
+}
 
 
 # Production

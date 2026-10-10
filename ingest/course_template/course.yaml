@@ -2,7 +2,7 @@
 title: $title
 code: $code
 year: $year
-semester: $semester
+semester: $semester               # semester of the programme, e.g. 5; groups the dashboard
 status: active          # active | archived
 hue: $hue                # course colour, 0-359 on the hue wheel
 order: $order

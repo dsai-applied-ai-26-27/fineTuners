@@ -70,6 +70,21 @@ class ContractMistakes(CourseTestCase):
         self.edit(DECK, "title: Least squares\n", "")
         self.assertProblem(self.check(), "`title` is required", file=DECK)
 
+    def test_semester_is_a_number_from_1_to_12(self):
+        self.edit(COURSE, "semester: 1\n", "semester: 13\n")
+        issue = self.assertProblem(self.check(), "semester", file=COURSE)
+        self.assertEqual(issue.line, self.line_of(COURSE, "semester: 13"))
+
+    def test_a_season_from_an_older_file_still_loads(self):
+        # The field once held `winter` or `summer`. Such files are on the server until
+        # the next publish, and a deploy must not fail on them.
+        for old in ("winter", "summer", '""'):
+            with self.subTest(value=old):
+                self.write(COURSE, self.read(COURSE).replace("semester: 1\n", f"semester: {old}\n"))
+                report = self.sync(force=True)
+                self.assertEqual(report.status, "synced", msg=report.format())
+                self.write(COURSE, self.read(COURSE).replace(f"semester: {old}\n", "semester: 1\n"))
+
     def test_card_without_an_answer(self):
         self.edit(
             DECK,

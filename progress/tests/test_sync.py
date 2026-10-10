@@ -6,6 +6,7 @@ but the cursor it remembers and what it sends.
 
 import json
 import time
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
@@ -70,10 +71,10 @@ class SyncTests(TestCase):
         self.assertLess(Record.objects.get().graded_at, NOW + HOUR)
 
     def test_many_records_take_a_fixed_number_of_queries(self):
-        # One SELECT and one INSERT for all 300; the rest is the ledger, the clears and
-        # the four queries that build the answer.
+        # One SELECT and one INSERT for all 300, and one COUNT for the account's limit;
+        # the rest is the ledger, the clears and the four queries that build the answer.
         records = {f"mlpr/card-{i}": rec(3, NOW - HOUR) for i in range(300)}
-        with self.assertNumQueries(14):
+        with self.assertNumQueries(15):
             self.push(records=records)
         self.assertEqual(Record.objects.count(), 300)
 
@@ -148,6 +149,40 @@ class SyncTests(TestCase):
         self.assertEqual(list(Record.objects.values_list("key", flat=True)), ["ok"])
         self.assertFalse(Clear.objects.exists() or Attempt.objects.exists() or Day.objects.exists())
 
+    def test_numbers_that_are_not_numbers_are_skipped(self):
+        # Python's JSON reader accepts NaN and Infinity; nothing downstream does.
+        payload = json.loads(
+            '{"attempts": {"mlpr/mock": [{"score": NaN, "max": 10, "t": 5}],'
+            ' "mlpr/real": [{"score": 7, "max": 10, "t": 6}]},'
+            ' "activity": {"2026-10-01": {"cards": Infinity}}}'
+        )
+        answer = sync(self.user, payload)
+        self.assertEqual([a.paper for a in Attempt.objects.all()], ["real"])
+        self.assertFalse(Day.objects.exists())
+        json.dumps(answer, allow_nan=False)  # what goes back is strict JSON
+
+    def test_an_account_cannot_store_without_limit(self):
+        tight = {"records": 3, "attempts": 1, "days": 1}
+        with patch.dict("progress.sync.LIMITS", tight):
+            self.push(records={f"mlpr/card-{i}": rec(3, NOW - HOUR) for i in range(5)})
+            self.assertEqual(Record.objects.count(), 3)
+            # Full, but what is already stored can still be graded again.
+            key = Record.objects.first().key
+            self.push(records={f"mlpr/{key}": rec(1, NOW), "mlpr/one-more": rec(3, NOW)})
+            self.assertEqual(Record.objects.count(), 3)
+            self.assertEqual(Record.objects.get(key=key).state, 1)
+
+            sitting = {"score": 1, "max": 2}
+            self.push(attempts={"mlpr/mock": [{**sitting, "t": 5}, {**sitting, "t": 6}]})
+            self.assertEqual(Attempt.objects.count(), 1)
+            self.push(activity={"2026-10-01": {"cards": 1}, "2026-10-02": {"cards": 1}})
+            self.assertEqual(Day.objects.count(), 1)
+        # Someone else is not affected by this account being full.
+        other = get_user_model().objects.create_user("bob")
+        with patch.dict("progress.sync.LIMITS", tight):
+            sync(other, {"records": {"mlpr/card-0": rec(3, NOW)}})
+        self.assertEqual(Record.objects.filter(user=other).count(), 1)
+
     def test_a_rebuilt_database_asks_the_device_for_everything(self):
         answer = self.push(cursor=57)  # the server knows nothing of version 57
         self.assertTrue(answer["resync"])
@@ -187,6 +222,15 @@ class SyncViewTests(TestCase):
         self.assertEqual(self.post(self.client, [1, 2]).status_code, 400)
         bad = self.client.post(self.URL, "{not json", content_type="application/json")
         self.assertEqual(bad.status_code, 400)
+
+    def test_an_oversized_request_is_refused_before_it_is_read(self):
+        # Django's own limit on a request body (DATA_UPLOAD_MAX_MEMORY_SIZE, 2.5 MB).
+        self.client.force_login(self.user)
+        response = self.post(
+            self.client, {"records": {"mlpr/x": {"s": 3, "t": 1, "pad": "x" * 3_000_000}}}
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(Record.objects.exists())
 
     def test_a_post_without_the_csrf_token_is_refused(self):
         """The test client normally skips this check; a browser never does."""
