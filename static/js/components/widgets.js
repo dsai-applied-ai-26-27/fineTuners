@@ -1,6 +1,7 @@
 // Small read-outs of progress used across pages. Each export becomes an Alpine component
 // of the same name (see app.js), used in a template as x-data="name" or x-data="name(arg)".
 
+import { overview, STATES, width } from "../lib/overview.js";
 import { COURSE, DAY, manifest, manifests, percent, plural } from "../lib/util.js";
 
 const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
@@ -41,27 +42,34 @@ export const ring = () => ({
   },
 });
 
-/** A course on the dashboard. */
+/** A course on the dashboard: one bar for everything in it that can be marked. */
 export const courseCard = (slug) => ({
-  ids: [],
+  course: null,
   init() {
-    const found = manifests().find((m) => m.slug === slug);
-    this.ids = found ? cardIds(found) : [];
+    this.course = manifests().find((m) => m.slug === slug) || null;
   },
-  get stats() {
-    return this.$store.progress.stats(slug, this.ids);
+  get all() {
+    return this.course ? overview(this.course, this.$store.progress) : null;
   },
   get due() {
-    return this.stats.due;
+    const cards = this.all?.groups.find((group) => group.name === "cards");
+    return cards ? cards.stats.due : 0;
   },
   pct(kind) {
-    return share(this.stats)(kind);
+    return this.all ? this.all[kind] : 0;
+  },
+  get headline() {
+    if (!this.all?.total) return "";
+    if (!this.all.started) return "Not started";
+    return `${Math.round(this.all.solid)}% confident`;
+  },
+  /** "Reading 1/3 · Cards 12/40": how many of each kind are solid. */
+  get detail() {
+    if (!this.all) return "";
+    return this.all.groups.map((group) => `${group.label} ${group.stats.solid}/${group.stats.total}`).join(" · ");
   },
   get label() {
-    const s = this.stats;
-    if (!s.total) return "";
-    if (s.unseen === s.total) return "Not started";
-    return `${percent(s.solid, s.total)}% solid, ${s.unseen} unseen`;
+    return this.all?.total ? `${this.headline}. ${this.detail}` : "";
   },
 });
 
@@ -109,20 +117,32 @@ export const setDone = (slug) => ({
   },
 });
 
-/** Read state of a document, for list rows. */
+/** How a document was rated, for list rows: "", "missed", "shaky" or "solid". */
 export const readMark = (key) => ({
-  get read() {
-    return this.$store.progress.status(COURSE, key) === 3;
+  get state() {
+    return STATES[this.$store.progress.status(COURSE, key)];
   },
 });
 
-/** The reading page: mark as read. */
+/** The reading page: rate how well you know it, with the same three grades as a card. */
 export const reader = (key) => ({
-  get read() {
-    return this.$store.progress.status(COURSE, key) === 3;
+  get s() {
+    return this.$store.progress.status(COURSE, key);
   },
-  toggle() {
-    this.$store.progress.set(COURSE, key, !this.read);
+  get state() {
+    return STATES[this.s];
+  },
+  get title() {
+    return ["How well do you know this?", "Marked as lost", "Marked as shaky", "Marked as confident"][this.s];
+  },
+  get hint() {
+    return this.s
+      ? "It counts towards this course on the dashboard. Press the same mark again to clear it."
+      : "Rate it honestly once you have read it. It feeds the course's progress bar.";
+  },
+  rate(s) {
+    // Not counted as a card for the day's activity: reading is not a review.
+    this.$store.progress.grade(COURSE, key, this.s === s ? 0 : s, { count: false });
   },
 });
 
@@ -203,23 +223,33 @@ export const activity = () => ({
   },
 });
 
-/** Stat tiles on a course's home page. */
+/** Stat tiles on a course's home page: one per kind of thing that can be marked. */
 export const courseStats = () => ({
+  get all() {
+    return overview(manifest(), this.$store.progress);
+  },
+  /** Stats of one kind ("reading", "cards", "problems") plus bar widths in percent. */
+  group(name) {
+    const empty = { total: 0, solid: 0, shaky: 0, missed: 0, unseen: 0, due: 0 };
+    const stats = this.all.groups.find((group) => group.name === name)?.stats || empty;
+    return {
+      ...stats,
+      pSolid: width(stats, "solid"),
+      pShaky: width(stats, "shaky"),
+      pMissed: width(stats, "missed"),
+    };
+  },
   get cards() {
-    const s = this.$store.progress.stats(COURSE, cardIds(manifest()));
-    const pct = share(s);
-    return { ...s, pSolid: pct("solid"), pShaky: pct("shaky"), pMissed: pct("missed") };
+    return this.group("cards");
   },
-  get read() {
-    const lectures = manifest().docs.filter((doc) => doc.kind === "lecture");
-    return this.$store.progress.countMarked(
-      COURSE,
-      lectures.map((doc) => doc.key),
-    );
+  get reading() {
+    return this.group("reading");
   },
-  get questions() {
-    const ids = manifest().sets.flatMap((set) => set.questions);
-    return this.$store.progress.countMarked(COURSE, ids);
+  get problems() {
+    return this.group("problems");
+  },
+  get percent() {
+    return Math.round(this.all.solid);
   },
 });
 
