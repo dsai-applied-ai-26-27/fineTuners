@@ -63,7 +63,7 @@
         <tbody>
           {% for item in courses %}
           <tr>
-            <td><a class="link" href="{{ item.get_absolute_url }}">{{ item.code }}</a><br><span class="faint">{{ item.title }}</span></td>
+            <td><a class="link" href="{{ item.get_absolute_url }}">{{ item.code }}</a><br><span class="faint">{{ item.title }}{% if item.year %} · {{ item.year_label }}{% endif %}</span></td>
             <td class="faint">{{ item.counts.lectures }} lectures<br>{{ item.counts.cards }} cards · {{ item.counts.questions }} questions</td>
             <td class="num"><span x-text="courseStats('{{ item.slug }}').graded">0</span> / {{ item.counts.cards }}</td>
             <td class="faint">{% if item.synced_at %}{{ item.synced_at|date:"j M Y, H:i" }}{% else %}never{% endif %}</td>

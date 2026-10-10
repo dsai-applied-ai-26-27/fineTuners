@@ -287,7 +287,15 @@ setenv) cmd_setenv "$@" ;;
 backup) cmd_backup ;;
 schedule-backup) cmd_schedule_backup ;;
 restore) cmd_restore "$@" ;;
-manage) compose exec web python manage.py "$@" ;;
+manage)
+	# Docker wants a terminal for `exec` unless told otherwise, and there is none when
+	# this is run as: ssh host "dsai-vault/bin/deploy manage ...".
+	if [[ -t 0 ]]; then
+		compose exec web python manage.py "$@"
+	else
+		compose exec -T web python manage.py "$@"
+	fi
+	;;
 ci) cmd_ci ;;
 *) die "unknown command '${command}'. See the top of $0 for the list." ;;
 esac

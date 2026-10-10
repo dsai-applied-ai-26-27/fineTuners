@@ -9,10 +9,11 @@ from django.contrib import admin
 
 from . import models
 
-admin.site.site_header = "DSAI Vault content"
+admin.site.site_header = "DSAI Vault admin"
 admin.site.site_title = "DSAI Vault"
 admin.site.index_title = (
-    "Read-only. Edit the files under courses/, then run: manage.py sync_content"
+    "People are under Users. Course content is read-only here: "
+    "edit the files under courses/, then run manage.py sync_content"
 )
 
 
@@ -31,8 +32,8 @@ class ReadOnlyAdmin(admin.ModelAdmin):
 
 @admin.register(models.Course)
 class CourseAdmin(ReadOnlyAdmin):
-    list_display = ["code", "title", "year", "status", "hue", "synced_at"]
-    list_filter = ["status", "year"]
+    list_display = ["code", "title", "semester", "year", "status", "hue", "synced_at"]
+    list_filter = ["status", "semester", "year"]
     search_fields = ["title", "code", "slug"]
 
 

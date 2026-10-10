@@ -329,6 +329,8 @@ class Builder:
                 "title": spec.title,
                 "code": spec.code,
                 "year": spec.year,
+                # A course that names no series is the only year of its own.
+                "series": spec.series or self.files.slug,
                 "semester": spec.semester,
                 "status": spec.status,
                 "hue": spec.hue,

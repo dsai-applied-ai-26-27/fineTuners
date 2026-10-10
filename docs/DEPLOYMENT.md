@@ -70,7 +70,8 @@ and they could not be more different:
 
 **No person, AI session or script writes to it directly.** Course content gets in only as
 files that the server loads ([`publish`](#publishing-course-content)). People's rows get
-in only through people using the site. The admin is read-only for both.
+in only through people using the site. The admin is read-only for course content; for
+people it offers a few deliberate actions (see [Admin](#admin)).
 
 Consequences:
 
@@ -303,7 +304,19 @@ On a new server, start at [Setting it up from scratch](#setting-it-up-from-scrat
   readable by its owner only.
 - The containers run as an unprivileged user without Linux capabilities, on a read-only
   file system, and are not published on any port of the server.
-- Not done yet: a Content Security Policy, rate limiting, off-server backups.
+- Every page carries a Content Security Policy: scripts, styles, fonts and images load
+  from the site itself and from nowhere else, and no other site can frame it.
+- The admin has no password form on the server. `/admin/` leads a visitor to the
+  landing page; only a staff account signed in with Google gets further.
+- One account can store a bounded amount of progress (`LIMITS` in
+  [progress/sync.py](../progress/sync.py)), so signing in is not a way to fill the disk.
+- Saving progress, search and starting a sign-in are rate limited per account, or per
+  visitor address when signed out (`RATE_LIMITS` in
+  [config/settings.py](../config/settings.py)). The limits sit far above what a class of
+  fifty does, including all of them signing in from one campus address in the same
+  minute; they exist to stop a loop, not to manage load. The visitor's address is the
+  `CF-Connecting-IP` header, which Cloudflare sets and the proxies pass on.
+- Not done yet: off-server backups.
 
 ## Accounts
 
@@ -368,7 +381,24 @@ well, but the check that counts is the one on the server.
 
 `/admin/` needs a staff user. Sign in on the site with Google once, then run
 `deploy manage make_admin you@example.com` (table above). No password is involved: the
-admin accepts the session you already have.
+admin accepts the session you already have. From then on an **Admin** entry shows in
+the site's navigation, and **Users** in the menu behind your initial.
+
+Under Users you see everyone who has signed in, how much they have graded and when
+they last studied. Opening a person shows their progress by course. You can:
+
+- correct a name, or switch **Active** off to lock someone out without deleting anything;
+- tick **Staff** and **Superuser** to make someone an administrator;
+- delete a person, which removes their progress with them;
+- select people in the list and choose **Clear the study progress**: the accounts stay,
+  and their devices drop their own copies at the next visit.
+
+Course content stays read-only there; it changes by publishing files.
+
+`deploy manage` needs the server's copy of the deploy script from October 2026 or later
+to work over plain `ssh` (older copies want `ssh -t`). The script is one of the
+[files a deploy cannot change](#what-a-deploy-cannot-change): install it again with
+`deploy install` after pulling.
 
 ### An open site
 

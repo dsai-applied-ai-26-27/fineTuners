@@ -16,6 +16,7 @@ from ingest.discover import DOCUMENT_DIRS, SLUG, SOURCE_DIRS, find_courses
 
 TEMPLATE = Path(__file__).resolve().parents[2] / "course_template"
 CONTENT_DIRS = [*DOCUMENT_DIRS, "decks", "problems", "exams", "reference", "memory/palaces"]
+SERIES_HINT = "# series: <folder of the first year>   only when this is another year of that course"
 
 
 class Command(BaseCommand):
@@ -27,7 +28,15 @@ class Command(BaseCommand):
         parser.add_argument("--code", help="Short code shown on the course card (default: SLUG).")
         parser.add_argument("--year", default="", help='Academic year, e.g. "2026-27".')
         parser.add_argument(
-            "--semester", default="", choices=["", "winter", "summer"], help="Optional."
+            "--series",
+            help="For another year of an existing course: the folder name of its first year.",
+        )
+        parser.add_argument(
+            "--semester",
+            type=int,
+            choices=range(1, 13),
+            metavar="N",
+            help="Semester of the programme, 1-12. The dashboard groups courses by it.",
         )
         parser.add_argument("--hue", type=int, help="Course colour, 0-359 (default: spread out).")
 
@@ -39,6 +48,10 @@ class Command(BaseCommand):
         target = Path(settings.COURSES_DIR) / slug
         if slug in existing or target.exists():
             raise CommandError(f"{target} already exists.")
+
+        series = options["series"]
+        if series and not SLUG.match(series):
+            raise CommandError("--series is a folder name: lowercase letters, digits, hyphens.")
 
         hue = options["hue"]
         if hue is None:
@@ -56,7 +69,8 @@ class Command(BaseCommand):
             "title": json.dumps(options["title"], ensure_ascii=False),
             "code": json.dumps(options["code"] or slug.upper(), ensure_ascii=False),
             "year": json.dumps(options["year"], ensure_ascii=False),
-            "semester": json.dumps(options["semester"]),
+            "series": f"series: {series}" if series else SERIES_HINT,
+            "semester": options["semester"] or "",
             "hue": hue,
             "order": len(existing),
         }

@@ -18,7 +18,15 @@ Including another URLconf
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.contrib.admin.views.decorators import staff_member_required
 from django.urls import include, path
+
+if settings.GOOGLE_SIGN_IN:
+    # The admin has its own sign-in page with a user name and a password. Nobody here
+    # has a password, so on a server that page is only something to guess at. Wrapped
+    # like this it never shows: a visitor is sent to the landing page to sign in with
+    # Google, and comes back to the admin if their account is staff.
+    admin.site.login = staff_member_required(admin.site.login, login_url=settings.LOGIN_URL)
 
 urlpatterns = [
     path("admin/", admin.site.urls),

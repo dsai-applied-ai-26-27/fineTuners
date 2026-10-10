@@ -11,7 +11,7 @@
       <p class="overline">{{ course.code }} · one page</p>
       <h1>{{ doc.title }}</h1>
     </div>
-    <button class="btn btn--tonal no-print" type="button" onclick="window.print()">{% icon "print" %}Print</button>
+    <button class="btn btn--tonal no-print" type="button" @click="window.print()">{% icon "print" %}Print</button>
   </div>
   {% if doc.summary %}<p class="lead">{{ doc.summary }}</p>{% endif %}
 </header>

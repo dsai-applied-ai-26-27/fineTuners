@@ -64,19 +64,39 @@
       "title": "Year",
       "type": "string"
     },
-    "semester": {
-      "default": "",
-      "enum": [
-        "",
-        "winter",
-        "summer"
+    "series": {
+      "anyOf": [
+        {
+          "maxLength": 64,
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
       ],
-      "title": "Semester",
-      "type": "string"
+      "default": null,
+      "description": "Only when this folder is another year of a course that already has a folder: the name of that first folder, e.g. `mlpr`. Folders sharing a `series` are one course in different years: the dashboard opens the latest, and the course page offers every year at the top.",
+      "title": "Series"
+    },
+    "semester": {
+      "anyOf": [
+        {
+          "maximum": 12,
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Which semester of the programme the course belongs to, e.g. `5`. The dashboard groups courses by it.",
+      "title": "Semester"
     },
     "status": {
       "default": "active",
-      "description": "`archived` moves the course to the bottom of the dashboard.",
+      "description": "`archived` is a finished course: it is left out of Next up and of the landing page, and without a `semester` it folds away at the bottom of the dashboard.",
       "enum": [
         "active",
         "archived"
@@ -94,7 +114,7 @@
     },
     "order": {
       "default": 0,
-      "description": "Position among courses of the same year.",
+      "description": "Position among courses of the same semester.",
       "minimum": 0,
       "title": "Order",
       "type": "integer"

@@ -8,10 +8,11 @@ Fields: [fields.md#course](fields.md#course). Example:
 title: Reinforcement Learning
 code: RL
 year: "2026-27"          # quoted: an unquoted 2026-27 is fine too, but a bare 2026 is a number
-semester: winter         # winter | summer | leave out
-status: active           # active | archived
+# series: rl             # only for another year of an existing course, see below
+semester: 5              # semester of the programme, 1-12 | leave out
+status: active           # active | archived (a finished course)
 hue: 150                 # the course's colour, 0-359 on the hue wheel
-order: 4                 # position among courses of the same year
+order: 4                 # position among courses of the same semester
 description: Markov decision processes, dynamic programming, TD learning and policy gradients.
 
 topics:
@@ -21,6 +22,40 @@ topics:
   - id: dp
     title: Dynamic programming
 ```
+
+## Where the course shows on the dashboard
+
+The dashboard has one section per semester of the programme, titled the way the
+faculty writes it (`semester: 5` is shown as Semester V). Sections that still hold an
+active course come first, the latest semester on top; a semester whose courses are
+all archived follows.
+
+- A course **without** `semester` is listed under its `year` while it is active, and
+  in the folded Archived section once it is archived.
+- `status: archived` means finished. The course stays readable in its semester, but
+  Next up stops suggesting it and the landing page does not list it.
+- `order` sorts courses inside a section.
+
+## Another year of the same course
+
+One folder is one course in one academic year. When a course is taught again and its
+material changes, do not overwrite the old folder: people's progress is tied to it.
+Create a second folder and tell it which course it continues:
+
+```
+manage.py startcourse mlpr-2026 --title "Machine Learning and Pattern Recognition" \
+    --code MLPR --year 2026-27 --semester 4 --series mlpr
+```
+
+which writes `series: mlpr` into the new `course.yaml`. `series` is the name of the
+first year's folder; that folder itself needs no change.
+
+- The dashboard and the navigation show one entry for the course and open the
+  **latest** year (`year` decides, so write it the same way everywhere: `"2026-27"`).
+- The course page shows every year at the top, newest first, and switches between
+  them. A course with one year shows that one.
+- Each year has its own ids, its own content and its own progress. Nothing is shared
+  or copied between years; copy the files you want to keep and edit them.
 
 ## Topics
 

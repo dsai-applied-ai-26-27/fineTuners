@@ -22,14 +22,14 @@ Open http://127.0.0.1:8000 and press **Development sign-in** (offered only on yo
 machine; no Google client is needed locally). A small example course is included so there
 is something to click through.
 
-To browse the database in Django's admin, create a login once:
+To open Django's admin, make that development user an administrator once:
 
 ```
-uv run python manage.py createsuperuser
+uv run python manage.py make_admin dev@localhost
 ```
 
-then visit http://127.0.0.1:8000/admin/. The admin is read-only on purpose: content is
-edited in files.
+then visit http://127.0.0.1:8000/admin/. Course content is read-only there on purpose:
+it is edited in files. People and their progress can be looked at and managed.
 
 ## Add a course
 

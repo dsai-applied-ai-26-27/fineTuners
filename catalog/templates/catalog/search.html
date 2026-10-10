@@ -15,7 +15,7 @@
       {% icon "search" %}
       <input type="search" name="q" value="{{ query }}" placeholder="Search everything" aria-label="Search" autofocus>
     </label>
-    <select class="select" name="course" aria-label="Course" onchange="this.form.submit()">
+    <select class="select" name="course" aria-label="Course" @change="$el.form.submit()">
       <option value="">All courses</option>
       {% for item in courses %}<option value="{{ item.slug }}"{% if item.slug == course_slug %} selected{% endif %}>{{ item.code }} · {{ item.title }}</option>{% endfor %}
     </select>

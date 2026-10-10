@@ -5,11 +5,12 @@ import os
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
-from django.test import override_settings
+from django.test import SimpleTestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
 from catalog.models import Course
+from catalog.views.home import dashboard_groups
 from ingest.tests.base import CourseTestCase
 
 C = "example"
@@ -52,6 +53,56 @@ def sign_in(test):
     return user
 
 
+class DashboardGroupTests(SimpleTestCase):
+    """How courses are sorted into sections. The function only reads attributes, so
+    unsaved Course objects are enough and no database is needed (SimpleTestCase)."""
+
+    @staticmethod
+    def course(slug, semester=None, year="2026-27", status="active", order=0):
+        return Course(
+            slug=slug, title=slug, code=slug, semester=semester, year=year, status=status,
+            order=order,
+        )  # fmt: skip
+
+    def sections(self, *courses):
+        groups, archived = dashboard_groups(list(courses))
+        shown = [(g["title"], [c.slug for c in g["courses"]]) for g in groups]
+        return shown, [c.slug for c in archived]
+
+    def test_current_semesters_first_then_finished_ones(self):
+        shown, archived = self.sections(
+            self.course("math", 3),
+            self.course("old-b", 4, "2025-26", "archived", order=2),
+            self.course("old-a", 4, "2025-26", "archived", order=1),
+            self.course("rl", 5, order=2),
+            self.course("aai", 5, order=1),
+        )
+        self.assertEqual(
+            shown,
+            [
+                ("Semester V", ["aai", "rl"]),
+                ("Semester III", ["math"]),
+                ("Semester IV", ["old-a", "old-b"]),
+            ],
+        )
+        self.assertEqual(archived, [])
+
+    def test_without_a_semester_the_year_is_the_section(self):
+        shown, archived = self.sections(
+            self.course("new", year="2026-27"),
+            self.course("bare", year=""),
+            self.course("done", year="2024-25", status="archived"),
+        )
+        self.assertEqual(shown, [("2026/27", ["new"]), ("Courses", ["bare"])])
+        self.assertEqual(archived, ["done"])
+
+    def test_section_note_names_the_years_it_spans(self):
+        groups, _ = dashboard_groups(
+            [self.course("a", 5, "2026-27"), self.course("b", 5, "2025-26")]
+        )
+        self.assertEqual(groups[0]["note"], "2025/26 and 2026/27")
+
+
 class PageTests(CourseTestCase):
     def setUp(self):
         super().setUp()
@@ -91,6 +142,13 @@ class PageTests(CourseTestCase):
         self.assertEqual(
             {exam["slug"] for exam in manifest["exams"]}, {"midterm", "final", "comprehensive"}
         )
+
+    def test_home_puts_the_course_under_its_semester(self):
+        response = self.get("home")
+        self.assertEqual([g["title"] for g in response.context["groups"]], ["Semester I"])
+        self.assertEqual(response.context["archived"], [])
+        self.assertContains(response, "Semester I")
+        self.assertContains(self.get("course", C), "Semester I")
 
     def test_navigation_only_offers_what_exists(self):
         response = self.get("course", C)
@@ -160,9 +218,10 @@ class PageTests(CourseTestCase):
     def test_page_queries_stay_bounded(self):
         """A guard against N+1 queries: the count must not grow with the content.
 
-        Two of each are for the request itself: the session, then the signed-in user."""
+        Two of each are for the request itself: the session, then the signed-in user.
+        The course's front page has one more than before for its years."""
         self.get("course", C)  # warm the per-course cache
-        with self.assertNumQueries(8):
+        with self.assertNumQueries(9):
             self.get("course", C)
         with self.assertNumQueries(5):
             self.get("deck", C, "least-squares")

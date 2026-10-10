@@ -204,6 +204,10 @@
     color: var(--on-secondary-container);
     box-shadow: none;
   }
+  /* The academic years of a course, above its title. */
+  .years {
+    margin-bottom: var(--s2);
+  }
   .chip--tonal {
     background: var(--surface-high);
     box-shadow: none;

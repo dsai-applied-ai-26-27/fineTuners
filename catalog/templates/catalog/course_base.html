@@ -6,7 +6,7 @@
 {% block rail %}
 <a class="nav-item" href="{% url 'catalog:home' %}">{% icon "back" %}<span class="label">All courses</span></a>
 <a class="rail__course" href="{{ course.get_absolute_url }}">
-  <span class="overline">{{ course.code }}{% if course.year %} · {{ course.year }}{% endif %}</span>
+  <span class="overline">{{ course.code }}{% if course.year %} · {{ course.year_label }}{% endif %}</span>
   <strong>{{ course.title }}</strong>
 </a>
 <a class="nav-item" href="{{ course.get_absolute_url }}"{% if active == "overview" %} aria-current="page"{% endif %}>

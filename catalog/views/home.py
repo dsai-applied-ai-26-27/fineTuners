@@ -6,6 +6,7 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from django.shortcuts import render
 
+from .. import editions
 from ..models import Card, Course, Document, Formula, Hook, Question, Term
 from ..nav import course_data
 
@@ -41,28 +42,57 @@ def privacy(request):
     return render(request, "catalog/privacy.html", {"contact": settings.CONTACT_EMAIL})
 
 
+def dashboard_groups(courses):
+    """Sort courses into the sections of the dashboard.
+
+    A course that names its semester sits with that semester, finished or not. One that
+    does not falls back to its academic year, or to the Archived fold once it is finished.
+    Sections with something still being studied come first, latest semester on top.
+    """
+    active = Course.Status.ACTIVE
+    archived = [c for c in courses if c.semester is None and c.status != active]
+    shown = [c for c in courses if c.semester is not None or c.status == active]
+
+    def section(course):
+        return (course.semester or 0, "" if course.semester else course.year)
+
+    groups = []
+    # groupby only joins neighbours, so the list is sorted by the same key first.
+    for (semester, year), members in groupby(sorted(shown, key=section), key=section):
+        members = sorted(members, key=lambda c: (c.order, c.title))
+        years = sorted({c.year_label for c in members if c.year})
+        groups.append(
+            {
+                "title": members[0].semester_label or members[0].year_label or "Courses",
+                "note": " and ".join(years) if semester else "",
+                "courses": members,
+                "current": any(c.status == active for c in members),
+                "rank": (semester, year),
+            }
+        )
+    groups.sort(key=lambda g: g["rank"], reverse=True)  # latest first...
+    groups.sort(key=lambda g: not g["current"])  # ...and finished sections after the rest
+    return groups, archived
+
+
 # `/` is two pages at one address: the landing page for a visitor, the dashboard for
 # someone signed in. So the view itself must be reachable without a login, and decides.
 @login_not_required
 def home(request):
-    courses = list(Course.objects.all())
+    # One card per course: of a course taught in several years, the latest. Earlier
+    # years are reached from the year switch on the course's own page.
+    courses = editions.latest(list(Course.objects.all()))
     for course in courses:
         data = course_data(course)
         course.counts = data["counts"]
     if settings.REQUIRE_LOGIN and not request.user.is_authenticated:
         return landing(request, courses)
-    active = [c for c in courses if c.status == Course.Status.ACTIVE]
-    archived = [c for c in courses if c.status == Course.Status.ARCHIVED]
-    active.sort(key=lambda c: (c.year or "",), reverse=True)
-    years = [
-        {"year": year or "Courses", "courses": sorted(group, key=lambda c: (c.order, c.title))}
-        for year, group in groupby(active, key=lambda c: c.year)
-    ]
+    groups, archived = dashboard_groups(courses)
     return render(
         request,
         "catalog/home.html",
         {
-            "years": years,
+            "groups": groups,
             "archived": archived,
             "manifests": [course_data(c)["manifest"] for c in courses],
             "active": "home",
