@@ -11,23 +11,16 @@ from ..models import Card, Course, Document, Formula, Hook, Question, Term
 from ..nav import course_data
 
 
-def landing(request, courses):
-    """What a visitor sees before signing in: what the site is, and the way in."""
-    shown = [
-        c
-        for c in courses
-        if c.status == Course.Status.ACTIVE
-        and (c.counts["reading"] or c.counts["cards"] or c.counts["questions"])
-    ]
+def landing(request):
+    """What a visitor sees before signing in: what the site is, and the way in.
+
+    It is given nothing about the courses. The page says what the site is for, and the
+    database is not asked anything on behalf of someone who has not signed in.
+    """
     return render(
         request,
         "catalog/landing.html",
         {
-            "courses": shown,
-            "totals": {
-                name: sum(c.counts[name] for c in shown)
-                for name in ("reading", "cards", "questions")
-            },
             # Where they were heading; the sign-in sends them on afterwards.
             "next": request.GET.get("next", ""),
             "google": settings.GOOGLE_SIGN_IN,
@@ -79,14 +72,14 @@ def dashboard_groups(courses):
 # someone signed in. So the view itself must be reachable without a login, and decides.
 @login_not_required
 def home(request):
+    if settings.REQUIRE_LOGIN and not request.user.is_authenticated:
+        return landing(request)
     # One card per course: of a course taught in several years, the latest. Earlier
     # years are reached from the year switch on the course's own page.
     courses = editions.latest(list(Course.objects.all()))
     for course in courses:
         data = course_data(course)
         course.counts = data["counts"]
-    if settings.REQUIRE_LOGIN and not request.user.is_authenticated:
-        return landing(request, courses)
     groups, archived = dashboard_groups(courses)
     return render(
         request,
