@@ -16,6 +16,15 @@ def course_data(course):
     return cache.get_or_set(key, lambda: _build(course), None)
 
 
+def has_content(course):
+    """Whether anything has been written up for the course yet.
+
+    A course with nothing in it has no navigation at all, so that is the test. The
+    dashboard and the list of courses in the rail only offer courses that pass it.
+    """
+    return bool(course_data(course)["nav"])
+
+
 def _build(course):
     slug = course.slug
     docs = list(course.documents.values("kind", "slug", "number", "title", "order"))

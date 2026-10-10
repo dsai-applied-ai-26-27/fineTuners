@@ -4,62 +4,78 @@
 {% block title %}Courses · DSAI Vault{% endblock %}
 
 {% block content %}
-<header class="page-head">
-  <div class="page-head__row">
-    <div>
-      <p class="overline">Study</p>
-      <h1>Courses</h1>
-    </div>
-    <div class="today" x-data="today">
-      <div class="today__item"><strong class="num" x-text="minutes">0</strong><span>min focused today</span></div>
-      <div class="today__item"><strong class="num" x-text="cards">0</strong><span>cards today</span></div>
-      <div class="today__item" :data-on="streak > 0">{% icon "streak" %}<strong class="num" x-text="streak">0</strong><span>day streak</span></div>
-    </div>
+<header class="dash-head">
+  <div>
+    <h1>Your courses</h1>
+    <p class="dash-head__lead">The site picks one thing for you to do next. Everything else is inside the course it belongs to.</p>
   </div>
+  {# Opens the tour (templates/components/tour.html listens for this event). #}
+  <button class="btn btn--outlined btn--small no-print" type="button" @click="$dispatch('tour')">{% icon "help" %}How it works</button>
 </header>
 
-{# One next action, always: computed in the browser from progress (static/js/components/nextup.js). #}
-<section class="next tone" x-data="nextUp" x-show="item" x-cloak :style="item ? `--hue: ${item.hue}` : ''">
-  <div class="next__body">
-    <p class="overline"><span x-text="item?.course"></span> · next up</p>
-    <h2 x-text="item?.title"></h2>
-    <p x-text="item?.detail"></p>
-  </div>
-  <a class="btn btn--filled btn--large" :href="item?.url"><span x-text="item?.action">Continue</span>{% icon "forward" %}</a>
-</section>
-
-<section class="activity" x-data="activity" aria-label="Activity in the last 14 days">
-  <template x-for="day in days" :key="day.date">
-    <div class="activity__day" :title="day.title" :data-today="day.today">
-      <i :style="`height:${day.level}%`"></i>
-      <span x-text="day.label"></span>
+<div class="dash-band">
+  {% comment %} One next action, always: worked out in the browser from the person's progress
+     (static/js/components/nextup.js). The block takes the colour of the course it names. {% endcomment %}
+  <section class="nextup tone" x-data="nextUp" :style="item ? `--hue: ${item.hue}` : ''" aria-label="Next up">
+    <div class="nextup__body" x-show="item" x-cloak>
+      <p class="nextup__label"><i></i><span>Next up<span x-show="item?.course"> · <span x-text="item?.course"></span></span></span></p>
+      <h2 x-text="item?.title"></h2>
+      <p x-text="item?.detail"></p>
     </div>
-  </template>
-</section>
+    <a class="btn btn--filled" :href="item?.url" x-show="item" x-cloak><span x-text="item?.action">Continue</span>{% icon "forward" %}</a>
+    <div class="nextup__body" x-show="!item" x-cloak>
+      <p class="nextup__label">Next up</p>
+      <h2>Nothing is waiting</h2>
+      <p>Nothing is due and nothing is left to start. Open any course to go over it again.</p>
+    </div>
+  </section>
+
+  <section class="pulse" aria-label="Your activity">
+    <p class="pulse__label">Last 14 days</p>
+    <div class="activity" x-data="activity">
+      <template x-for="day in days" :key="day.date">
+        <div class="activity__day" :title="day.title" :data-today="day.today">
+          <i :style="`height:${day.level}%`"></i>
+          <span x-text="day.label"></span>
+        </div>
+      </template>
+    </div>
+    <dl class="pulse__figures" x-data="today">
+      <div><dt>cards today</dt><dd class="num" x-text="cards">0</dd></div>
+      <div><dt>timer minutes</dt><dd class="num" x-text="minutes">0</dd></div>
+      <div><dt>day streak</dt><dd class="num" x-text="streak">0</dd></div>
+    </dl>
+  </section>
+</div>
 
 {% for group in groups %}
-<section class="section">
-  <div class="section-head"><h2>{{ group.title }}{% if group.note %} <span class="faint">{{ group.note }}</span>{% endif %}</h2></div>
-  <div class="grid">
-    {% for c in group.courses %}{% include "components/course_card.html" %}{% endfor %}
-  </div>
+<section class="semester">
+  <header class="semester__head">
+    <h2>{{ group.title }}</h2>
+    {% if group.note %}<p class="semester__year">{{ group.note }}</p>{% endif %}
+    {# What the colours in every bar mean, said once. #}
+    {% if forloop.first and group.ready %}<p class="semester__key"><span><i class="solid"></i>solid</span><span><i class="shaky"></i>shaky</span><span><i class="missed"></i>missed</span></p>{% endif %}
+  </header>
+  {% include "components/course_group.html" %}
 </section>
 {% empty %}
-{% if not archived %}
+{% if not archived.courses %}
 <div class="empty">
   {% icon "empty" %}
   <strong>No courses yet</strong>
+  {% if user.is_staff or debug %}
   <p>Create one with <code>manage.py startcourse rl --title "Reinforcement Learning"</code>,<br>then run <code>manage.py sync_content</code>.</p>
+  {% else %}
+  <p>Nothing has been published here so far.</p>
+  {% endif %}
 </div>
 {% endif %}
 {% endfor %}
 
-{% if archived %}
-<details class="section archived"{% if not groups %} open{% endif %}>
-  <summary class="section-head"><h2>Archived <span class="faint">{{ archived|length }}</span></h2>{% icon "expand" %}</summary>
-  <div class="grid">
-    {% for c in archived %}{% include "components/course_card.html" %}{% endfor %}
-  </div>
+{% if archived.courses %}
+<details class="semester semester--fold archived"{% if not groups %} open{% endif %}>
+  <summary class="semester__head"><h2>Archived</h2><span class="semester__year">{{ archived.courses|length }}</span>{% icon "expand" %}</summary>
+  {% include "components/course_group.html" with group=archived %}
 </details>
 {% endif %}
 {% endblock %}

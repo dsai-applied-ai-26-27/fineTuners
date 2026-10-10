@@ -3,6 +3,7 @@ from django.utils.functional import SimpleLazyObject
 
 from . import editions
 from .models import Course
+from .nav import has_content
 
 
 def site(request):
@@ -11,10 +12,11 @@ def site(request):
     a course replace that part of the navigation and never do."""
 
     def current():
-        # Of a course taught in several years only the latest is listed, and only
-        # while that one is active.
+        # Of a course taught in several years only the latest is listed, only while
+        # that one is active, and only once there is something in it to open.
         active = Course.Status.ACTIVE
-        return [c for c in editions.latest(list(Course.objects.all())) if c.status == active]
+        latest = editions.latest(list(Course.objects.all()))
+        return [c for c in latest if c.status == active and has_content(c)]
 
     return {
         "nav_courses": SimpleLazyObject(current),

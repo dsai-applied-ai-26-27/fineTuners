@@ -137,174 +137,9 @@
     }
   }
 
-  /* ---- the figure ------------------------------------------------------------------- */
-  .plate {
-    padding: clamp(var(--s4), 2.6vw, var(--s6));
-    border-radius: var(--r-l);
-    background: var(--surface-raised);
-    box-shadow: inset 0 0 0 1px var(--outline-variant);
-    & figcaption {
-      margin-top: var(--s5);
-      padding-top: var(--s4);
-      border-top: 1px solid var(--outline-variant);
-      font-size: var(--text-s);
-      line-height: 1.6;
-      text-wrap: pretty;
-      color: var(--on-surface-variant);
-    }
-  }
-  .plate__title {
-    margin-bottom: var(--s4);
-    font-weight: 600;
-    letter-spacing: -0.005em;
-  }
-
-  /* The chart (templates/components/recall_figure.html, written by tools/make_figure.py).
-     A grid of three rows: how long each wait is, the plot, the days. The lines are an SVG
-     stretched over the plot; every word and number is HTML placed over it by percentage,
-     so text keeps its size on a narrow screen. */
-  .recall {
-    display: grid;
-    grid-template-columns: 2.25rem minmax(0, 1fr);
-    grid-template-areas:
-      ". waits"
-      "scale plot"
-      ". days";
-    column-gap: var(--s3);
-    font-size: var(--text-xs);
-    font-variant-numeric: tabular-nums;
-    color: var(--on-surface-faint);
-  }
-  .recall__waits {
-    grid-area: waits;
-    position: relative;
-    height: 1.625rem;
-    margin-bottom: var(--s3);
-  }
-  /* A bracket over each stretch between two reviews, with its length in days. */
-  .recall__wait {
-    position: absolute;
-    bottom: 0;
-    height: 0.3125rem;
-    &::before {
-      content: "";
-      position: absolute;
-      inset: 0 2px;
-      border: 1px solid var(--outline);
-      border-bottom: 0;
-    }
-    &[data-open]::before {
-      border-right: 0;
-      right: 0;
-    }
-    & b {
-      position: absolute;
-      bottom: calc(100% + 3px);
-      left: 50%;
-      translate: -50% 0;
-      font-weight: 600;
-      white-space: nowrap;
-      color: var(--on-surface-variant);
-    }
-  }
-  .recall__scale {
-    grid-area: scale;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    text-align: right;
-    line-height: 1;
-    /* Each label is centred on its grid line: half a line up at the top, down at the foot. */
-    & span:first-child {
-      translate: 0 -50%;
-    }
-    & span:last-child {
-      translate: 0 50%;
-    }
-  }
-  .recall__plot {
-    grid-area: plot;
-    position: relative;
+  /* The chart itself is a shared component (components.css). Here it is wider than tall. */
+  .cover .recall__plot {
     aspect-ratio: 2 / 1;
-    & svg {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      overflow: visible;
-    }
-    /* The drawing is stretched to fit, so strokes are told not to stretch with it. */
-    & path {
-      fill: none;
-      vector-effect: non-scaling-stroke;
-    }
-  }
-  .recall__grid {
-    stroke: var(--outline-variant);
-  }
-  .recall__base {
-    stroke: var(--outline);
-  }
-  /* Between the two curves: what reviewing keeps. A wash of the line's own colour. */
-  .recall__plot .recall__kept {
-    fill: color-mix(in oklch, var(--primary) 11%, transparent);
-  }
-  .recall__lost {
-    stroke: var(--on-surface-faint);
-    stroke-width: 1.5;
-    stroke-dasharray: 5 4;
-  }
-  .recall__line {
-    stroke: var(--primary);
-    stroke-width: 2;
-    stroke-linejoin: round;
-    stroke-linecap: round;
-  }
-  /* One ring per review, on the 100% line: the moment the card is seen again. */
-  .recall__dot {
-    position: absolute;
-    top: 0;
-    width: 0.5625rem;
-    height: 0.5625rem;
-    margin: -0.28125rem 0 0 -0.28125rem;
-    border-radius: 50%;
-    background: var(--surface-raised);
-    box-shadow: inset 0 0 0 2px var(--primary);
-  }
-  .recall__label {
-    position: absolute;
-    font-size: var(--text-s);
-    font-weight: 600;
-    white-space: nowrap;
-  }
-  .recall__label--kept {
-    top: 36%;
-    left: 42%;
-    color: var(--primary);
-  }
-  .recall__label--lost {
-    top: 71%;
-    left: 21%;
-    font-weight: 500;
-  }
-  .recall__days {
-    grid-area: days;
-    position: relative;
-    height: 1.5rem;
-    & span,
-    & em {
-      position: absolute;
-      top: var(--s2);
-      line-height: 1;
-    }
-    & span {
-      translate: -50% 0;
-    }
-    /* The unit sits in the corner under the scale, where the two axes meet. */
-    & em {
-      right: calc(100% + var(--s3));
-      font-style: normal;
-    }
   }
 
   /* ---- what a course holds: a plain list, ruled like a table of contents ------------ */
@@ -468,12 +303,12 @@
     .holds {
       grid-template-columns: minmax(0, 1fr);
     }
-    .recall__plot {
+    .cover .recall__plot {
       aspect-ratio: 16 / 9;
     }
   }
   @media (max-width: 36rem) {
-    .recall__plot {
+    .cover .recall__plot {
       aspect-ratio: 4 / 3;
     }
     .holds__list div {

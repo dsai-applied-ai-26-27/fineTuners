@@ -196,20 +196,43 @@ The lines are an SVG stretched to fit; every label is HTML placed over it by
 percentage, so text stays readable on a phone. If the schedule changes, change the
 copy in the script and re-run it; a test compares the two.
 
+**The dashboard** ([catalog/templates/catalog/home.html](../catalog/templates/catalog/home.html))
+follows the same layout: a headline in the reading typeface, then what to do (Next up)
+beside what was done (the last fourteen days), then one ruled section per semester
+with its heading in a column on the left. A course gets a card only if there is
+something in it (`has_content` in [catalog/nav.py](../catalog/nav.py)); the others are
+named in one line, and are left out of the navigation and of Settings too, because a
+card for an empty course is a button that leads nowhere. Cards are plain plates with
+a hairline edge; the course's hue appears only on the tag with its code. Hints for
+whoever writes content (which folder, which command) are shown to staff and in DEBUG
+only.
+
+**The tour** ([templates/components/tour.html](../templates/components/tour.html),
+[static/js/components/tour.js](../static/js/components/tour.js)) is a `<dialog>` that is
+part of every page. It opens by itself the first time someone reaches the dashboard
+in a browser; the server only says where that offer is made (`tour(true)` on the
+dashboard). Anything else opens it by dispatching a `tour` event, which the dashboard's
+"How it works" button and Settings do. That it has been seen is a preference of the
+browser (`pref` / `setPref` on the progress store): kept in localStorage with the
+progress, never sent to the server, so a second device offers it once more. Its
+steps are stacked in one grid cell, which keeps the dialog the height of the tallest.
+
 **JavaScript** ([static/js/](../static/js/)) is plain ES modules.
 [app.js](../static/js/app.js) registers everything with Alpine and starts it.
 
 - `store/progress.js` is the only code that reads or writes progress, and the only code
   that talks to the server about it ([Accounts and progress](#accounts-and-progress)).
   It holds `records` (keyed `<course>/<id>`: `{s, t, k, n}`), `attempts`, `activity` and
-  `clears` in one localStorage key per account.
+  `clears` in one localStorage key per account, plus `prefs`: small settings of that
+  browser which are stored alongside but never synced.
 - `lib/overview.js` turns a course's manifest and that store into one set of numbers:
   how much of the reading, the cards and the problems is solid, shaky or missed. The
   dashboard's bars and the course page's tiles both come from it.
 - `store/timer.js` is the focus timer. It stores when the block *ends*, so it survives
   navigation and reloads.
 - `components/` has one module per interactive piece: `flashcards`, `paper`, `palace`,
-  `cover`, `nextup`, `settings`, `shell`, and `widgets` (small progress read-outs).
+  `cover`, `nextup`, `settings`, `shell`, `tour`, and `widgets` (small progress
+  read-outs).
 - `math.js` typesets `.math` nodes with KaTeX and adds callout icons. The `x-math` directive
   does the same for HTML inserted later.
 

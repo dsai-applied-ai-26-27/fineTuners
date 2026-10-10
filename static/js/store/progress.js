@@ -277,6 +277,17 @@ export function createProgress() {
       return sync(options);
     },
 
+    // ---- preferences -----------------------------------------------------------------
+    // Small settings of this browser, such as having seen the tour. They are stored with
+    // the progress, but a merge, a clear and the server never touch them.
+    pref(name) {
+      return state.prefs?.[name];
+    },
+    setPref(name, value) {
+      state.prefs = { ...state.prefs, [name]: value };
+      this.persistent = save();
+    },
+
     // ---- records ---------------------------------------------------------------------
     record(course, id) {
       this.rev;

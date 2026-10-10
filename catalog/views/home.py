@@ -8,7 +8,7 @@ from django.shortcuts import render
 
 from .. import editions
 from ..models import Card, Course, Document, Formula, Hook, Question, Term
-from ..nav import course_data
+from ..nav import course_data, has_content
 
 
 def landing(request):
@@ -80,7 +80,13 @@ def home(request):
     for course in courses:
         data = course_data(course)
         course.counts = data["counts"]
-    groups, archived = dashboard_groups(courses)
+    groups, folded = dashboard_groups(courses)
+    archived = {"courses": folded}
+    # Inside each section: the courses there is something to open (they get a card),
+    # and those not written up yet (they are only named, in one quiet line).
+    for group in [*groups, archived]:
+        group["ready"] = [c for c in group["courses"] if has_content(c)]
+        group["waiting"] = [c for c in group["courses"] if not has_content(c)]
     return render(
         request,
         "catalog/home.html",
@@ -159,7 +165,9 @@ def search(request):
 
 
 def settings_page(request):
-    courses = list(Course.objects.all())
+    # Every year of every course that has something in it: progress can be cleared
+    # for each of them, and an empty course has none to clear.
+    courses = [course for course in Course.objects.all() if has_content(course)]
     for course in courses:
         course.counts = course_data(course)["counts"]
     return render(
