@@ -6,7 +6,9 @@
 # only the finished /app folder.
 
 # The official Python image, taken from Amazon's public mirror: Docker Hub limits
-# anonymous downloads per address, and CI machines share theirs with everyone.
+# anonymous downloads per address, and CI machines share theirs with everyone. The mirror
+# refuses now and then too, so CI fetches this image beforehand, with retries and other
+# mirrors to fall back on (.github/scripts/pull-image.sh), and the build finds it locally.
 FROM public.ecr.aws/docker/library/python:3.13-slim AS build
 
 # uv is a single binary; copy it from its official image at the version that wrote uv.lock.

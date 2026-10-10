@@ -49,7 +49,21 @@ jobs:
       DJANGO_ALLOWED_HOSTS: vault.test
     steps:
       - uses: actions/checkout@v7
-      - run: docker build --tag dsai-vault:ci .
+      # The two images the job needs from outside, fetched first and patiently. Runners
+      # share their addresses with everyone, and a registry that answers "too many
+      # requests" must not turn a run red: on main that would also skip the deploy.
+      - name: Fetch the base images
+        run: bash .github/scripts/pull-image.sh python:3.13-slim caddy:2-alpine
+      # The base image is on the machine now. The build still asks ghcr.io for uv, so it
+      # gets a second and third try as well.
+      - name: Build the image
+        run: |
+          for attempt in 1 2 3; do
+            docker build --tag dsai-vault:ci . && exit 0
+            echo "build failed (attempt $attempt of 3); waiting before the next"
+            sleep $((attempt * 20))
+          done
+          exit 1
       - name: Django's deployment checklist
         run: >
           docker run --rm -e DJANGO_SECRET_KEY -e DJANGO_ALLOWED_HOSTS dsai-vault:ci
@@ -84,6 +98,7 @@ jobs:
             echo "/settings/ answered a visitor: the sign-in requirement is not working"
             exit 1
           fi
+      # Uses the Caddy image fetched in the first step; nothing is downloaded here.
       - name: The proxy configuration is valid
         run: >
           docker run --rm -e ORIGIN_SECRET=ci -e PUBLIC_HOST=vault.test

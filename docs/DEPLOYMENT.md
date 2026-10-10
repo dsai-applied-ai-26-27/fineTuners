@@ -131,6 +131,14 @@ Work on a branch, open a pull request, merge when CI is green. That is the whole
 | `image` | the same | builds the Docker image, runs `check --deploy` inside it, serves the example course from it, validates the proxy config |
 | `deploy` | pushes to `main`, after both pass | sends the commit to the server |
 
+**When a run is red for no reason of yours.** The `image` job downloads two images from
+public registries, and those refuse anonymous downloads from GitHub's shared addresses now
+and then (`toomanyrequests: Rate exceeded`).
+[.github/scripts/pull-image.sh](../.github/scripts/pull-image.sh) fetches them first, trying
+three registries several times, so this should no longer fail a run. If a run on `main`
+does fail on something that has nothing to do with the code, the deploy was skipped:
+open the run on GitHub and press **Re-run failed jobs**, and the deploy follows.
+
 The deploy job pipes `git archive` of the commit over SSH. On the server,
 [deploy/deploy.sh](../deploy/deploy.sh) (`deploy app <commit>`) builds the image from it,
 runs `migrate`, restarts the containers, re-runs `sync_content`, and finishes with
