@@ -47,6 +47,13 @@ class LandingTests(TestCase):
         with self.settings(CONTACT_EMAIL="owner@example.test"):
             self.assertContains(self.client.get("/privacy/"), "mailto:owner@example.test")
 
+    def test_every_frame_carries_the_logo_and_the_tab_icon(self):
+        for path in ("/", "/privacy/", "/accounts/logout/"):
+            with self.subTest(path=path):
+                response = self.client.get(path, follow=True)
+                self.assertContains(response, 'class="brand__glyph"')
+                self.assertContains(response, 'rel="icon" href="/static/brand/logo.svg"')
+
     def test_without_an_oauth_client_it_says_so(self):
         response = self.client.get("/")
         self.assertContains(response, "not set up")

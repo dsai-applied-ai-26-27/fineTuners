@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="{% static 'css/components.css' %}">
   <link rel="stylesheet" href="{% static 'css/prose.css' %}">
   <link rel="stylesheet" href="{% static 'css/study.css' %}">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%234b63c9'/%3E%3Cpath d='M9 22V10h5.2c3.4 0 5.8 2.4 5.8 6s-2.4 6-5.8 6z' fill='none' stroke='white' stroke-width='2.6'/%3E%3C/svg%3E">
+  {% include "components/icons.html" %}
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
@@ -26,7 +26,7 @@
 <div class="app" x-data="shell" :data-drawer="drawer ? 'open' : 'closed'" @keydown.window="onKey($event)" @keydown.escape.window="drawer = false">
   <nav class="rail" aria-label="Main">
     <a class="brand" href="{% url 'catalog:home' %}">
-      <span class="brand__mark" aria-hidden="true">dv</span>
+      <span class="brand__mark" aria-hidden="true">{% include "components/logo.html" %}</span>
       <span>DSAI<span class="brand__dot"> Vault</span></span>
     </a>
 

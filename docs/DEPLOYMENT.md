@@ -321,8 +321,11 @@ account that should own this:
 2. **APIs & Services → OAuth consent screen** (it opens "Google Auth Platform"): user type
    **External**; app name, your e-mail as support and developer contact. Scopes: leave
    the defaults (`email`, `profile`, `openid`).
-3. **Branding**: Google will not let the app be published without these. No logo: a
-   logo triggers a review.
+3. **Branding**: Google will not let the app be published without these. The logo is
+   optional: the file to upload is `static/brand/logo-512.png`. With a logo Google wants
+   to verify the app (it asks you to prove you control the home page's domain, and
+   reviews it, which takes days). Sign-in works in the meantime, but Google caps an
+   unverified app at 100 users over its lifetime.
    ```
    Application home page            https://dsai3.pages.dev/
    Application privacy policy link  https://dsai3.pages.dev/privacy/

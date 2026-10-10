@@ -164,6 +164,13 @@ No bundler and no npm project. Third-party files are fetched once by
 [tools/vendor_assets.py](../tools/vendor_assets.py) (pinned versions, integrity checked) and
 committed under `static/vendor/`, `static/fonts/` and `static/icons.svg`.
 
+**The logo** (a D whose inside is a keyhole) is one SVG path in
+[tools/make_icons.py](../tools/make_icons.py). That script writes the tab icon and the
+bitmap sizes into `static/brand/`, and the bare glyph into
+[templates/components/logo.html](../templates/components/logo.html), which the page frame
+includes so the mark takes the page's own colour. Change the shape there and re-run it;
+do not edit its outputs.
+
 **JavaScript** ([static/js/](../static/js/)) is plain ES modules.
 [app.js](../static/js/app.js) registers everything with Alpine and starts it.
 

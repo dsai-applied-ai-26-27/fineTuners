@@ -78,7 +78,8 @@ templates/   base page and shared fragments
 static/      CSS, JavaScript (no build step), vendored libraries, fonts, icons
 docs/        AUTHORING.md, ARCHITECTURE.md, DEPLOYMENT.md, content-types/, schemas/, example-course/
 courses/     course folders: NOT in git (raw material and written content)
-tools/       vendor_assets.py (fetch front-end libraries), katex_check.cjs
+tools/       vendor_assets.py (fetch front-end libraries), make_icons.py (the logo, in
+             every size, into static/brand/), katex_check.cjs
 deploy/      what the server runs: compose file, proxy config, deploy script, setup scripts
 edge/        the Cloudflare Pages function that forwards dsai3.pages.dev to the server
 Dockerfile   the production image; .github/workflows/ci.yml tests, builds and deploys it

@@ -14,12 +14,13 @@
   <link rel="stylesheet" href="{% static 'css/base.css' %}">
   <link rel="stylesheet" href="{% static 'css/components.css' %}">
   <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+  {% include "components/icons.html" %}
 </head>
 <body class="landing">
 
 <header class="landing__bar">
   <a class="brand" href="{% url 'catalog:home' %}">
-    <span class="brand__mark" aria-hidden="true">dv</span>
+    <span class="brand__mark" aria-hidden="true">{% include "components/logo.html" %}</span>
     <span>DSAI<span class="brand__dot"> Vault</span></span>
   </a>
 </header>
