@@ -181,6 +181,9 @@ GOOGLE_OAUTH_CLIENT_ID = os.environ.get("GOOGLE_OAUTH_CLIENT_ID", "")
 GOOGLE_OAUTH_CLIENT_SECRET = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET", "")
 GOOGLE_SIGN_IN = bool(GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET)
 
+# Shown on the privacy page as the address for questions. Left out when empty.
+CONTACT_EMAIL = os.environ.get("DSAI_CONTACT_EMAIL", "")
+
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
         "APPS": [{"client_id": GOOGLE_OAUTH_CLIENT_ID, "secret": GOOGLE_OAUTH_CLIENT_SECRET}]

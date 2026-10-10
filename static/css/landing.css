@@ -300,6 +300,66 @@
     }
   }
 
+  /* ---- the privacy page: one readable column ---------------------------------------- */
+  .legal {
+    width: min(42rem, 100% - 2 * var(--gutter));
+    margin-inline: auto;
+    padding: clamp(var(--s5), 8vh, var(--s8)) 0 var(--s8);
+    & h1 {
+      margin-top: var(--s2);
+      font-size: var(--text-3xl);
+      letter-spacing: -0.025em;
+    }
+    & .lead {
+      margin-top: var(--s4);
+      font-size: var(--text-l);
+      line-height: 1.55;
+      color: var(--on-surface-variant);
+    }
+    & h2 {
+      margin-top: var(--s6);
+      font-size: var(--text-xl);
+      letter-spacing: -0.015em;
+    }
+    & p,
+    & li {
+      font-family: var(--font-read);
+      line-height: 1.65;
+    }
+    & h2 + p,
+    & h2 + ul {
+      margin-top: var(--s2);
+    }
+    & ul {
+      display: grid;
+      gap: var(--s3);
+      padding-left: 1.2rem;
+    }
+    & p a {
+      color: var(--primary);
+      text-decoration: underline;
+    }
+  }
+  .legal__back {
+    margin-top: var(--s7);
+    font-family: var(--font-ui) !important;
+    font-size: var(--text-s);
+    & .link {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--s1);
+      text-decoration: none;
+    }
+    & .icon {
+      width: 1rem;
+      height: 1rem;
+    }
+  }
+  .landing__foot a:hover {
+    color: var(--on-surface);
+    text-decoration: underline;
+  }
+
   @media (max-width: 56rem) {
     .hero {
       grid-template-columns: minmax(0, 1fr);

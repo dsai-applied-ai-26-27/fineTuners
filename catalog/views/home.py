@@ -35,6 +35,12 @@ def landing(request, courses):
     )
 
 
+@login_not_required
+def privacy(request):
+    """What the site stores about a person. Public, so it can be read before signing in."""
+    return render(request, "catalog/privacy.html", {"contact": settings.CONTACT_EMAIL})
+
+
 # `/` is two pages at one address: the landing page for a visitor, the dashboard for
 # someone signed in. So the view itself must be reachable without a login, and decides.
 @login_not_required

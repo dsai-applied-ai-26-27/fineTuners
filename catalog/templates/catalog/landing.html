@@ -55,7 +55,7 @@
         </form>
         {% endif %}
       </div>
-      <p class="hero__small">Any Google account works. The site keeps your name, your e-mail address and your study progress, and nothing else. You can delete all of it in Settings.</p>
+      <p class="hero__small">Any Google account works. The site keeps your name, your e-mail address and your study progress, and nothing else. You can delete all of it in Settings. <a class="link" href="{% url 'catalog:privacy' %}">Privacy</a></p>
     </div>
 
     {# A picture of the product made from its own parts. The numbers are for show. #}
@@ -121,7 +121,7 @@
 
 <footer class="landing__foot">
   <span>DSAI Vault</span>
-  <span>A study site for one programme. Not an official university page.</span>
+  <span>A study site for one programme. Not an official university page. · <a href="{% url 'catalog:privacy' %}">Privacy</a></span>
 </footer>
 
 </body>

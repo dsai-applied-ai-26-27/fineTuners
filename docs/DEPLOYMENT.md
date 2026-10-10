@@ -293,6 +293,9 @@ On a new server, start at [Setting it up from scratch](#setting-it-up-from-scrat
   original files is switched off outside DEBUG.
 - The server only answers requests that carry the secret, so nothing is readable under the
   server's own name.
+- `/privacy/` says in plain words what is stored and how to remove it. It is public, and
+  Google's consent screen links to it. `DSAI_CONTACT_EMAIL` in the server's `.env` adds
+  an address for questions to it.
 - About each person the site stores what Google hands over at sign-in (name, e-mail
   address, Google's id for the account) and their study progress. No passwords. A person
   can delete all of it from Settings; deleting the user in the admin does the same.
@@ -315,17 +318,26 @@ In [Google Cloud Console](https://console.cloud.google.com/), signed in with the
 account that should own this:
 
 1. Create a project (any name, for example "DSAI Vault").
-2. **APIs & Services → OAuth consent screen**: user type **External**; app name, your
-   e-mail as support and developer contact. Scopes: leave the defaults (`email`,
-   `profile`, `openid`). Then **publish the app** ("In production"). While it is in
-   "Testing", only the test users you list can sign in.
-3. **APIs & Services → Credentials → Create credentials → OAuth client ID**, type **Web
+2. **APIs & Services → OAuth consent screen** (it opens "Google Auth Platform"): user type
+   **External**; app name, your e-mail as support and developer contact. Scopes: leave
+   the defaults (`email`, `profile`, `openid`).
+3. **Branding**: Google will not let the app be published without these. No logo: a
+   logo triggers a review.
+   ```
+   Application home page            https://dsai3.pages.dev/
+   Application privacy policy link  https://dsai3.pages.dev/privacy/
+   Authorized domains               dsai3.pages.dev
+   ```
+4. **Audience → Publish app** ("In production"). While it is in "Testing", only the
+   test users you list there can sign in.
+5. **Clients → Create client** (the same as Credentials → Create credentials → OAuth
+   client ID), type **Web
    application**. Under **Authorised redirect URIs** add exactly:
    ```
    https://dsai3.pages.dev/accounts/google/login/callback/
    http://localhost:8000/accounts/google/login/callback/
    ```
-4. **Download JSON** for the new client.
+6. **Download JSON** for the new client.
 
 Then, from this folder:
 

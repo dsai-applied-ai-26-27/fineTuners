@@ -37,6 +37,16 @@ class LandingTests(TestCase):
         self.assertTemplateUsed(response, "catalog/landing.html")
         self.assertNotContains(response, "data-user")
 
+    def test_the_privacy_page_is_public_and_linked(self):
+        """Google wants a privacy link before the sign-in may be offered to everyone."""
+        response = self.client.get("/privacy/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Delete my account")
+        self.assertNotContains(response, "mailto:")  # no contact address configured
+        self.assertContains(self.client.get("/"), 'href="/privacy/"')
+        with self.settings(CONTACT_EMAIL="owner@example.test"):
+            self.assertContains(self.client.get("/privacy/"), "mailto:owner@example.test")
+
     def test_without_an_oauth_client_it_says_so(self):
         response = self.client.get("/")
         self.assertContains(response, "not set up")
