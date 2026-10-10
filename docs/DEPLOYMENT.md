@@ -79,9 +79,9 @@ Consequences:
 - **The database must be backed up**, because accounts and progress exist nowhere else
   (a browser holds a copy of its owner's progress, but that is not a backup).
   `deploy backup` makes a consistent copy in `~/dsai-vault/backups/` and keeps the newest
-  fourteen. Run it every night with one line in the server user's crontab (`crontab -e`):
+  fourteen. Have it run every night, once (it adds one line to the server user's crontab):
   ```
-  17 3 * * * $HOME/dsai-vault/bin/deploy backup >/dev/null 2>&1
+  ssh <server> dsai-vault/bin/deploy schedule-backup
   ```
   A copy on the same disk does not survive the disk, so fetch one to your computer now and
   then: `scp <server>:dsai-vault/backups/<newest file> .`
@@ -215,7 +215,7 @@ with its Caddyfile mounted from the host.
 5. **Switch on signing in:** create the OAuth client and run `deploy/setup-google.sh`
    ([Accounts](#accounts) has the steps). Until then the site shows its landing page and
    says that signing in is not set up.
-6. **Schedule the backup** (the crontab line under [The database](#the-database)).
+6. **Schedule the backup:** `ssh <server> dsai-vault/bin/deploy schedule-backup`.
 
 On Windows, start the scripts with Git Bash by its full path. In PowerShell a bare `bash`
 is the WSL launcher, which fails if no Linux is installed:
@@ -322,10 +322,13 @@ account that should own this:
    **External**; app name, your e-mail as support and developer contact. Scopes: leave
    the defaults (`email`, `profile`, `openid`).
 3. **Branding**: Google will not let the app be published without these. The logo is
-   optional: the file to upload is `static/brand/logo-512.png`. With a logo Google wants
-   to verify the app (it asks you to prove you control the home page's domain, and
-   reviews it, which takes days). Sign-in works in the meantime, but Google caps an
-   unverified app at 100 users over its lifetime.
+   optional: the file to upload is `static/brand/logo-512.png`. With a logo the console
+   says "Your app requires verification". That is about the branding only: until Google
+   has verified it (Verification Center; it asks you to prove you control the home
+   page's domain and takes days), its sign-in screen does not show the app's name and
+   logo. Signing in works regardless, and the user cap shown on the Audience page does
+   not apply, because the site asks for no sensitive scopes. Submit it once the site is
+   live: the reviewers open the home page and the privacy link.
    ```
    Application home page            https://dsai3.pages.dev/
    Application privacy policy link  https://dsai3.pages.dev/privacy/

@@ -10,6 +10,7 @@
 #   deploy status | logs | restart   look at, or restart, what is running
 #   deploy setenv NAME               set one value in .env, read from standard input
 #   deploy backup                    copy the database to ~/dsai-vault/backups/
+#   deploy schedule-backup           do that every night (adds a line to the crontab)
 #   deploy restore <file>            replace the database with one of those copies
 #   deploy manage <args>             run manage.py inside the running container
 #   deploy ci                        the only thing the GitHub Actions key may run
@@ -228,6 +229,20 @@ PY
 	say "saved $ROOT/backups/$name ($(du -h "$ROOT/backups/$name" | cut -f1))"
 }
 
+cmd_schedule_backup() {
+	# One line in this user's crontab: a backup every night. Safe to run twice.
+	local line="17 3 * * * $ROOT/bin/deploy backup >/dev/null 2>&1"
+	if crontab -l 2>/dev/null | grep -qF "$ROOT/bin/deploy backup"; then
+		say "the nightly backup is already scheduled"
+		return
+	fi
+	(
+		crontab -l 2>/dev/null || true
+		printf '%s\n' "$line"
+	) | crontab -
+	say "scheduled: a backup every night at 03:17, the newest fourteen kept in $ROOT/backups"
+}
+
 cmd_restore() {
 	local file="${1:-}"
 	[[ -f "$file" ]] || die "usage: deploy restore <backup file>"
@@ -270,6 +285,7 @@ logs) compose logs --tail "${1:-100}" web proxy ;;
 restart) compose up --detach --force-recreate ;;
 setenv) cmd_setenv "$@" ;;
 backup) cmd_backup ;;
+schedule-backup) cmd_schedule_backup ;;
 restore) cmd_restore "$@" ;;
 manage) compose exec web python manage.py "$@" ;;
 ci) cmd_ci ;;
