@@ -96,10 +96,13 @@
       opacity: 0.45;
       pointer-events: none;
     }
-    & .icon:first-child {
+    /* An icon at either end is pulled a little towards the edge, so the padding looks
+       even beside text. Only an icon that is the button's own child: one inside a
+       wrapper is handled with its wrapper, below. */
+    & > .icon:first-child {
       margin-left: calc(var(--s2) * -1);
     }
-    & .icon:last-child:not(:first-child) {
+    & > .icon:last-child:not(:first-child) {
       margin-right: calc(var(--s2) * -1);
     }
   }
@@ -148,6 +151,21 @@
       background: var(--secondary-container);
       color: var(--on-secondary-container);
     }
+  }
+  /* An icon that is swapped for another (play / pause, sun / moon) sits in a <span> that
+     Alpine shows or hides. Left as inline text, that span is a line of text with the
+     icon standing on its baseline, a few pixels above the middle. As a grid it is just
+     a box around the icon. */
+  .icon-btn > span,
+  .btn > span:has(> .icon:only-child) {
+    display: inline-grid;
+    place-items: center;
+  }
+  /* In a button with text such a wrapper stands where a leading icon would, and takes
+     the same pull towards the edge. The pull is on the wrapper, not on the icon in it:
+     a negative margin inside would narrow the wrapper and squeeze the icon. */
+  .btn > span:has(> .icon:only-child) {
+    margin-left: calc(var(--s2) * -1);
   }
   .kbd {
     display: inline-grid;
@@ -317,6 +335,30 @@
   }
   .spacer {
     flex: 1;
+  }
+  /* A label with its explanation on the left, one control on the right. The text gives
+     way and wraps inside its own column; the control never drops below it, except on a
+     phone, where there is no room beside. */
+  .row--split {
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    gap: var(--s2) var(--s5);
+    & > :first-child {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    /* Whatever stands on the right keeps its own width. */
+    & > :not(:first-child) {
+      flex: none;
+    }
+    & > .spacer {
+      display: none;
+    }
+  }
+  @media (max-width: 36rem) {
+    .row--split {
+      flex-wrap: wrap;
+    }
   }
 
   /* ---- lists ----------------------------------------------------------------------- */

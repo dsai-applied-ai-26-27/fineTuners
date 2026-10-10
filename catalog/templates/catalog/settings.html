@@ -82,18 +82,18 @@
   <section class="section">
     <div class="section-head"><h2>{% icon "tune" %}Appearance and help</h2></div>
     <div class="card stack">
-      <div class="row">
+      <div class="row row--split">
         <div><strong>Tour</strong><p class="faint">Five short steps on how the site is meant to be used. It takes a minute.</p></div>
         <span class="spacer"></span>
         {# The tour's dialog is part of every page (templates/components/tour.html). #}
         <button class="btn btn--tonal" type="button" @click="$dispatch('tour')">{% icon "help" %}Show the tour</button>
       </div>
-      <div class="row">
+      <div class="row row--split">
         <div><strong>Theme</strong><p class="faint">Follows your device until you switch it here. Choosing what your device uses anyway goes back to following it.</p></div>
         <span class="spacer"></span>
         <button class="btn btn--tonal" type="button" @click="toggleTheme()"><span x-show="theme === 'dark'">{% icon "light" %}</span><span x-show="theme === 'light'" x-cloak>{% icon "dark" %}</span><span x-text="theme === 'dark' ? 'Switch to light' : 'Switch to dark'">Switch theme</span></button>
       </div>
-      <div class="row">
+      <div class="row row--split">
         <div><strong>Keyboard shortcuts</strong><p class="faint">Press <span class="kbd">?</span> on any page.</p></div>
         <span class="spacer"></span>
         <button class="btn btn--tonal" type="button" @click="$refs.shortcuts.showModal()">{% icon "keyboard" %}Show the list</button>
