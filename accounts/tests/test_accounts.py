@@ -10,6 +10,7 @@ from django.core.management.base import CommandError
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
+from catalog.models import Course
 from progress.models import Record
 
 User = get_user_model()
@@ -37,6 +38,24 @@ class LandingTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "catalog/landing.html")
         self.assertNotContains(response, "data-user")
+
+    def test_the_landing_page_says_what_the_site_is_for_and_nothing_about_its_courses(self):
+        Course.objects.create(slug="rl", title="Reinforcement Learning", code="RL")
+        # Not one query: nothing is looked up for a visitor who has not signed in.
+        with self.assertNumQueries(0):
+            response = self.client.get("/")
+        self.assertContains(response, "Data&nbsp;Science and&nbsp;AI curriculum")
+        self.assertNotContains(response, "Reinforcement Learning")
+
+    def test_the_figure_on_the_landing_page_shows_the_real_review_schedule(self):
+        """The chart is drawn by tools/make_figure.py from a copy of the schedule the
+        flashcards follow. If the schedule changes, the figure has to be drawn again."""
+        schedule = (settings.BASE_DIR / "static/js/store/progress.js").read_text(encoding="utf-8")
+        days = re.search(r"const INTERVALS = \[([0-9, ]+)\];", schedule).group(1).split(", ")
+        response = self.client.get("/")
+        for wait in days:
+            self.assertContains(response, f"<b>{wait}")
+        self.assertContains(response, " and then ".join([", ".join(days[:-1]), days[-1]]))
 
     def test_pages_carry_a_content_security_policy(self):
         response = self.client.get("/")

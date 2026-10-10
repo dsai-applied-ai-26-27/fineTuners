@@ -1,6 +1,7 @@
 /* The landing page, and the few pages of the sign-in flow that share its frame.
-   Everything here is built from the same tokens as the app: tonal surfaces, the course
-   hues, no gradients. */
+   Everything here is built from the same tokens as the app: tonal surfaces, hairlines
+   instead of boxes, no gradients. The landing page itself is laid out like the cover of
+   a set of notes: one statement, the way in, one figure, and a ruled list. */
 
 @layer pages {
   .landing {
@@ -45,41 +46,64 @@
     font-weight: 600;
   }
 
-  /* ---- hero ------------------------------------------------------------------------ */
-  .hero {
-    display: grid;
-    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
-    align-items: center;
-    gap: var(--s7);
-    padding-top: clamp(var(--s4), 5vh, var(--s7));
-    & h1 {
-      margin-top: var(--s3);
-      font-size: clamp(2.25rem, 4.6vw, 3.6rem);
-      font-weight: 650;
-      line-height: 1.04;
-      letter-spacing: -0.03em;
-      text-wrap: balance;
+  /* ---- the cover: one statement, the way in, one figure ---------------------------- */
+  /* On this page the bar and the foot keep to the same column as the content, so the
+     logo stands over the first letter of the headline however wide the window is. */
+  .landing--cover {
+    & .landing__bar,
+    & .landing__foot {
+      width: min(72rem, 100% - 2 * var(--gutter));
+      margin-inline: auto;
+      padding-inline: 0;
     }
-    & .lead {
-      max-width: 34rem;
-      margin-top: var(--s5);
-      font-size: var(--text-l);
-      line-height: 1.55;
-      color: var(--on-surface-variant);
+    /* The brand link has its own side padding; pull it back so the mark, not the
+       padding, sits on the column's edge. */
+    & .brand {
+      margin-left: calc(-1 * var(--s3));
     }
   }
-  .hero__actions {
+  .cover {
+    --columns: minmax(0, 5fr) minmax(0, 7fr);
+    --between: clamp(var(--s6), 6vw, 5rem);
+    padding-top: clamp(var(--s5), 7vh, var(--s8));
+    /* The one place the reading face is used large: the page is the cover of a set of
+       notes, and reads like one. At this size the font switches to its display cut by
+       itself (optical sizing). */
+    & h1 {
+      max-width: 17em;
+      font-family: var(--font-read);
+      font-size: clamp(2.125rem, 1.1rem + 4.1vw, 3.875rem);
+      font-weight: 500;
+      line-height: 1.07;
+      letter-spacing: -0.022em;
+      text-wrap: balance;
+    }
+  }
+  .cover__body {
+    display: grid;
+    grid-template-columns: var(--columns);
+    align-items: start;
+    gap: var(--between);
+    margin-top: clamp(var(--s6), 5vw, var(--s8));
+  }
+  .cover__lead {
+    max-width: 30rem;
+    font-size: 1.125rem;
+    line-height: 1.6;
+    color: var(--on-surface-variant);
+  }
+  .cover__actions {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: var(--s3);
     margin-top: var(--s6);
   }
-  .hero__small {
-    max-width: 30rem;
+  .cover__small {
+    max-width: 27rem;
     margin-top: var(--s4);
     font-size: var(--text-s);
-    line-height: 1.5;
+    line-height: 1.55;
     color: var(--on-surface-faint);
   }
   /* Google's own button: neutral surface, their mark, their wording. */
@@ -113,142 +137,221 @@
     }
   }
 
-  /* ---- the picture: two panels made of real parts ---------------------------------- */
-  .show {
-    position: relative;
+  /* ---- the figure ------------------------------------------------------------------- */
+  .plate {
+    padding: clamp(var(--s4), 2.6vw, var(--s6));
+    border-radius: var(--r-l);
+    background: var(--surface-raised);
+    box-shadow: inset 0 0 0 1px var(--outline-variant);
+    & figcaption {
+      margin-top: var(--s5);
+      padding-top: var(--s4);
+      border-top: 1px solid var(--outline-variant);
+      font-size: var(--text-s);
+      line-height: 1.6;
+      text-wrap: pretty;
+      color: var(--on-surface-variant);
+    }
+  }
+  .plate__title {
+    margin-bottom: var(--s4);
+    font-weight: 600;
+    letter-spacing: -0.005em;
+  }
+
+  /* The chart (templates/components/recall_figure.html, written by tools/make_figure.py).
+     A grid of three rows: how long each wait is, the plot, the days. The lines are an SVG
+     stretched over the plot; every word and number is HTML placed over it by percentage,
+     so text keeps its size on a narrow screen. */
+  .recall {
     display: grid;
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    padding: var(--s6) 0;
-    /* A block of the page's own colour behind the panels, the way a container sits
-       behind content everywhere else on the site. */
+    grid-template-columns: 2.25rem minmax(0, 1fr);
+    grid-template-areas:
+      ". waits"
+      "scale plot"
+      ". days";
+    column-gap: var(--s3);
+    font-size: var(--text-xs);
+    font-variant-numeric: tabular-nums;
+    color: var(--on-surface-faint);
+  }
+  .recall__waits {
+    grid-area: waits;
+    position: relative;
+    height: 1.625rem;
+    margin-bottom: var(--s3);
+  }
+  /* A bracket over each stretch between two reviews, with its length in days. */
+  .recall__wait {
+    position: absolute;
+    bottom: 0;
+    height: 0.3125rem;
     &::before {
       content: "";
       position: absolute;
-      inset: 0 0 0 14%;
-      border-radius: var(--r-xl);
-      background: var(--primary-container);
+      inset: 0 2px;
+      border: 1px solid var(--outline);
+      border-bottom: 0;
+    }
+    &[data-open]::before {
+      border-right: 0;
+      right: 0;
+    }
+    & b {
+      position: absolute;
+      bottom: calc(100% + 3px);
+      left: 50%;
+      translate: -50% 0;
+      font-weight: 600;
+      white-space: nowrap;
+      color: var(--on-surface-variant);
     }
   }
-  .show__panel {
-    position: relative;
-    padding: var(--s5);
-    border-radius: var(--r-l);
-    background: var(--surface-raised);
-    box-shadow: var(--shadow-2);
-    & .overline {
-      margin-bottom: var(--s3);
-    }
-  }
-  /* The card overlaps the foot of the courses panel, so that foot is left empty. */
-  .show__panel--courses {
-    grid-column: 4 / 12;
-    display: grid;
-    gap: var(--s3);
-    padding-bottom: var(--s7);
-  }
-  .show__panel--card {
-    grid-column: 1 / 10;
-    margin-top: calc(-1 * var(--s6));
-  }
-  .show__row {
-    display: grid;
-    grid-template-columns: 3.75rem 1fr;
-    align-items: center;
-    gap: var(--s3);
-    & .course-card__code {
-      justify-self: start;
-    }
-  }
-  .show__question {
-    font-size: var(--text-l);
-    font-weight: 600;
-    line-height: 1.3;
-  }
-  .show__answer {
-    margin-top: var(--s2);
-    font-family: var(--font-read);
-    color: var(--on-surface-variant);
-    line-height: 1.5;
-  }
-  .show__grades {
+  .recall__scale {
+    grid-area: scale;
     display: flex;
-    flex-wrap: wrap;
-    gap: var(--s2);
-    margin-top: var(--s4);
-    & .chip {
-      opacity: 0.55;
+    flex-direction: column;
+    justify-content: space-between;
+    text-align: right;
+    line-height: 1;
+    /* Each label is centred on its grid line: half a line up at the top, down at the foot. */
+    & span:first-child {
+      translate: 0 -50%;
     }
-    & .show__picked {
-      opacity: 1;
-      box-shadow: inset 0 0 0 2px currentColor;
+    & span:last-child {
+      translate: 0 50%;
+    }
+  }
+  .recall__plot {
+    grid-area: plot;
+    position: relative;
+    aspect-ratio: 2 / 1;
+    & svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+    /* The drawing is stretched to fit, so strokes are told not to stretch with it. */
+    & path {
+      fill: none;
+      vector-effect: non-scaling-stroke;
+    }
+  }
+  .recall__grid {
+    stroke: var(--outline-variant);
+  }
+  .recall__base {
+    stroke: var(--outline);
+  }
+  /* Between the two curves: what reviewing keeps. A wash of the line's own colour. */
+  .recall__plot .recall__kept {
+    fill: color-mix(in oklch, var(--primary) 11%, transparent);
+  }
+  .recall__lost {
+    stroke: var(--on-surface-faint);
+    stroke-width: 1.5;
+    stroke-dasharray: 5 4;
+  }
+  .recall__line {
+    stroke: var(--primary);
+    stroke-width: 2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+  }
+  /* One ring per review, on the 100% line: the moment the card is seen again. */
+  .recall__dot {
+    position: absolute;
+    top: 0;
+    width: 0.5625rem;
+    height: 0.5625rem;
+    margin: -0.28125rem 0 0 -0.28125rem;
+    border-radius: 50%;
+    background: var(--surface-raised);
+    box-shadow: inset 0 0 0 2px var(--primary);
+  }
+  .recall__label {
+    position: absolute;
+    font-size: var(--text-s);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .recall__label--kept {
+    top: 36%;
+    left: 42%;
+    color: var(--primary);
+  }
+  .recall__label--lost {
+    top: 71%;
+    left: 21%;
+    font-weight: 500;
+  }
+  .recall__days {
+    grid-area: days;
+    position: relative;
+    height: 1.5rem;
+    & span,
+    & em {
+      position: absolute;
+      top: var(--s2);
+      line-height: 1;
+    }
+    & span {
+      translate: -50% 0;
+    }
+    /* The unit sits in the corner under the scale, where the two axes meet. */
+    & em {
+      right: calc(100% + var(--s3));
+      font-style: normal;
     }
   }
 
-  /* ---- three steps ------------------------------------------------------------------ */
-  .how {
+  /* ---- what a course holds: a plain list, ruled like a table of contents ------------ */
+  .holds {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--s4);
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    align-items: start;
+    gap: var(--s5) clamp(var(--s6), 6vw, 5rem);
+    padding-top: var(--s7);
+    border-top: 1px solid var(--outline-variant);
   }
-  .how__step {
-    padding: var(--s5);
-    border-radius: var(--r-xl);
-    background: var(--surface-low);
+  .holds__head {
     & h2 {
-      margin-top: var(--s4);
-      font-size: var(--text-xl);
+      font-family: var(--font-read);
+      font-size: var(--text-2xl);
+      font-weight: 500;
       letter-spacing: -0.015em;
     }
     & p {
-      margin-top: var(--s2);
-      color: var(--on-surface-variant);
+      max-width: 21rem;
+      margin-top: var(--s3);
       line-height: 1.55;
+      color: var(--on-surface-faint);
     }
   }
-  .how__icon {
-    display: grid;
-    place-items: center;
-    width: 2.75rem;
-    height: 2.75rem;
-    border-radius: var(--r-m);
-    background: var(--primary-container);
-    color: var(--on-primary-container);
-  }
-
-  /* ---- what is inside --------------------------------------------------------------- */
-  .inside__head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--s2) var(--s5);
-    margin-bottom: var(--s4);
-    & h2 {
-      font-size: var(--text-2xl);
-      letter-spacing: -0.02em;
+  .holds__list {
+    & div {
+      display: grid;
+      grid-template-columns: 12.5rem minmax(0, 1fr);
+      gap: var(--s1) var(--s5);
+      padding: var(--s4) 0;
+      border-top: 1px solid var(--outline-variant);
     }
-  }
-  .inside__grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
-    gap: var(--s3);
-  }
-  .inside__tile {
-    display: grid;
-    justify-items: start;
-    gap: var(--s2);
-    padding: var(--s4) var(--s5) var(--s5);
-    border-radius: var(--r-l);
-    background: var(--primary-container);
-    color: var(--on-primary-container);
-    & strong {
-      font-size: var(--text-l);
-      line-height: 1.25;
+    & div:first-child {
+      padding-top: 0;
+      border-top: 0;
     }
-  }
-  .inside__meta {
-    font-size: var(--text-s);
-    opacity: 0.8;
+    & div:last-child {
+      padding-bottom: 0;
+    }
+    & dt {
+      font-weight: 600;
+    }
+    & dd {
+      line-height: 1.6;
+      color: var(--on-surface-variant);
+    }
   }
 
   /* ---- sign-in flow pages (templates/allauth/layouts/base.html) --------------------- */
@@ -361,14 +464,19 @@
   }
 
   @media (max-width: 56rem) {
-    .hero {
+    .cover__body,
+    .holds {
       grid-template-columns: minmax(0, 1fr);
-      gap: var(--s6);
     }
-    .show {
-      max-width: 30rem;
+    .recall__plot {
+      aspect-ratio: 16 / 9;
     }
-    .how {
+  }
+  @media (max-width: 36rem) {
+    .recall__plot {
+      aspect-ratio: 4 / 3;
+    }
+    .holds__list div {
       grid-template-columns: minmax(0, 1fr);
     }
   }

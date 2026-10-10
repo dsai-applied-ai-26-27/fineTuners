@@ -183,6 +183,19 @@ bitmap sizes into `static/brand/`, and the bare glyph into
 includes so the mark takes the page's own colour. Change the shape there and re-run it;
 do not edit its outputs.
 
+**The landing page** ([catalog/templates/catalog/landing.html](../catalog/templates/catalog/landing.html),
+[static/css/landing.css](../static/css/landing.css)) is laid out like the cover of a set
+of notes: one statement in the reading typeface, the way in, one figure, and a ruled
+list. It loads no JavaScript and is given no course data, so it costs no database
+query. Its figure is a real chart, not decoration:
+[tools/make_figure.py](../tools/make_figure.py) draws how a flashcard is recalled when
+it is reviewed on the site's own schedule (`INTERVALS` in
+[static/js/store/progress.js](../static/js/store/progress.js)) and writes
+[templates/components/recall_figure.html](../templates/components/recall_figure.html).
+The lines are an SVG stretched to fit; every label is HTML placed over it by
+percentage, so text stays readable on a phone. If the schedule changes, change the
+copy in the script and re-run it; a test compares the two.
+
 **JavaScript** ([static/js/](../static/js/)) is plain ES modules.
 [app.js](../static/js/app.js) registers everything with Alpine and starts it.
 
