@@ -82,8 +82,15 @@ if [[ "$code" != 404 ]]; then
 fi
 echo "    $origin is up and refuses requests without the secret"
 
-echo "==> 2/4 signing in to Cloudflare (a browser window opens)"
-wrangler login
+echo "==> 2/4 signing in to Cloudflare"
+# `whoami` exits 0 either way, so go by what it says.
+if wrangler whoami 2>&1 | grep -qi "not authenticated"; then
+	echo "    a browser window opens: press Allow there within about a minute."
+	echo "    If it times out, run 'npx wrangler@4 login' by itself, then this script again."
+	wrangler login
+else
+	echo "    already signed in"
+fi
 
 echo "==> 3/4 storing ORIGIN_URL and ORIGIN_SECRET on the Pages project '$project'"
 secrets="$(mktemp)"

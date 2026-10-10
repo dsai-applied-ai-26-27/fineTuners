@@ -199,6 +199,13 @@ with its Caddyfile mounted from the host.
    It creates a deploy-only SSH key, pins it to `deploy ci` on the server, and stores it
    with the server's address and host key as Actions secrets.
 
+On Windows, start both scripts with Git Bash by its full path. In PowerShell a bare `bash`
+is the WSL launcher, which fails if no Linux is installed:
+
+```
+& "C:\Program Files\Git\bin\bash.exe" deploy/setup-cloudflare.sh <server> dsai3 <origin-url>
+```
+
 Steps 3 and 4 change things only you should change (the server's shared web server, who
 may log in to it, your Cloudflare and GitHub accounts), so they are scripts for you to
 read and run rather than something a session does for you.
