@@ -10,6 +10,22 @@
   <p class="overline">{{ course.code }}{% if course.semester %} · {{ course.semester_label }}{% endif %}{% if course.status == "archived" %} · archived{% endif %}</p>
   <h1>{{ course.title }}</h1>
   {% if course.description %}<p class="lead">{{ course.description }}</p>{% endif %}
+  {% if on_dashboard is not None %}
+  {% comment %} A form, because it changes something: a link could be followed by a crawler or
+     a prefetching browser. `next` brings the person back to this page. {% endcomment %}
+  <form class="mine no-print" method="post" action="{% url 'catalog:enroll' %}">
+    {% csrf_token %}
+    <input type="hidden" name="series" value="{{ course.series }}">
+    <input type="hidden" name="next" value="{{ request.path }}">
+    {% if on_dashboard %}
+    <span class="mine__state">{% icon "check" %}On your dashboard</span>
+    <button class="btn btn--small" type="submit" name="action" value="remove">Remove</button>
+    {% else %}
+    <button class="btn btn--tonal btn--small" type="submit" name="action" value="add">Add to my courses</button>
+    <span class="mine__state">Not on your dashboard</span>
+    {% endif %}
+  </form>
+  {% endif %}
 </header>
 
 {% if not nav %}

@@ -2,6 +2,7 @@ from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
+from ..mine import chosen
 from ..models import Document, QuestionSet
 from .common import load_course
 
@@ -32,6 +33,9 @@ def course(request, course):
         assessments=course.assessments.annotate(n_papers=Count("papers")),
         topics=course.topics.all(),
         palaces=course.palaces.all(),
+        # Whether this course is on the visitor's dashboard: decides which of the two
+        # buttons (Add, Remove) the page shows. None when nobody is signed in.
+        on_dashboard=None if chosen(request) is None else course.series in chosen(request),
     )
     return render(request, "catalog/course.html", context)
 

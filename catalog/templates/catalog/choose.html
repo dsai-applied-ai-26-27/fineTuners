@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block title %}Your courses · DSAI Vault{% endblock %}
+{% block crumbs %}<a href="{% url 'catalog:home' %}">Courses</a>{% icon "next" %}<span>Choose</span>{% endblock %}
+
+{% block content %}
+{% comment %} One form for the first sign-in and for every later change (catalog.views.mine.choose).
+   It works as plain HTML: a ticked box is sent, an unticked one is not. Alpine only adds the
+   running count and the All / None shortcuts. The count is taken from the boxes themselves
+   when Alpine starts, so a box ticked before that, or restored by the browser's Back, is
+   counted too. {% endcomment %}
+<form class="choose" method="post" x-data="{ count: {{ ticked|length }}, tally() { this.count = this.$root.querySelectorAll('input[name=series]:checked').length; } }" x-init="tally()" @change="tally()">
+  {% csrf_token %}
+  <header class="dash-head">
+    <div>
+      <h1>{% if first_time %}Choose your courses{% else %}Your courses{% endif %}</h1>
+      <p class="dash-head__lead">Tick the courses you are taking. They make up your dashboard and the list in the menu, and Next up picks only from them. You can come back and change this at any time.</p>
+    </div>
+  </header>
+
+  {% if error %}<p class="choose__error" role="alert">{% icon "error" %}{{ error }}</p>{% endif %}
+
+  {% for group in groups %}
+  <section class="semester" x-data="{ set(on) { this.$root.querySelectorAll('input[name=series]').forEach((box) => (box.checked = on)); this.$dispatch('change'); } }">
+    <header class="semester__head">
+      <h2>{{ group.title }}</h2>
+      {% if group.note %}<p class="semester__year">{{ group.note }}</p>{% endif %}
+      <p class="choose__all" x-cloak><button type="button" @click="set(true)">All</button><button type="button" @click="set(false)">None</button></p>
+    </header>
+    <div class="semester__body">
+      <div class="choose__list">
+        {% for c in group.courses %}
+        <label class="choose__item tone" style="--hue: {{ c.hue }}">
+          <input type="checkbox" name="series" value="{{ c.series }}"{% if c.series in ticked %} checked{% endif %}>
+          <span class="course-card__code">{{ c.code }}</span>
+          <span class="choose__title">{{ c.title }}</span>
+          <span class="choose__meta">
+            {% if c.ready %}{% if c.counts.reading %}{{ c.counts.reading }} note{{ c.counts.reading|pluralize }}{% endif %}{% if c.counts.reading and c.counts.cards %} · {% endif %}{% if c.counts.cards %}{{ c.counts.cards }} card{{ c.counts.cards|pluralize }}{% endif %}{% if c.counts.questions %} · {{ c.counts.questions }} problem{{ c.counts.questions|pluralize }}{% endif %}
+            {% else %}Not written up yet{% endif %}
+          </span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+  {% empty %}
+  <div class="empty">{% icon "empty" %}<strong>No courses yet</strong><p>Nothing has been published here so far.</p></div>
+  {% endfor %}
+
+  {% if groups %}
+  <div class="choose__foot">
+    <p><strong class="num" x-text="count">{{ ticked|length }}</strong> chosen</p>
+    {% if not first_time %}<a class="btn" href="{% url 'catalog:home' %}">Cancel</a>{% endif %}
+    <button class="btn btn--filled" type="submit">{% if first_time %}Open my dashboard{% else %}Save{% endif %}</button>
+  </div>
+  {% endif %}
+</form>
+{% endblock %}

@@ -34,7 +34,7 @@
     <a class="nav-item" href="{% url 'catalog:home' %}"{% if active == "home" %} aria-current="page"{% endif %}>
       {% icon "home" %}<span class="label">Courses</span>
     </a>
-    {% if nav_courses %}<p class="rail__label">Active</p>{% endif %}
+    {% if nav_courses %}<p class="rail__label">{% if user.is_authenticated %}My courses{% else %}Courses{% endif %}</p>{% endif %}
     {% for item in nav_courses %}
     <a class="nav-item tone" style="--hue: {{ item.hue }}" href="{{ item.get_absolute_url }}">
       <span class="dot"></span><span class="label">{{ item.title }}</span><span class="count">{{ item.code }}</span>

@@ -24,6 +24,8 @@ from django.utils.html import format_html, format_html_join
 from progress.models import Attempt, Day, Ledger, Record
 from progress.sync import forget
 
+from .models import Enrollment
+
 User = get_user_model()
 
 admin.site.unregister(User)
@@ -65,9 +67,9 @@ class PersonAdmin(UserAdmin):
             },
         ),
         ("Account", {"fields": ["signs_in_with", "date_joined", "last_login"]}),
-        ("Study progress", {"fields": ["progress"]}),
+        ("Study progress", {"fields": ["courses", "progress"]}),
     ]
-    readonly_fields = ["signs_in_with", "date_joined", "last_login", "progress"]
+    readonly_fields = ["signs_in_with", "date_joined", "last_login", "courses", "progress"]
 
     # -- what may be done -----------------------------------------------------------------
 
@@ -131,6 +133,10 @@ class PersonAdmin(UserAdmin):
     def signs_in_with(self, user):
         providers = sorted({account.provider.title() for account in user.socialaccount_set.all()})
         return ", ".join(providers) or "No linked account (a local or development user)"
+
+    @admin.display(description="On their dashboard")
+    def courses(self, user):
+        return ", ".join(sorted(Enrollment.objects.series_of(user))) or "No course chosen yet."
 
     @admin.display(description="By course")
     def progress(self, user):

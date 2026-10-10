@@ -9,8 +9,11 @@
     <h1>Your courses</h1>
     <p class="dash-head__lead">The site picks one thing for you to do next. Everything else is inside the course it belongs to.</p>
   </div>
-  {# Opens the tour (templates/components/tour.html listens for this event). #}
-  <button class="btn btn--outlined btn--small no-print" type="button" @click="$dispatch('tour')">{% icon "help" %}How it works</button>
+  <div class="dash-head__tools no-print">
+    {% if user.is_authenticated %}<a class="btn btn--outlined btn--small" href="{% url 'catalog:choose' %}">{% icon "tune" %}Choose courses</a>{% endif %}
+    {# Opens the tour (templates/components/tour.html listens for this event). #}
+    <button class="btn btn--outlined btn--small" type="button" @click="$dispatch('tour')">{% icon "help" %}How it works</button>
+  </div>
 </header>
 
 <div class="dash-band">
@@ -63,7 +66,9 @@
 <div class="empty">
   {% icon "empty" %}
   <strong>No courses yet</strong>
-  {% if user.is_staff or debug %}
+  {% if others %}
+  <p>None of the courses you chose is here at the moment. <a class="link" href="{% url 'catalog:choose' %}">Choose courses</a></p>
+  {% elif user.is_staff or debug %}
   <p>Create one with <code>manage.py startcourse rl --title "Reinforcement Learning"</code>,<br>then run <code>manage.py sync_content</code>.</p>
   {% else %}
   <p>Nothing has been published here so far.</p>
@@ -77,6 +82,10 @@
   <summary class="semester__head"><h2>Archived</h2><span class="semester__year">{{ archived.courses|length }}</span>{% icon "expand" %}</summary>
   {% include "components/course_group.html" with group=archived %}
 </details>
+{% endif %}
+
+{% if others and user.is_authenticated %}
+<p class="dash-more no-print">{{ others }} other course{{ others|pluralize }} {{ others|pluralize:"is,are" }} not on your dashboard. <a class="link" href="{% url 'catalog:choose' %}">Choose courses</a></p>
 {% endif %}
 {% endblock %}
 

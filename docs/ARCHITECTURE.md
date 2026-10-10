@@ -321,6 +321,28 @@ disk: an account may hold at most `LIMITS` rows of each kind
 ([progress/sync.py](../progress/sync.py)), far above honest use, and Django refuses a
 request body over 2.5 MB before the view sees it (`DATA_UPLOAD_MAX_MEMORY_SIZE`).
 
+**Choosing courses.** A person says which courses they take, and the dashboard, the
+list in the navigation and Next up then show those and nothing else. It decides what
+is put in front of someone, not what they may open: any course can still be reached
+by its address or by searching, and its page has a button to add or remove it.
+
+- The choice is one small table, `Enrollment` in
+  [accounts/models.py](../accounts/models.py): a user and a course's `series`, as text.
+  Not a foreign key to `catalog.Course`, because those rows are a cache that can be
+  rebuilt; and the series rather than the slug, so that next year's edition of a
+  course takes its place without anyone choosing again. Operations on the table live
+  on its **manager** (`Enrollment.objects.series_of`, `.replace`).
+- [catalog/mine.py](../catalog/mine.py) narrows a list of courses to one person's
+  (`mine`), asking the database once per request (`chosen`). The dashboard view and
+  the context processor both go through it.
+- [catalog/views/mine.py](../catalog/views/mine.py) has the page with the tick boxes
+  (`/my-courses/`, a plain HTML form, POST then redirect) and the address the button
+  on a course posts to. Someone with nothing chosen is sent to that page instead of
+  the dashboard, which is what makes it the first thing after the first sign-in.
+  Courses they already have progress in come ticked.
+- Where the site runs open, with nobody signed in, there is nothing to choose and
+  every course is shown.
+
 **People in the admin.** [accounts/admin.py](../accounts/admin.py) replaces Django's own
 user admin with a narrower one. The list shows each person with how much they have
 graded and when they last studied, computed by correlated subqueries (`Subquery` with

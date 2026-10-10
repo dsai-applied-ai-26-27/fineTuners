@@ -64,7 +64,7 @@ and they could not be more different:
 
 | | Course content | People |
 |---|---|---|
-| Tables | `catalog_*` | `auth_user`, `socialaccount_*`, `progress_*`, sessions |
+| Tables | `catalog_*` | `auth_user`, `socialaccount_*`, `accounts_enrollment` (the courses each person chose), `progress_*`, sessions |
 | Written by | `manage.py sync_content`, from the course files | the site itself: a sign-in creates the person, [progress/sync.py](../progress/sync.py) stores what they did |
 | If lost | deploy and publish: it is all back | gone, unless there is a backup |
 
@@ -306,7 +306,8 @@ On a new server, start at [Setting it up from scratch](#setting-it-up-from-scrat
   Google's consent screen links to it. `DSAI_CONTACT_EMAIL` in the server's `.env` adds
   an address for questions to it.
 - About each person the site stores what Google hands over at sign-in (name, e-mail
-  address, Google's id for the account) and their study progress. No passwords. A person
+  address, Google's id for the account), which courses they chose, and their study
+  progress. No passwords. A person
   can delete all of it from Settings; deleting the user in the admin does the same.
 - No secret is in the repository, in an image, or in a log. `.env` on the server is
   readable by its owner only.

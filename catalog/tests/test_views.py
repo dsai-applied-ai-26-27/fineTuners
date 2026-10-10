@@ -9,6 +9,7 @@ from django.test import SimpleTestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
+from accounts.models import Enrollment
 from catalog.models import Course
 from catalog.views.home import dashboard_groups
 from ingest.tests.base import CourseTestCase
@@ -47,8 +48,12 @@ COURSE_PAGES = [
 
 def sign_in(test):
     """Every page needs a signed-in person. force_login skips the sign-in form and puts
-    a session for this user straight into the test client."""
+    a session for this user straight into the test client.
+
+    The person has already chosen every course there is at this moment, so the dashboard
+    shows them; choosing itself is tested in test_mine.py."""
     user = get_user_model().objects.create_user("reader", email="reader@example.test")
+    Enrollment.objects.replace(user, Course.objects.values_list("series", flat=True))
     test.client.force_login(user)
     return user
 
@@ -153,7 +158,10 @@ class PageTests(CourseTestCase):
     def test_a_course_with_nothing_in_it_is_named_but_not_offered(self):
         """It gets no card, no place in the navigation and no row in Settings: each of
         those would be a button leading to an empty page."""
-        Course.objects.create(slug="rl", title="Reinforcement Learning", code="RL", semester=1)
+        Course.objects.create(
+            slug="rl", series="rl", title="Reinforcement Learning", code="RL", semester=1
+        )
+        Enrollment.objects.create(user=self.user, series="rl")  # chosen, and still empty
         response = self.get("home")
         group = response.context["groups"][0]
         self.assertEqual([c.slug for c in group["ready"]], [C])
@@ -264,9 +272,10 @@ class PageTests(CourseTestCase):
         """A guard against N+1 queries: the count must not grow with the content.
 
         Two of each are for the request itself: the session, then the signed-in user.
-        The course's front page has one more than before for its years."""
+        The course's front page has two more: its years, and whether this person has
+        it on their dashboard."""
         self.get("course", C)  # warm the per-course cache
-        with self.assertNumQueries(9):
+        with self.assertNumQueries(10):
             self.get("course", C)
         with self.assertNumQueries(5):
             self.get("deck", C, "least-squares")

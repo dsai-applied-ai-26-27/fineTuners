@@ -24,6 +24,10 @@ urlpatterns = [
     path("search/", views.search, name="search"),
     path("settings/", views.settings_page, name="settings"),
     path("privacy/", views.privacy, name="privacy"),
+    # Which courses are on your dashboard: the page with the tick boxes, and the
+    # address the Add / Remove button on a course posts to.
+    path("my-courses/", views.choose, name="choose"),
+    path("my-courses/change/", views.enroll, name="enroll"),
     path("courses/<slug:course>/", views.course, name="course"),
     path("courses/<slug:course>/topics/<slug:key>/", views.topic, name="topic"),
     path("courses/<slug:course>/cards/", views.cards, name="cards"),

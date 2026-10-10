@@ -72,7 +72,8 @@ uv run ruff check . && uv run ruff format .           lint and format
 config/      Django project: settings, root URL config
 catalog/     the site: models, views, URLs, templates, template tags
 progress/    each person's grades and marks, and the endpoint the browser saves them to
-accounts/    the pieces around signing in that are ours (the rest is django-allauth)
+accounts/    the pieces around signing in that are ours (the rest is django-allauth), and
+             which courses each person chose for their dashboard
 ingest/      files -> database: schemas, Markdown renderer, sync, management commands
 templates/   base page and shared fragments
 static/      CSS, JavaScript (no build step), vendored libraries, fonts, icons
@@ -100,7 +101,8 @@ To sign in locally press "Development sign-in" on the landing page.
   is a new folder whose `course.yaml` says `series: <first folder>`; never rewrite a
   finished year in place, because people's progress is keyed to its ids.
 - The database holds two kinds of table. `catalog_*` is a cache of the course files and may
-  be rebuilt at will. Users and `progress_*` exist nowhere else: never delete `db.sqlite3`
+  be rebuilt at will. Users, `progress_*` and `accounts_*` (the courses each person
+  chose) exist nowhere else: never delete `db.sqlite3`
   on the server, and write a migration for any change to those models.
 - Every view needs a signed-in person unless it is marked `@login_not_required`. A new page
   is private by default; think before marking one public.
