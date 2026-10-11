@@ -1,0 +1,12 @@
+{% comment %} The points of one `update` (catalog/news.py), for the dialog and for the page that lists
+   them all. `{% url point.link %}` takes the name of the address from the data: the tag
+   accepts a variable as well as a quoted name. {% endcomment %}
+<ul class="news__points">
+  {% for point in update.points %}
+  <li>
+    <strong>{{ point.title }}</strong>
+    <span>{{ point.text }}</span>
+    {% if point.link %}<a class="link" href="{% url point.link %}">{{ point.label|default:"Open" }}</a>{% endif %}
+  </li>
+  {% endfor %}
+</ul>

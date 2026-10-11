@@ -24,7 +24,7 @@
         <span class="spacer"></span>
         <form method="post" action="{% url 'account_logout' %}">{% csrf_token %}<button class="btn btn--tonal" type="submit">Sign out</button></form>
       </div>
-      <p class="faint mt-4">Signed in with Google. The site stores your name, your e-mail address and your study progress, and nothing else. <a class="link" href="{% url 'catalog:privacy' %}">Privacy</a> · <a class="link" href="{% url 'catalog:terms' %}">Terms</a></p>
+      <p class="faint mt-4">Signed in with Google. The site stores your name, your e-mail address, your study progress and what you send it yourself (a request, an educator application), and nothing else. <a class="link" href="{% url 'catalog:privacy' %}">Privacy</a> · <a class="link" href="{% url 'catalog:terms' %}">Terms</a></p>
       <div class="row mt-4">
         <span class="spacer"></span>
         <button class="btn" type="button" @click="$refs.remove.showModal()">{% icon "delete" %}Delete my account</button>
@@ -83,10 +83,15 @@
     <div class="section-head"><h2>{% icon "tune" %}Appearance and help</h2></div>
     <div class="card stack">
       <div class="row row--split">
-        <div><strong>Tour</strong><p class="faint">Five short steps on how the site is meant to be used. It takes a minute.</p></div>
+        <div><strong>Tour</strong><p class="faint">A few short steps on how the site is meant to be used. It takes a minute, and it always shows the site as it is now.</p></div>
         <span class="spacer"></span>
         {# The tour's dialog is part of every page (templates/components/tour.html). #}
         <button class="btn btn--tonal" type="button" @click="$dispatch('tour')">{% icon "help" %}Show the tour</button>
+      </div>
+      <div class="row row--split">
+        <div><strong>What's new</strong><p class="faint">What changed on the site, and what came after you took the tour.</p></div>
+        <span class="spacer"></span>
+        <a class="btn btn--tonal" href="{% url 'catalog:whats_new' %}">{% icon "history" %}See the changes</a>
       </div>
       <div class="row row--split">
         <div><strong>Theme</strong><p class="faint">Follows your device until you switch it here. Choosing what your device uses anyway goes back to following it.</p></div>

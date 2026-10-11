@@ -10,7 +10,7 @@
   <p class="overline">{{ course.code }}{% if course.semester %} · {{ course.semester_label }}{% endif %}{% if course.status == "archived" %} · archived{% endif %}</p>
   <h1>{{ course.title }}</h1>
   {% if course.description %}<p class="lead">{{ course.description }}</p>{% endif %}
-  {% if on_dashboard is not None %}
+  {% if on_dashboard is not None and not closed %}
   {% comment %} A form, because it changes something: a link could be followed by a crawler or
      a prefetching browser. `next` brings the person back to this page. {% endcomment %}
   <form class="mine no-print" method="post" action="{% url 'catalog:enroll' %}">
@@ -29,15 +29,29 @@
 </header>
 
 {% if not nav %}
+{% comment %} Nothing to study yet. On the year being taught now the page says whether someone is
+   writing the course, and offers the two things a student can do about it: ask, or write
+   it (the pages of the desk app). An earlier year is finished and asks for nothing. {% endcomment %}
 <div class="empty">
   {% icon "empty" %}
-  <strong>Nothing here yet</strong>
+  <strong>No content yet</strong>
+  {% if not is_current %}
+  <p>Nothing was written up for this year.</p>
+  {% elif has_educator %}
+  <p>This course is being written. It fills in as the lectures go by.</p>
+  {% else %}
+  <p>Nobody is writing this course yet. The courses here are written by students who took them.</p>
+  {% endif %}
+  {% if is_current and user.is_authenticated and not closed %}
+  <p class="empty__actions">
+    <a class="btn btn--filled" href="{% url 'desk:ask' %}?course={{ course.series }}&amp;kind=content">Ask for it</a>
+    {% if not has_educator %}<a class="btn btn--tonal" href="{% url 'desk:apply' %}?course={{ course.series }}">Become its educator</a>{% endif %}
+  </p>
+  {% endif %}
   {# How to fill it is for whoever writes the content, not for someone who came to study. #}
   {% if user.is_staff or debug %}
-  <p>Put lecture slides, labs and homework under <code>courses/{{ course.slug }}/source/</code>.<br>
-  Then start a content session (see <code>docs/AUTHORING.md</code>) and run <code>manage.py sync_content {{ course.slug }}</code>.</p>
-  {% else %}
-  <p>This course has not been written up yet.</p>
+  <p class="empty__author">Put lecture slides, labs and homework in this course's <code>source/</code> folder,
+  start a content session (<code>docs/AUTHORING.md</code>), then run <code>manage.py sync_content {{ course.slug }}</code>.</p>
   {% endif %}
 </div>
 {% else %}
@@ -194,5 +208,13 @@
   </section>
   {% endif %}
 </div>
+
+{% if user.is_authenticated and not closed %}
+{# The way to say that something is missing or wrong, where it is noticed. #}
+<p class="course-ask no-print">
+  Something missing or wrong in this course? <a class="link" href="{% url 'desk:ask' %}?course={{ course.series }}&amp;from={{ request.path|urlencode }}">Ask or report</a>
+  {% if is_current and not has_educator %}<span>Nobody keeps this course up to date at the moment. <a class="link" href="{% url 'desk:apply' %}?course={{ course.series }}">Become its educator</a></span>{% endif %}
+</p>
+{% endif %}
 {% endif %}
 {% endblock %}

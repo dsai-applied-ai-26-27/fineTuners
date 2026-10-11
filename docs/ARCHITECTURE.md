@@ -21,7 +21,7 @@ HTML page  +  static/js (Alpine)  +  progress: a copy in the browser,
                                      kept in step with progress/ on the server
 ```
 
-Four Django **apps** of our own, listed in `INSTALLED_APPS` in
+Five Django **apps** of our own, listed in `INSTALLED_APPS` in
 [config/settings.py](../config/settings.py):
 
 - **`catalog`** owns the course tables and every page.
@@ -30,12 +30,14 @@ Four Django **apps** of our own, listed in `INSTALLED_APPS` in
 - **`progress`** owns what a signed-in person has done, and the one endpoint that saves it.
 - **`accounts`** is the little that is ours around signing in. The sign-in itself is
   django-allauth's.
+- **`desk`** owns what people send to whoever runs the site (requests, applications to
+  write a course), who writes which course, and the owner's switches for a course.
 
 The split between files and database is the main design decision: content is written as
 files (so an AI can author it and a human can read a diff), but served from a database (so
 pages are simple queries). The `catalog` tables can be emptied at any time; `migrate` and
-`sync_content` rebuild them. The `progress` and user tables cannot: they are the only
-data here that does not come from a file.
+`sync_content` rebuild them. The user tables and those of `progress`, `accounts` and
+`desk` cannot: they are the only data here that does not come from a file.
 
 ## A request, start to finish
 
@@ -95,7 +97,9 @@ changing a model run `manage.py makemigrations` then `migrate`. Commit the migra
 **Admin.** [catalog/admin.py](../catalog/admin.py) registers every model read-only
 (`has_change_permission` returns `False`), because an edit there would be overwritten by the
 next sync. It is a browser for what the importer produced. People are the exception:
-see [Accounts and progress](#accounts-and-progress).
+see [Accounts and progress](#accounts-and-progress). So are the two things about a
+course that the owner decides and no file does, which are actions on the Courses list:
+see [The desk](#the-desk-requests-educators-and-the-owners-switches).
 
 ## The ingest pipeline
 
@@ -159,7 +163,7 @@ plugins for maths, callouts, footnotes, definition lists, task lists and attribu
   an active course first, the latest on top, finished semesters after. A course without
   a semester falls back to its year, or to the Archived fold once it is archived.
 - `load_course()` returns the course and the shared context: navigation, counts and the
-  manifest. [catalog/nav.py](../catalog/nav.py) builds those once per sync and caches them
+  manifest. It answers 404 for a course the owner has not opened, except to staff. [catalog/nav.py](../catalog/nav.py) builds those once per sync and caches them
   with Django's cache framework under a key that includes the course's content hash, so a
   new sync simply uses a new key.
 - Navigation lists only sections that have content.
@@ -209,13 +213,32 @@ only.
 
 **The tour** ([templates/components/tour.html](../templates/components/tour.html),
 [static/js/components/tour.js](../static/js/components/tour.js)) is a `<dialog>` that is
-part of every page. It opens by itself the first time someone reaches the dashboard
-in a browser; the server only says where that offer is made (`tour(true)` on the
-dashboard). Anything else opens it by dispatching a `tour` event, which the dashboard's
-"How it works" button and Settings do. That it has been seen is a preference of the
-browser (`pref` / `setPref` on the progress store): kept in localStorage with the
-progress, never sent to the server, so a second device offers it once more. Its
-steps are stacked in one grid cell, which keeps the dialog the height of the tallest.
+part of every page. It opens by itself once, the first time a person reaches their
+dashboard, and whenever something dispatches a `tour` event, which the dashboard's
+"How it works" button and Settings do. Its steps are stacked in one grid cell, which
+keeps the dialog the height of the tallest. There is one tour: it is rewritten when the
+site changes and always describes the site as it is.
+
+**What a person has been shown** is a fact about the account, not about a browser
+([catalog/welcome.py](../catalog/welcome.py), `accounts.Profile`). `welcome(request)`
+decides what the dashboard and a course's front page offer unasked: the tour for
+someone who has never taken it, otherwise the updates they have not seen, never both.
+The moment either dialog opens, the browser posts to `/whats-new/seen/`
+([static/js/seen.js](../static/js/seen.js)) with the number of the latest update the
+page was built with, so a second device does not offer it again. It is a POST from the
+browser and not something the view does while rendering, because showing a page must
+not change anything. On the open site, where there is no account, the browser remembers
+the tour as before and there is no news.
+
+**What's new** ([catalog/news.py](../catalog/news.py),
+[templates/components/news.html](../templates/components/news.html)). Updates are a
+list in code, numbered upwards, newest first; announcing something is adding an entry at
+the top. A profile stores the number current when the person took the tour
+(`tour_update`) and the last number shown to them (`news_seen`). Taking the tour counts
+as having seen everything so far. `/whats-new/` lists them all and marks those that came
+after the person's tour. People who had an account before profiles existed were given
+one by a data migration saying they toured at update 0: they are not walked through the
+site again, and are told what changed instead.
 
 **JavaScript** ([static/js/](../static/js/)) is plain ES modules.
 [app.js](../static/js/app.js) registers everything with Alpine and starts it.
@@ -231,8 +254,9 @@ steps are stacked in one grid cell, which keeps the dialog the height of the tal
 - `store/timer.js` is the focus timer. It stores when the block *ends*, so it survives
   navigation and reloads.
 - `components/` has one module per interactive piece: `flashcards`, `paper`, `palace`,
-  `cover`, `nextup`, `settings`, `shell`, `tour`, and `widgets` (small progress
+  `cover`, `nextup`, `settings`, `shell`, `tour`, `news`, and `widgets` (small progress
   read-outs).
+- `seen.js` tells the server that the tour or the news was shown.
 - `math.js` typesets `.math` nodes with KaTeX and adds callout icons. The `x-math` directive
   does the same for HTML inserted later.
 
@@ -364,6 +388,75 @@ Confident" ([catalog/templates/catalog/document.html](../catalog/templates/catal
 stored as the same record under the key `doc:<kind>:<slug>`. A plan phase stays a yes/no
 mark.
 
+## The desk: requests, educators and the owner's switches
+
+[desk/](../desk/) is the app for what reaches the person who runs the site, and for the
+people who write courses. Like `progress` and `accounts`, its tables are real data.
+
+**Models** ([desk/models.py](../desk/models.py)). Every one names a course by its
+`series`, as text, for the same reasons as `Enrollment`.
+
+- `Request`: something a person sent: content they miss, a fault, an idea. It has a
+  status and an `answer`, which the person reads on the page they sent it from.
+- `EducatorApplication`: an offer to write a course, with a name, a phone number, the
+  year of study and how they would write it. One per person and course; sending the form
+  again updates it. `decide()` answers it, and accepting is what creates the role.
+- `Educator`: the role. This person writes this course.
+- `CourseSetting`: the owner's two switches for a course, each with three positions:
+  empty ("as the course file says"), yes, no.
+
+**Two questions about a course** ([desk/switches.py](../desk/switches.py)): is it open
+to students, and is someone writing it? Each starts from the course's own file
+(`enabled`, `has_educator` in `course.yaml`), and the owner's switch, once used, wins.
+An accepted educator also counts as someone writing it. The switches are not columns of
+`catalog.Course` because that table is rebuilt from files; a test deletes every course
+and checks that a switch is still in force afterwards. One `Switches` object per request
+answers for every course from two queries.
+
+- A course that is not open is left out of [catalog/mine.py](../catalog/mine.py)'s
+  `catalogue(request)`, which the dashboard, the navigation, the page for choosing
+  courses and both forms start from; search and Settings filter the same way; and
+  `load_course()` answers 404 for it. Staff are the exception there, with a banner:
+  that is how the owner reads a course before opening it.
+- A course with nothing in it says so on the page of its current year
+  ([catalog/templates/catalog/course.html](../catalog/templates/catalog/course.html))
+  and offers to ask for it, and, unless someone writes it, to apply to become its
+  educator. An earlier year asks for nothing.
+
+**The pages** ([desk/views.py](../desk/views.py), [desk/forms.py](../desk/forms.py)).
+`/ask/` and `/educators/apply/` are `ModelForm`s: the form is built from the model, the
+view adds what the form cannot know (who is asking, with `save(commit=False)`), and a
+successful POST redirects. The form only offers, and so only accepts, the courses this
+person can see. `/educators/` explains the role, lists the courses nobody writes, and for
+an educator shows their course, how to hand work in, and what was asked about it. They
+see the question and not who asked; they can mark it done with a line of answer.
+
+**Telling the owner** ([desk/notify.py](../desk/notify.py)). When a request or an
+application is stored, a short message goes to the owner's notification bot. The view
+queues it with `transaction.on_commit`, so it is sent only once the row is really in the
+database, and from a separate thread, so the person never waits for it and never sees it
+fail. The message says that something arrived, for which course, and where in the admin
+to read it; it never carries a name, a phone number or what was written, which is what
+keeps the privacy page true. Failures that may pass (no answer, a 5xx) are tried twice
+more; a refusal is final. Without `BMO_NOTIFY_URL` and `BMO_NOTIFY_TOKEN` nothing is
+sent, and the address must be https because the token travels in a header.
+
+**In the admin** ([desk/admin.py](../desk/admin.py)). Requests and applications are
+listed and answered there; what the person wrote is read-only. Accepting an application
+(an action on the list, or the status on its page) calls `decide()`. The switches are
+actions on the Courses list ([catalog/admin.py](../catalog/admin.py)), whose columns say
+whether students see each course and who writes it; the join by series is done with
+`Subquery`, as in the people admin.
+
+**Why an educator is not given the admin.** The admin is one door: `is_staff` opens all
+of it, and narrowing it per table and per course is work that would have to be right
+every time. More to the point, the course tables are a cache. A row added there is gone
+at the next sync, because content only ever arrives as files. So an educator works where
+the content really lives: the course files, kept in a private repository of their own
+with instructions for an AI assistant (see [DEPLOYMENT.md](DEPLOYMENT.md#the-content-repository)).
+What they hand in is a pull request, the owner's review is the merge, and `publish`
+puts it on the site.
+
 ## Tests
 
 `manage.py test` runs Django's test runner.
@@ -381,6 +474,14 @@ mark.
 - [accounts/tests/](../accounts/tests/): who is sent to the landing page, the sign-in flow
   is reachable signed out, the development sign-in is closed outside DEBUG, deleting an
   account takes its progress with it.
+
+- [desk/tests/](../desk/tests/): asking, applying, the educator's page, the switches
+  and a closed course, the admin actions, and that a notification never carries what a
+  person wrote. The bot is never contacted: the one function that opens a connection is
+  replaced. Code queued with `transaction.on_commit` does not run inside a test's
+  transaction, so those tests use `captureOnCommitCallbacks(execute=True)`.
+- [catalog/tests/test_welcome.py](../catalog/tests/test_welcome.py): who is offered the
+  tour, who the news, and that each is offered once per account.
 
 A test that needs a signed-in person calls `self.client.force_login(user)`, which puts a
 session for that user into the test client without going through a sign-in page.

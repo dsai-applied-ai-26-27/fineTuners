@@ -25,6 +25,10 @@ services:
       DSAI_REQUIRE_LOGIN: ${DSAI_REQUIRE_LOGIN:-1}
       # Optional: an address for questions, shown on the privacy page.
       DSAI_CONTACT_EMAIL: ${DSAI_CONTACT_EMAIL:-}
+      # Optional: the owner's notification bot, told when a request or an educator
+      # application arrives (desk/notify.py). Empty: they are stored and nobody is told.
+      BMO_NOTIFY_URL: ${BMO_NOTIFY_URL:-}
+      BMO_NOTIFY_TOKEN: ${BMO_NOTIFY_TOKEN:-}
     volumes:
       - data:/data # the database and the images copied from course content
       - ./courses:/courses:ro # course files, replaced by `deploy content`

@@ -3,6 +3,10 @@
     manage.py startcourse rl --title "Reinforcement Learning" --code RL --year 2026-27
 
 Mirrors Django's own `startapp`: copies a template and fills in the blanks.
+
+Where the courses folder is kept in semester folders (`semester-5/rl/`), a new course with
+`--semester` goes into the folder of its semester. Otherwise it goes directly into the
+courses folder. Either way its address is its own name.
 """
 
 import json
@@ -17,10 +21,12 @@ from ingest.discover import DOCUMENT_DIRS, SLUG, SOURCE_DIRS, find_courses
 TEMPLATE = Path(__file__).resolve().parents[2] / "course_template"
 CONTENT_DIRS = [*DOCUMENT_DIRS, "decks", "problems", "exams", "reference", "memory/palaces"]
 SERIES_HINT = "# series: <folder of the first year>   only when this is another year of that course"
+# How the folders that group courses by semester are named: semester-1, semester-2, ...
+SEMESTER_FOLDER = "semester-"
 
 
 class Command(BaseCommand):
-    help = "Create courses/<slug>/ with course.yaml and the source/ and content/ folders."
+    help = "Create a course folder with course.yaml and the source/ and content/ folders."
 
     def add_arguments(self, parser):
         parser.add_argument("slug", help="Short address, e.g. rl or mai3.")
@@ -39,14 +45,30 @@ class Command(BaseCommand):
             help="Semester of the programme, 1-12. The dashboard groups courses by it.",
         )
         parser.add_argument("--hue", type=int, help="Course colour, 0-359 (default: spread out).")
+        parser.add_argument(
+            "--closed",
+            action="store_true",
+            help="Students do not see the course until it is opened in the admin.",
+        )
+        parser.add_argument(
+            "--has-educator",
+            action="store_true",
+            help="Someone is writing it already: its page does not ask for an educator.",
+        )
 
     def handle(self, *args, **options):
         slug = options["slug"]
         if not SLUG.match(slug):
             raise CommandError("The slug may only use lowercase letters, digits and hyphens.")
         existing = find_courses(settings.CONTENT_ROOTS)
-        target = Path(settings.COURSES_DIR) / slug
-        if slug in existing or target.exists():
+        home = Path(settings.COURSES_DIR)
+        semester = options["semester"]
+        # Follow what is there: semester folders are used only where they already are.
+        grouped = semester and home.is_dir() and any(home.glob(f"{SEMESTER_FOLDER}*/"))
+        target = home / f"{SEMESTER_FOLDER}{semester}" / slug if grouped else home / slug
+        if slug in existing:
+            raise CommandError(f"{existing[slug]} already exists.")
+        if target.exists():
             raise CommandError(f"{target} already exists.")
 
         series = options["series"]
@@ -71,6 +93,8 @@ class Command(BaseCommand):
             "year": json.dumps(options["year"], ensure_ascii=False),
             "series": f"series: {series}" if series else SERIES_HINT,
             "semester": options["semester"] or "",
+            "enabled": "false" if options["closed"] else "true",
+            "has_educator": "true" if options["has_educator"] else "false",
             "hue": hue,
             "order": len(existing),
         }

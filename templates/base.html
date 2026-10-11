@@ -43,6 +43,15 @@
     {% endblock %}
 
     <div class="rail__foot">
+      {% if user.is_authenticated %}
+      {# Both need an account: what is sent belongs to a person. The form is told which page (and course) it was opened from. #}
+      <a class="nav-item" href="{% url 'desk:ask' %}?{% if course %}course={{ course.slug }}&amp;{% endif %}from={{ request.path|urlencode }}"{% if active == "ask" %} aria-current="page"{% endif %}>
+        {% icon "flag" %}<span class="label">Ask or report</span>
+      </a>
+      <a class="nav-item" href="{% url 'desk:educators' %}"{% if active == "educators" %} aria-current="page"{% endif %}>
+        {% icon "guide" %}<span class="label">Educators</span>
+      </a>
+      {% endif %}
       <a class="nav-item" href="{% url 'catalog:search' %}"{% if active == "search" %} aria-current="page"{% endif %}>
         {% icon "search" %}<span class="label">Search</span><span class="kbd">/</span>
       </a>
@@ -81,6 +90,12 @@
 
     <main class="page" id="main">
       <div class="page__inner {% block inner_class %}{% endblock %}">
+        {% if closed %}
+        <div class="banner" role="status">
+          {% icon "hidden" %}
+          <span>Students cannot see this course yet; you can, as an administrator. To open it: Admin, Courses, tick it, <strong>Open to students</strong>.</span>
+        </div>
+        {% endif %}
         {% if stale %}
         <div class="banner" role="status">
           {% icon "sync" %}
@@ -94,6 +109,7 @@
 
   {% include "components/dialogs.html" %}
   {% include "components/tour.html" %}
+  {% if welcome.news %}{% include "components/news.html" %}{% endif %}
 </div>
 
 {# json_script prints data as JSON inside an inert <script> tag, safely escaped. #}

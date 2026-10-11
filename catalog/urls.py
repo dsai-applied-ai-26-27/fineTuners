@@ -25,6 +25,9 @@ urlpatterns = [
     path("settings/", views.settings_page, name="settings"),
     path("privacy/", views.privacy, name="privacy"),
     path("terms/", views.terms, name="terms"),
+    # What changed on the site, and where the browser reports having shown it (or the tour).
+    path("whats-new/", views.whats_new, name="whats_new"),
+    path("whats-new/seen/", views.seen, name="seen"),
     # Which courses are on your dashboard: the page with the tick boxes, and the
     # address the Add / Remove button on a course posts to.
     path("my-courses/", views.choose, name="choose"),

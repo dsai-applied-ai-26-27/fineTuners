@@ -9,6 +9,7 @@ from .mine import choose, enroll
 from .practice import cards, deck, problem_set, problems, review
 from .reference import cheatsheet, formulas, glossary
 from .source import source_file
+from .welcome import seen, whats_new
 
 __all__ = [
     "assessment",
@@ -32,8 +33,10 @@ __all__ = [
     "problems",
     "review",
     "search",
+    "seen",
     "settings_page",
     "source_file",
     "terms",
     "topic",
+    "whats_new",
 ]

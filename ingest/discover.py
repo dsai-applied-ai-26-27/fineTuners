@@ -9,6 +9,11 @@ A file's meaning comes only from where it sits, so authors never declare a type:
     <course>/content/exams/<assessment>/assessment.yaml  +  <paper>.yaml
     <course>/content/reference/formulas.yaml | glossary.yaml | cheatsheet.md
     <course>/content/memory/hooks.yaml  |  memory/palaces/<palace>.yaml
+
+A course folder sits directly in the courses folder, or one level down inside a folder that
+only groups courses (`semester-5/rl/`). Grouping is for the people who keep the files: a
+course's address is its own folder's name wherever it sits, and the site never sees the
+group.
 """
 
 import hashlib
@@ -56,18 +61,54 @@ class CourseFiles:
         return Path(path).relative_to(self.root).as_posix()
 
 
+def _folders(directory):
+    return sorted(
+        child
+        for child in directory.iterdir()
+        if child.is_dir() and not child.name.startswith(("_", "."))
+    )
+
+
+def course_folders(root):
+    """Every course folder in one root: directly in it, or inside a grouping folder.
+
+    A folder with a course.yaml is a course. Any other folder is looked into once, for
+    courses grouped under it; that is as deep as the search goes.
+    """
+    root = Path(root)
+    if not root.is_dir():
+        return
+    for child in _folders(root):
+        if (child / "course.yaml").is_file():
+            yield child
+        else:
+            for inner in _folders(child):
+                if (inner / "course.yaml").is_file():
+                    yield inner
+
+
 def find_courses(roots):
     """Course folders under the given roots, by slug. The first root to define a slug wins."""
     found = {}
     for root in roots:
-        root = Path(root)
-        if not root.is_dir():
-            continue
-        for child in sorted(root.iterdir()):
-            if child.name.startswith(("_", ".")) or not child.is_dir():
-                continue
-            if (child / "course.yaml").is_file():
-                found.setdefault(child.name, child)
+        for folder in course_folders(root):
+            found.setdefault(folder.name, folder)
+    return found
+
+
+def clashes(roots):
+    """Slugs that two folders of the same root claim, with those folders.
+
+    A course is addressed by its folder's name, so `semester-4/cda` and `semester-5/cda`
+    would be one course in two places. (The same slug in two different roots is not a
+    clash: the first root wins, which is how the example course steps aside.)
+    """
+    found = {}
+    for root in roots:
+        seen = {}
+        for folder in course_folders(root):
+            seen.setdefault(folder.name, []).append(folder)
+        found.update({slug: folders for slug, folders in seen.items() if len(folders) > 1})
     return found
 
 

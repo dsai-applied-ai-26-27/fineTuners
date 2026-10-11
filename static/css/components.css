@@ -1144,7 +1144,95 @@
       background: var(--primary);
     }
   }
+  /* The picture of the last step: the three things one can send. */
+  .tour__asks {
+    display: grid;
+    gap: var(--s2);
+    width: 100%;
+    & span {
+      padding: var(--s2) var(--s3);
+      border-radius: var(--r-s);
+      box-shadow: inset 0 0 0 1px var(--outline-variant);
+      font-size: var(--text-s);
+      font-weight: 600;
+      color: var(--on-surface-variant);
+    }
+    & span[data-on] {
+      background: color-mix(in oklab, var(--primary) 7%, var(--surface-raised));
+      box-shadow: inset 0 0 0 2px var(--primary);
+      color: var(--on-surface);
+    }
+  }
+
+  /* ---- what's new (templates/components/news.html, catalog/whats_new.html) ---------- */
+  /* The dialog borrows the frame of the tour; these are the parts of its own. */
+  .news__body {
+    display: grid;
+    gap: var(--s6);
+    max-height: min(62dvh, 34rem);
+    padding: var(--s3) var(--s6) 0;
+    overflow-y: auto;
+  }
+  .news__update {
+    & h2,
+    & h3 {
+      margin: var(--s1) 0 var(--s3);
+      font-family: var(--font-read);
+      font-size: var(--text-2xl);
+      font-weight: 500;
+      line-height: 1.2;
+      letter-spacing: -0.015em;
+      text-wrap: balance;
+    }
+  }
+  .news__update--page + .news__update--page {
+    margin-top: var(--s4);
+  }
+  .news__date {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s2) var(--s3);
+    font-size: var(--text-s);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--on-surface-faint);
+    & .chip {
+      min-height: 1.5rem;
+      padding: 0 var(--s2);
+      border-radius: var(--r-xs);
+      font-size: var(--text-xs);
+    }
+  }
+  .news__points {
+    display: grid;
+    & li {
+      display: grid;
+      gap: 2px;
+      padding: var(--s3) 0;
+      border-top: 1px solid var(--outline-variant);
+    }
+    & li:last-child {
+      padding-bottom: 0;
+    }
+    & span {
+      line-height: 1.55;
+      color: var(--on-surface-variant);
+    }
+    & .link {
+      justify-self: start;
+      margin-top: var(--s1);
+      font-size: var(--text-s);
+    }
+  }
+  .news__all {
+    margin-right: auto;
+    font-size: var(--text-s);
+  }
   @media (max-width: 36rem) {
+    .news__body {
+      padding-inline: var(--s4);
+    }
     .tour__steps {
       padding-inline: var(--s4);
     }

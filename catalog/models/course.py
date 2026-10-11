@@ -23,6 +23,11 @@ class Course(models.Model):
     # from any number, so the column allows NULL instead of using 0 as a stand-in.
     semester = models.PositiveSmallIntegerField(null=True, blank=True)
     status = models.CharField(max_length=10, choices=Status, default=Status.ACTIVE)
+    # What the course's file says about two things the owner can also switch in the
+    # admin (desk.CourseSetting, which wins once it is used). Ask desk.switches, not
+    # these fields, whether a course is open or has an educator.
+    enabled = models.BooleanField(default=True)
+    has_educator = models.BooleanField(default=False)
     hue = models.PositiveSmallIntegerField(default=250)
     order = models.PositiveIntegerField(default=0)
     description = models.TextField(blank=True)

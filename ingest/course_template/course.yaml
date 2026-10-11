@@ -5,6 +5,8 @@ year: $year
 $series
 semester: $semester               # semester of the programme, e.g. 5; groups the dashboard
 status: active          # active | archived
+enabled: $enabled           # false: students do not see the course until it is opened in the admin
+has_educator: $has_educator     # true: someone is writing it, so its page does not ask for an educator
 hue: $hue                # course colour, 0-359 on the hue wheel
 order: $order
 description: ""

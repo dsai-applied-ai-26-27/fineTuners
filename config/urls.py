@@ -34,6 +34,8 @@ urlpatterns = [
     path("accounts/", include("allauth.urls")),
     path("account/", include("accounts.urls")),
     path("api/progress/", include("progress.urls")),
+    # Asking and reporting (/ask/), and everything about educators (/educators/).
+    path("", include("desk.urls")),
     path("", include("catalog.urls")),
 ]
 

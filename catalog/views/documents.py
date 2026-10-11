@@ -11,7 +11,7 @@ from .common import load_course
 
 def document_list(request, course, kind):
     segment, title = Document.SECTIONS[kind]
-    course, context = load_course(course, segment)
+    course, context = load_course(request, course, segment)
     context.update(
         kind=kind,
         section_title=title,
@@ -26,7 +26,7 @@ def document_list(request, course, kind):
 
 def document(request, course, slug, kind):
     segment, section_title = Document.SECTIONS[kind]
-    course, context = load_course(course, segment)
+    course, context = load_course(request, course, segment)
     doc = get_object_or_404(course.documents, kind=kind, slug=slug)
     topics = list(doc.topics.all())
 

@@ -84,6 +84,8 @@ INSTALLED_APPS = [
     "ingest",
     "accounts",
     "progress",
+    # What people send the owner, who writes which course, the owner's switches.
+    "desk",
 ]
 
 # Everything is behind a sign-in unless a view opts out with @login_not_required (the
@@ -190,6 +192,16 @@ GOOGLE_SIGN_IN = bool(GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET)
 
 # Shown on the privacy page as the address for questions. Left out when empty.
 CONTACT_EMAIL = os.environ.get("DSAI_CONTACT_EMAIL", "")
+
+# The owner's assistant bot, told whenever a request or an application arrives
+# (desk/notify.py). Both come from the environment: the address is the server's own,
+# so like every server address it is kept out of the repository. Empty: no messages.
+BMO_NOTIFY_URL = os.environ.get("BMO_NOTIFY_URL", "")
+BMO_NOTIFY_TOKEN = os.environ.get("BMO_NOTIFY_TOKEN", "")
+
+# Where the course files are kept for those who write them: a private repository that
+# educators are given access to. Shown on the educators' page.
+CONTENT_REPO_URL = os.environ.get("DSAI_CONTENT_REPO", "https://github.com/vrosi21/dsai-courses")
 
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
@@ -304,6 +316,9 @@ RATE_LIMITS = [
     # Starting a sign-in stores a session row before anyone is known. Sized so that a
     # whole class behind one campus address can sign in during the same minute.
     ("sign-in", "/accounts/", 120),
+    # The forms that write to the owner. Nobody sends thirty requests a minute by hand.
+    ("desk", "/ask/", 30),
+    ("desk", "/educators/", 30),
 ]
 
 # Django's cache framework: named stores behind one API. "default" keeps each course's

@@ -7,8 +7,7 @@ from accounts.models import Enrollment
 from accounts.views import safe_next
 from progress.models import Record
 
-from .. import editions
-from ..mine import chosen
+from ..mine import catalogue, chosen
 from ..models import Course
 from ..nav import course_data, has_content
 from .home import dashboard_groups
@@ -34,7 +33,7 @@ def choose(request):
     if not request.user.is_authenticated:  # the open site has no dashboards to fill
         return redirect("catalog:home")
 
-    courses = editions.latest(list(Course.objects.all()))
+    courses = catalogue(request)
     available = {course.series for course in courses}
     picked = chosen(request)
     first_time = not picked
@@ -80,7 +79,8 @@ def enroll(request):
     if request.user.is_authenticated:
         if request.POST.get("action") == "remove":
             Enrollment.objects.filter(user=request.user, series=series).delete()
-        elif Course.objects.filter(series=series).exists():
-            # get_or_create: pressing the button twice must not make two rows.
+        elif any(course.series == series for course in catalogue(request)):
+            # Only a course that is there to be seen can be added. get_or_create:
+            # pressing the button twice must not make two rows.
             Enrollment.objects.get_or_create(user=request.user, series=series)
     return redirect(safe_next(request))

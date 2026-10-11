@@ -85,6 +85,16 @@ class CourseFile(Spec):
         description="`archived` is a finished course: it is left out of Next up and of the "
         "landing page, and without a `semester` it folds away at the bottom of the dashboard.",
     )
+    enabled: bool = Field(
+        True,
+        description="`false` keeps the course out of sight until the owner switches it on "
+        "(here, or in the admin). For a course nobody has reached yet.",
+    )
+    has_educator: bool = Field(
+        False,
+        description="`true` says someone is writing this course. While it has no content its "
+        "page then says the content is on its way, instead of asking for an educator.",
+    )
     hue: int = Field(250, ge=0, le=359, description="Colour of the course, 0-359 on the hue wheel.")
     order: int = Field(0, ge=0, description="Position among courses of the same semester.")
     description: str = Field("", description="One or two sentences shown under the title.")

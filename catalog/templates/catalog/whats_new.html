@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block title %}What's new · DSAI Vault{% endblock %}
+{% block crumbs %}<a href="{% url 'catalog:home' %}">Courses</a>{% icon "next" %}<span>What's new</span>{% endblock %}
+{% block inner_class %}page__inner--narrow{% endblock %}
+
+{% block content %}
+<header class="dash-head">
+  <div>
+    <h1>What's new</h1>
+    <p class="dash-head__lead">What changed on the site, newest first.{% if any_fresh %} The ones marked new came after you took the tour.{% endif %} The tour itself always shows the site as it is now.</p>
+  </div>
+  <div class="dash-head__tools no-print">
+    <button class="btn btn--outlined btn--small" type="button" @click="$dispatch('tour')">{% icon "help" %}Show the tour</button>
+  </div>
+</header>
+
+{% for row in updates %}
+<section class="news__update news__update--page plate">
+  <p class="news__date">{{ row.update.date|date:"j F Y" }}{% if row.fresh %}<span class="chip chip--primary">New since your tour</span>{% endif %}</p>
+  <h2>{{ row.update.title }}</h2>
+  {% include "components/news_points.html" with update=row.update %}
+</section>
+{% empty %}
+<div class="empty">{% icon "empty" %}<strong>Nothing yet</strong><p>Changes to the site will be listed here.</p></div>
+{% endfor %}
+{% endblock %}

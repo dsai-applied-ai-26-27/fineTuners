@@ -1,15 +1,38 @@
-"""Whose courses: narrowing the catalogue to what one person chose.
+"""Which courses a visitor is shown.
 
-A signed-in person picks the courses they are taking (accounts.models.Enrollment); the
-dashboard, the list in the navigation and Next up then show those and nothing else. It is
-a matter of what is put in front of them, not of permission: any course can still be
-opened by its address or found by searching.
+Two narrowings, applied in this order:
 
-Where the site runs open, with nobody signed in, there is nothing to choose and every
+    catalogue(request)   every course there is to see: one per series (its latest year),
+                         without those the owner has not opened yet (desk.switches)
+    mine(request, ...)   of those, the ones this person chose for their dashboard
+                         (accounts.Enrollment)
+
+Choosing is about what is put in front of someone, not about permission: a course that
+was not chosen can still be opened by its address or found by searching. A course that is
+not open cannot.
+
+Where the site runs open, with nobody signed in, there is nothing to choose and every open
 course counts as theirs.
 """
 
 from accounts.models import Enrollment
+from desk.switches import switches
+
+from . import editions
+from .models import Course
+
+
+def catalogue(request):
+    """The open courses, latest year of each, in the usual order.
+
+    The view and the navigation both start from this list while one page is built, so it
+    is kept on the request: the courses are read from the database once.
+    """
+    if not hasattr(request, "_catalogue"):
+        gate = switches(request)
+        latest = editions.latest(list(Course.objects.all()))
+        request._catalogue = [course for course in latest if gate.is_open(course)]
+    return request._catalogue
 
 
 def chosen(request):

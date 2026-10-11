@@ -21,7 +21,7 @@ import tarfile
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
-from ingest.discover import find_courses
+from ingest.discover import clashes, find_courses
 from ingest.management.commands.sync_content import safe_streams
 from ingest.sync import sync_course
 
@@ -31,6 +31,9 @@ REMOTE_COMMAND = "dsai-vault/bin/deploy content"
 
 def pack(courses):
     """A .tar.gz, in memory, of `<slug>/course.yaml` and `<slug>/content/**` per course.
+
+    Each course is packed under its own name, whatever folder it is grouped in here
+    (`semester-5/rl/` is sent as `rl/`): the server keeps the courses side by side.
 
     Returns (bytes, number of files)."""
     buffer = io.BytesIO()
@@ -79,6 +82,13 @@ class Command(BaseCommand):
         courses = find_courses([settings.COURSES_DIR])
         if not courses:
             raise CommandError(f"No courses found in {settings.COURSES_DIR}.")
+        twice = clashes([settings.COURSES_DIR])
+        if twice:
+            raise CommandError(
+                "Two folders with the same name, so it is unclear which is the course: "
+                + ", ".join(sorted(twice))
+                + ". Nothing was sent. Rename or remove one of each."
+            )
 
         failed = 0
         for folder in courses.values():

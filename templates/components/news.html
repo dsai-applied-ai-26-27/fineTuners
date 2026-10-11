@@ -1,0 +1,30 @@
+{% load ui %}
+{% comment %} "What's new": the updates this person has not been shown yet (`welcome.news`, from
+   catalog/welcome.py; the entries are written in catalog/news.py). base.html includes this
+   only when there are any. It opens once the page is drawn and the server is told at that
+   moment (static/js/components/news.js), so it is shown once per account.
+
+   Built like the tour, with the same parts, so the two read as one family. {% endcomment %}
+<dialog class="dialog tour news" x-data="news" aria-labelledby="news-title"
+        data-seen="{% url 'catalog:seen' %}" data-upto="{{ news_latest }}"{% if welcome.news.0.tour_step is not None %} data-tour-step="{{ welcome.news.0.tour_step }}"{% endif %}>
+  <div class="tour__bar">
+    <p id="news-title">What's new</p>
+    <button class="btn btn--small" type="button" @click="$root.close()">Close</button>
+  </div>
+
+  <div class="news__body">
+    {% for update in welcome.news %}
+    <section class="news__update">
+      <p class="news__date">{{ update.date|date:"j F Y" }}</p>
+      <h3>{{ update.title }}</h3>
+      {% include "components/news_points.html" %}
+    </section>
+    {% endfor %}
+  </div>
+
+  <div class="tour__foot">
+    <a class="link news__all" href="{% url 'catalog:whats_new' %}">All changes</a>
+    {% if welcome.news.0.tour_step is not None %}<button class="btn" type="button" @click="tour()">See it in the tour</button>{% endif %}
+    <button class="btn btn--filled" type="button" @click="$root.close()" autofocus>Got it</button>
+  </div>
+</dialog>

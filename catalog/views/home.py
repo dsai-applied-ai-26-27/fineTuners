@@ -6,10 +6,12 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from django.shortcuts import redirect, render
 
-from .. import editions
-from ..mine import chosen, mine
+from desk.switches import switches
+
+from ..mine import catalogue, chosen, mine
 from ..models import Card, Course, Document, Formula, Hook, Question, Term
 from ..nav import course_data, has_content
+from ..welcome import welcome
 
 
 def landing(request):
@@ -83,7 +85,7 @@ def home(request):
         return landing(request)
     # One card per course: of a course taught in several years, the latest. Earlier
     # years are reached from the year switch on the course's own page.
-    everything = editions.latest(list(Course.objects.all()))
+    everything = catalogue(request)
     # A person who has not said which courses they take is asked first; that is what
     # happens right after the first sign-in. (Nothing to ask while there are none.)
     if everything and chosen(request) == set():
@@ -108,6 +110,8 @@ def home(request):
             "manifests": [course_data(c)["manifest"] for c in courses],
             # How many courses exist that are not on this dashboard.
             "others": len(everything) - len(courses),
+            # The tour on a first visit, or what changed since the last one.
+            "welcome": welcome(request),
             "active": "home",
         },
     )
@@ -125,6 +129,10 @@ def search(request):
     query = request.GET.get("q", "").strip()
     course_slug = request.GET.get("course", "")
     results = []
+    # Every year of every course can be searched, except courses that are not open.
+    gate = switches(request)
+    courses = list(Course.objects.all())
+    closed = [c.slug for c in courses if not gate.is_open(c)]
     if len(query) >= 2:
         scope = {"course__slug": course_slug} if course_slug else {}
 
@@ -133,7 +141,8 @@ def search(request):
             for name in fields:
                 # Q objects combine with | (OR) and & (AND) to build one WHERE clause.
                 condition |= Q(**{f"{name}__icontains": query})
-            return model.objects.filter(condition, **scope).select_related("course", *related)[:40]
+            rows = model.objects.filter(condition, **scope).exclude(course__slug__in=closed)
+            return rows.select_related("course", *related)[:40]
 
         for doc in found(Document, "title", "search_text"):
             results.append((doc.get_kind_display(), doc.label, doc, doc.search_text))
@@ -172,7 +181,7 @@ def search(request):
             "course_slug": course_slug,
             "page": page,
             "total": len(rows),
-            "courses": Course.objects.all(),
+            "courses": [c for c in courses if c.slug not in closed],
             "active": "search",
         },
     )
@@ -181,7 +190,8 @@ def search(request):
 def settings_page(request):
     # Every year of every course that has something in it: progress can be cleared
     # for each of them, and an empty course has none to clear.
-    courses = [course for course in Course.objects.all() if has_content(course)]
+    gate = switches(request)
+    courses = [c for c in Course.objects.all() if gate.is_open(c) and has_content(c)]
     for course in courses:
         course.counts = course_data(course)["counts"]
     return render(
