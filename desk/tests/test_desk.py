@@ -464,14 +464,14 @@ class DeskAdminTests(DeskTestCase):
     def test_the_course_list_says_who_writes_what_and_switches_it(self):
         courses = reverse("admin:catalog_course_changelist")
         page = self.client.get(courses)
-        self.assertContains(page, "Nobody: asks for an educator")
+        self.assertContains(page, "Nobody yet")
         self.assertContains(page, "Someone (course file)")
         self.offer.decide(EducatorApplication.Status.ACCEPTED)
         self.assertContains(self.client.get(courses), "ada@example.test")
 
         self.client.post(courses, {"action": "needs_writer", "_selected_action": [self.aai.pk]})
         self.assertFalse(CourseSetting.objects.get(series="aai").has_educator)
-        self.assertContains(self.client.get(courses), "Asks for an educator (set here)")
+        self.assertContains(self.client.get(courses), "Nobody (set here)")
         self.client.post(courses, {"action": "follow_file", "_selected_action": [self.aai.pk]})
         self.assertFalse(CourseSetting.objects.filter(series="aai").exists())
 

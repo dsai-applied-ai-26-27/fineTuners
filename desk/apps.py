@@ -1,4 +1,6 @@
 import logging
+import sys
+from pathlib import Path
 
 from django.apps import AppConfig
 from django.conf import settings
@@ -16,8 +18,13 @@ class DeskConfig(AppConfig):
         # stored and shown in the admin.
         from .notify import configured
 
-        if not settings.DEBUG and not settings.TESTING and not configured():
-            logger.warning(
-                "BMO_NOTIFY_URL or BMO_NOTIFY_TOKEN is not set: requests are stored, "
-                "but nobody is notified."
-            )
+        if settings.DEBUG or settings.TESTING or configured():
+            return
+        # Every management command loads the apps as well. The warning is for the process
+        # that serves the site, not for each `migrate` and `sync_content`.
+        if Path(sys.argv[0]).name == "manage.py":
+            return
+        logger.warning(
+            "BMO_NOTIFY_URL or BMO_NOTIFY_TOKEN is not set (or the address is not https): "
+            "requests are stored, but nobody is notified."
+        )

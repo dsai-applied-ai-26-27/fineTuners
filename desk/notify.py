@@ -15,7 +15,9 @@ Rules this module keeps:
   wrote. That keeps the privacy page true and the bot's log free of personal data.
 - One try, then at most two more, and only for failures that may pass: a network error or
   a 5xx answer. A 400, 403 or 429 is final.
-- A ceiling per hour, below the bot's own, so a burst cannot use up its allowance.
+- A burst rings once. The first message makes a sound; those that follow within two
+  minutes arrive silently. And there is a ceiling per hour, below the bot's own, so a
+  burst cannot use up its allowance. Whatever is not sent is still in the admin.
 """
 
 import json
@@ -34,6 +36,7 @@ SOURCE = "DSAI Vault"
 TIMEOUT = 5  # seconds
 RETRY_AFTER = (2, 6)  # seconds to wait before the second and the third try
 PER_HOUR = 20  # the bot accepts 30
+QUIET_FOR = 120  # seconds after a message during which the next ones make no sound
 
 
 def configured():
@@ -47,6 +50,10 @@ def notify(title, message="", *, level="info", url="", dedupe_key="", silent=Fal
     if _over_the_hourly_ceiling():
         logger.warning("BMO: hourly ceiling reached, notification skipped")
         return False
+    # cache.add stores the key only if it is not there yet, and says whether it did: one
+    # step that both asks "did something ring just now?" and starts the quiet period.
+    if not caches["limits"].add("bmo:rang", 1, timeout=QUIET_FOR):
+        silent = True
     payload = {"title": title[:120], "level": level, "source": SOURCE}
     if message:
         payload["message"] = message[:2000]

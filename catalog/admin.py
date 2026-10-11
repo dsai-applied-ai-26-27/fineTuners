@@ -73,8 +73,9 @@ class CourseAdmin(ReadOnlyAdmin):
 
     @admin.display(description="Written by")
     def writer(self, course):
+        # Kept short: the list has many columns.
         if course.switch_educator is False:
-            return "Asks for an educator (set here)"
+            return "Nobody (set here)"
         names = course.an_educator or ""
         if (course.n_educators or 0) > 1:
             names += f" and {course.n_educators - 1} more"
@@ -82,7 +83,7 @@ class CourseAdmin(ReadOnlyAdmin):
             return names
         if course.switch_educator:
             return "Someone (set here)"
-        return "Someone (course file)" if course.has_educator else "Nobody: asks for an educator"
+        return "Someone (course file)" if course.has_educator else "Nobody yet"
 
     # -- the switches -----------------------------------------------------------------------
     # An action receives the ticked rows as a queryset. A switch belongs to a series, so

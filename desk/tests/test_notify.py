@@ -3,6 +3,7 @@
 
 from unittest import mock
 
+from django.apps import apps
 from django.core.cache import caches
 from django.test import SimpleTestCase, override_settings
 
@@ -32,6 +33,27 @@ class ConfiguredTests(SimpleTestCase):
             dispatch.assert_not_called()
 
 
+class StartUpTests(SimpleTestCase):
+    """A server without the bot's settings says so when it starts, and only then."""
+
+    def ready(self, argv):
+        with mock.patch("desk.apps.sys.argv", argv), override_settings(DEBUG=False, TESTING=False):
+            apps.get_app_config("desk").ready()
+
+    @override_settings(BMO_NOTIFY_URL="", BMO_NOTIFY_TOKEN="")
+    def test_the_server_warns_and_a_management_command_does_not(self):
+        with self.assertLogs("desk.apps", "WARNING") as logs:
+            self.ready(["/usr/local/bin/gunicorn", "config.wsgi:application"])
+        self.assertIn("nobody is notified", logs.output[0])
+        with self.assertNoLogs("desk.apps", "WARNING"):
+            self.ready(["manage.py", "migrate"])
+
+    @BOT
+    def test_with_the_settings_there_is_nothing_to_say(self):
+        with self.assertNoLogs("desk.apps", "WARNING"):
+            self.ready(["/usr/local/bin/gunicorn", "config.wsgi:application"])
+
+
 @BOT
 class NotifyTests(SimpleTestCase):
     def setUp(self):
@@ -52,6 +74,19 @@ class NotifyTests(SimpleTestCase):
             (120, 2000, 100),
         )
         self.assertNotIn("silent", payload)
+
+    def test_a_burst_rings_once(self):
+        with mock.patch("desk.notify._dispatch") as dispatch:
+            for number in range(3):
+                notify.notify(f"Request {number}")
+        first, second, third = (call.args[0] for call in dispatch.call_args_list)
+        self.assertNotIn("silent", first)
+        self.assertTrue(second["silent"] and third["silent"])
+        # Once it has been quiet for a while, the next one rings again.
+        caches["limits"].delete("bmo:rang")
+        with mock.patch("desk.notify._dispatch") as dispatch:
+            notify.notify("Later")
+        self.assertNotIn("silent", dispatch.call_args.args[0])
 
     def test_what_is_empty_is_left_out(self):
         with mock.patch("desk.notify._dispatch") as dispatch:
