@@ -59,7 +59,7 @@
           </form>
           {% endif %}
         </div>
-        <p class="cover__small">Any Google account works. The site keeps your name, your e-mail address and your study progress, and nothing else. You can delete all of it in Settings. <a class="link" href="{% url 'catalog:privacy' %}">Privacy</a></p>
+        <p class="cover__small">Any Google account works. The site keeps your name, your e-mail address and your study progress, and nothing else. You can delete all of it in Settings. By signing in you agree to the <a class="link" href="{% url 'catalog:terms' %}">terms of use</a>. <a class="link" href="{% url 'catalog:privacy' %}">Privacy</a></p>
       </div>
 
       {% comment %} The one picture on the page, and it is a real one: the days are the schedule the
@@ -100,7 +100,7 @@
 
 <footer class="landing__foot">
   <span>DSAI Vault</span>
-  <span>A study site for one programme. Not an official university page. · <a href="{% url 'catalog:privacy' %}">Privacy</a></span>
+  <span>A study site for one programme. Not an official university page. · <a href="{% url 'catalog:privacy' %}">Privacy</a> · <a href="{% url 'catalog:terms' %}">Terms</a></span>
 </footer>
 
 </body>

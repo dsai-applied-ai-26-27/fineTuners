@@ -79,8 +79,22 @@ class LandingTests(TestCase):
         with self.settings(CONTACT_EMAIL="owner@example.test"):
             self.assertContains(self.client.get("/privacy/"), "mailto:owner@example.test")
 
+    def test_the_terms_page_is_public_and_linked(self):
+        response = self.client.get("/terms/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "The material can be wrong")
+        self.assertContains(response, 'href="/privacy/"')
+        self.assertNotContains(response, "mailto:")  # no contact address configured
+        # Linked from where someone decides to sign in, and from the privacy page.
+        self.assertContains(self.client.get("/"), 'href="/terms/"')
+        self.assertContains(self.client.get("/privacy/"), 'href="/terms/"')
+        with self.settings(CONTACT_EMAIL="owner@example.test"):
+            page = self.client.get("/terms/")
+            # Once as the way to ask for something to be removed, once under Questions.
+            self.assertContains(page, "mailto:owner@example.test", count=2)
+
     def test_every_frame_carries_the_logo_and_the_tab_icon(self):
-        for path in ("/", "/privacy/", "/accounts/logout/"):
+        for path in ("/", "/privacy/", "/terms/", "/accounts/logout/"):
             with self.subTest(path=path):
                 response = self.client.get(path, follow=True)
                 self.assertContains(response, 'class="brand__glyph"')

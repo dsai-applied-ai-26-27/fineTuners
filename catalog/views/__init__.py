@@ -3,7 +3,7 @@
 from .course import course, topic
 from .documents import document, document_list
 from .exams import assessment, exams, paper
-from .home import home, privacy, search, settings_page
+from .home import home, privacy, search, settings_page, terms
 from .memory import memory, palace
 from .mine import choose, enroll
 from .practice import cards, deck, problem_set, problems, review
@@ -34,5 +34,6 @@ __all__ = [
     "search",
     "settings_page",
     "source_file",
+    "terms",
     "topic",
 ]
