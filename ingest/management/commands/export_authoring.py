@@ -6,7 +6,8 @@ The course files live in a repository of their own, shared with the people who w
 courses. They do not have this application, so that repository carries a copy of
 everything needed to write content and to check it:
 
-    README.md  AGENTS.md  CLAUDE.md  .gitignore     from ingest/content_repo/
+    README.md  AGENTS.md  CLAUDE.md                 from ingest/content_repo/
+    .gitignore  .gitattributes                      (kept there without the dot)
     docs/                                           the authoring guide, the field reference,
                                                     the schemas and the example course
     tools/check.py                                  the checker
@@ -37,6 +38,7 @@ TOP = {
     "AGENTS.md": "AGENTS.md",
     "CLAUDE.md": "CLAUDE.md",
     "gitignore": ".gitignore",
+    "gitattributes": ".gitattributes",
 }
 GUIDE = ["AUTHORING.md", "content-types", "schemas", "example-course"]
 

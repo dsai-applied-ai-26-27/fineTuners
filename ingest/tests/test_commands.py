@@ -205,6 +205,7 @@ class AuthoringKitTests(CourseTestCase):
             "AGENTS.md",
             "CLAUDE.md",
             ".gitignore",
+            ".gitattributes",
             "docs/README.md",
             "docs/AUTHORING.md",
             "docs/content-types/fields.md",
