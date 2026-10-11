@@ -21,6 +21,7 @@ from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.html import format_html, format_html_join
 
+from desk.models import Educator
 from progress.models import Attempt, Day, Ledger, Record
 from progress.sync import forget
 
@@ -67,9 +68,16 @@ class PersonAdmin(UserAdmin):
             },
         ),
         ("Account", {"fields": ["signs_in_with", "date_joined", "last_login"]}),
-        ("Study progress", {"fields": ["courses", "progress"]}),
+        ("Study progress", {"fields": ["courses", "writes", "progress"]}),
     ]
-    readonly_fields = ["signs_in_with", "date_joined", "last_login", "courses", "progress"]
+    readonly_fields = [
+        "signs_in_with",
+        "date_joined",
+        "last_login",
+        "courses",
+        "writes",
+        "progress",
+    ]
 
     # -- what may be done -----------------------------------------------------------------
 
@@ -137,6 +145,11 @@ class PersonAdmin(UserAdmin):
     @admin.display(description="On their dashboard")
     def courses(self, user):
         return ", ".join(sorted(Enrollment.objects.series_of(user))) or "No course chosen yet."
+
+    @admin.display(description="Educator of")
+    def writes(self, user):
+        series = Educator.objects.filter(user=user).values_list("series", flat=True)
+        return ", ".join(sorted(series)) or "No course."
 
     @admin.display(description="By course")
     def progress(self, user):

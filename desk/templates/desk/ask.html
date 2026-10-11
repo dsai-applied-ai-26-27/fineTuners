@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block title %}Ask or report · DSAI Vault{% endblock %}
+{% block crumbs %}<a href="{% url 'catalog:home' %}">Courses</a>{% icon "next" %}<span>Ask or report</span>{% endblock %}
+{% block inner_class %}page__inner--narrow{% endblock %}
+
+{% block content %}
+<header class="dash-head">
+  <div>
+    <h1>Ask or report</h1>
+    <p class="dash-head__lead">Content you are missing, something that is wrong, or an idea for the site. It goes to the person who runs the site and, for a course, to whoever writes that course. The answer appears on this page.</p>
+  </div>
+</header>
+
+<div class="desk">
+{% if sent %}<p class="notice" role="status">{% icon "check" %}Sent, thank you. The answer will show below, under what you have sent.</p>{% endif %}
+
+{% comment %} A plain form: the view (desk.views.ask) checks it and redirects. The fields are written out
+   by hand for the layout; their names, values and errors still come from the Django form. {% endcomment %}
+<form class="form plate" method="post">
+  {% csrf_token %}
+  {{ form.page }}
+  {% for error in form.non_field_errors %}<p class="form__error" role="alert">{{ error }}</p>{% endfor %}
+
+  <fieldset class="form__field">
+    <legend>What is it?</legend>
+    <div class="choose__list">
+      <label class="choose__item choose__item--plain"><input type="radio" name="kind" value="content"{% if form.kind.value == "content" %} checked{% endif %}><span class="choose__title">Content for a course</span><span class="choose__meta">a lecture, cards, a past paper</span></label>
+      <label class="choose__item choose__item--plain"><input type="radio" name="kind" value="bug"{% if form.kind.value == "bug" %} checked{% endif %}><span class="choose__title">Something is wrong</span><span class="choose__meta">a mistake in the material, a page that breaks</span></label>
+      <label class="choose__item choose__item--plain"><input type="radio" name="kind" value="idea"{% if form.kind.value == "idea" %} checked{% endif %}><span class="choose__title">An idea for the site</span><span class="choose__meta">something it should be able to do</span></label>
+    </div>
+    {% for error in form.kind.errors %}<p class="form__error">{{ error }}</p>{% endfor %}
+  </fieldset>
+
+  <div class="form__field">
+    <label for="{{ form.series.id_for_label }}">Which course?</label>
+    {{ form.series }}
+    {% for error in form.series.errors %}<p class="form__error">{{ error }}</p>{% endfor %}
+  </div>
+
+  <div class="form__field">
+    <label for="{{ form.message.id_for_label }}">What should we know?</label>
+    {{ form.message }}
+    <p class="form__hint">Be specific: which lecture, which card, what you expected to see. Leave out anything private: a request about a course is also read by the student who writes that course, without your name.</p>
+    {% for error in form.message.errors %}<p class="form__error">{{ error }}</p>{% endfor %}
+  </div>
+
+  <div class="form__foot">
+    <button class="btn btn--filled" type="submit">Send</button>
+  </div>
+</form>
+</div>
+
+{% if mine %}
+<section class="semester semester--fold">
+  <header class="semester__head"><h2>What you have sent</h2></header>
+  <ul class="sent plate">
+    {% for item in mine %}
+    <li>
+      <p class="sent__meta"><strong>{{ item.get_kind_display }}</strong><span>{% if item.course %}{{ item.course.title }} · {% endif %}{{ item.created_at|date:"j M Y" }}</span><span class="chip sent__status" data-status="{{ item.status }}">{{ item.get_status_display }}</span></p>
+      <p class="sent__text">{{ item.message|truncatechars:280 }}</p>
+      {% if item.answer %}<p class="sent__answer"><strong>Answer:</strong> {{ item.answer }}</p>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+{% endblock %}

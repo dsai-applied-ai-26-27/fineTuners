@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block title %}Become an educator · DSAI Vault{% endblock %}
+{% block crumbs %}<a href="{% url 'catalog:home' %}">Courses</a>{% icon "next" %}<a href="{% url 'desk:educators' %}">Educators</a>{% icon "next" %}<span>Apply</span>{% endblock %}
+{% block inner_class %}page__inner--narrow{% endblock %}
+
+{% block content %}
+<header class="dash-head">
+  <div>
+    <h1>Become an educator</h1>
+    <p class="dash-head__lead">An educator writes a course for everyone else: turns its lectures into the notes, flashcards and problems this site shows. One application per course.</p>
+  </div>
+</header>
+
+<div class="desk">
+{% if taken %}<p class="notice" role="status">{% icon "info" %}That course already has someone writing it. You can still pick another one below.</p>{% endif %}
+{% if existing %}<p class="notice" role="status">{% icon "info" %}You have applied for this course ({{ existing.get_status_display|lower }}). Sending the form again updates your application.</p>{% endif %}
+
+<div class="plate brief">
+  <h2>Before you apply</h2>
+  <p><strong>How a course gets written.</strong> The content is plain text files in a fixed format, kept in a shared repository. Nothing is typed into the website. You can write the files by hand, or with a free chatbot, and for a lecture or two that works. For a whole course the realistic way is a paid AI assistant that can read the slides and write files on your computer (Claude, ChatGPT, Gemini or similar, about 20 € a month). You hand it a lecture, it writes in the site's format from the instructions in the repository, and you check what it wrote against the lecture.</p>
+  <p><strong>What stays with you.</strong> The checking. What goes up under your course has to be right, and an assistant gets things wrong with a straight face. Plan an hour or two per lecture.</p>
+  <p><strong>What happens next.</strong> The person who runs the site reads your application and contacts you on the number you give. If it is a yes, you get access to the course files and a short walk through the first lecture.</p>
+</div>
+
+<form class="form plate" method="post">
+  {% csrf_token %}
+  {% for error in form.non_field_errors %}<p class="form__error" role="alert">{{ error }}</p>{% endfor %}
+
+  <div class="form__field">
+    <label for="{{ form.series.id_for_label }}">Which course?</label>
+    {{ form.series }}
+    <p class="form__hint">Courses that nobody is writing yet.</p>
+    {% for error in form.series.errors %}<p class="form__error">{{ error }}</p>{% endfor %}
+  </div>
+
+  <div class="form__pair">
+    <div class="form__field">
+      <label for="{{ form.name.id_for_label }}">Your name</label>
+      {{ form.name }}
+      {% for error in form.name.errors %}<p class="form__error">{{ error }}</p>{% endfor %}
+    </div>
+    <div class="form__field">
+      <label for="{{ form.year.id_for_label }}">Year of study</label>
+      {{ form.year }}
+      {% for error in form.year.errors %}<p class="form__error">{{ error }}</p>{% endfor %}
+    </div>
+  </div>
+
+  <div class="form__pair">
+    <div class="form__field">
+      <label for="{{ form.phone.id_for_label }}">Phone number</label>
+      {{ form.phone }}
+      <p class="form__hint">Seen only by the person who runs the site, and used only to contact you about this.</p>
+      {% for error in form.phone.errors %}<p class="form__error">{{ error }}</p>{% endfor %}
+    </div>
+    <div class="form__field">
+      <label for="{{ form.github.id_for_label }}">GitHub user name <span class="form__optional">optional</span></label>
+      {{ form.github }}
+      <p class="form__hint">The course files are shared through GitHub. You can add it later.</p>
+      {% for error in form.github.errors %}<p class="form__error">{{ error }}</p>{% endfor %}
+    </div>
+  </div>
+
+  <div class="form__field">
+    <label for="{{ form.tools.id_for_label }}">How would you write it?</label>
+    {{ form.tools }}
+    {% for error in form.tools.errors %}<p class="form__error">{{ error }}</p>{% endfor %}
+  </div>
+
+  <div class="form__field">
+    <label for="{{ form.note.id_for_label }}">Anything else <span class="form__optional">optional</span></label>
+    {{ form.note }}
+    <p class="form__hint">How you did in the course, how much time you have, which lectures you have material for.</p>
+    {% for error in form.note.errors %}<p class="form__error">{{ error }}</p>{% endfor %}
+  </div>
+
+  <div class="form__foot">
+    <a class="btn" href="{% url 'desk:educators' %}">Cancel</a>
+    <button class="btn btn--filled" type="submit">Send application</button>
+  </div>
+</form>
+</div>
+{% endblock %}

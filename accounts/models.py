@@ -1,7 +1,8 @@
 """What the site keeps about a person besides who they are and what they have studied.
 
-One thing: which courses they chose to have on their dashboard. Like progress, these rows
-exist nowhere else, so every change to this file needs a migration.
+Two things: which courses they chose to have on their dashboard, and what the site has
+already shown them unasked (the tour, the news). Like progress, these rows exist nowhere
+else, so every change to this file needs a migration.
 """
 
 from django.conf import settings
@@ -52,3 +53,27 @@ class Enrollment(models.Model):
 
     def __str__(self):
         return f"{self.user}: {self.series}"
+
+
+class Profile(models.Model):
+    """What the site has put in front of one person unasked, so that it does so once.
+
+    A OneToOneField is a foreign key that allows one row per user: the usual Django way
+    to keep more about a person without replacing the user model. The row is made the
+    first time there is something to record; a person without one has seen nothing yet.
+    """
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="profile"
+    )
+    # When they were walked through the site. Empty until then, which is how a first visit
+    # is told from every later one.
+    tour_seen_at = models.DateTimeField(null=True, blank=True)
+    # The site's latest update at that moment (its number in catalog/news.py). Updates
+    # numbered higher are what changed since their tour.
+    tour_update = models.PositiveIntegerField(default=0)
+    # The latest update the "What's new" dialog has shown them.
+    news_seen = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return f"{self.user}: toured {self.tour_seen_at or 'never'}, news {self.news_seen}"

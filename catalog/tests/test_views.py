@@ -157,7 +157,8 @@ class PageTests(CourseTestCase):
 
     def test_a_course_with_nothing_in_it_is_named_but_not_offered(self):
         """It gets no card, no place in the navigation and no row in Settings: each of
-        those would be a button leading to an empty page."""
+        those would promise something to study. It is named, and its name leads to its
+        own page, which is where it can be asked for."""
         Course.objects.create(
             slug="rl", series="rl", title="Reinforcement Learning", code="RL", semester=1
         )
@@ -166,8 +167,12 @@ class PageTests(CourseTestCase):
         group = response.context["groups"][0]
         self.assertEqual([c.slug for c in group["ready"]], [C])
         self.assertEqual([c.slug for c in group["waiting"]], ["rl"])
-        self.assertContains(response, "Not written up yet: <b>Reinforcement Learning</b>.")
-        self.assertNotContains(response, 'href="/courses/rl/"')
+        self.assertContains(
+            response,
+            'Not written up yet: <a href="/courses/rl/"><b>Reinforcement Learning</b></a>.',
+        )
+        self.assertContains(response, "Open one to ask for it.")
+        self.assertNotContains(response, 'class="course-card tone" href="/courses/rl/"')
         self.assertEqual([c.slug for c in response.context["nav_courses"]], [])  # C is archived
         self.assertNotContains(self.get("settings"), "Reinforcement Learning")
 
@@ -182,7 +187,7 @@ class PageTests(CourseTestCase):
         for page in (self.get("course", "rl"), self.get("home"), self.get("settings")):
             self.assertNotContains(page, "sync_content")
             self.assertNotContains(page, "source/")
-        self.assertContains(self.get("course", "rl"), "has not been written up yet")
+        self.assertContains(self.get("course", "rl"), "Nobody is writing this course yet")
         self.user.is_staff = True
         self.user.save()
         self.assertContains(self.get("course", "rl"), "sync_content rl")
@@ -271,13 +276,15 @@ class PageTests(CourseTestCase):
     def test_page_queries_stay_bounded(self):
         """A guard against N+1 queries: the count must not grow with the content.
 
-        Two of each are for the request itself: the session, then the signed-in user.
-        The course's front page has two more: its years, and whether this person has
-        it on their dashboard."""
+        Two of each are for the request itself: the session, then the signed-in user,
+        and one is the owner's switches (is this course open?). The course's front
+        page has three more: its years, whether this person has it on their dashboard,
+        and what this person has been shown (tour, news). A course whose file does not
+        say that someone writes it costs one more there: the list of educators."""
         self.get("course", C)  # warm the per-course cache
-        with self.assertNumQueries(10):
+        with self.assertNumQueries(12):
             self.get("course", C)
-        with self.assertNumQueries(5):
+        with self.assertNumQueries(6):
             self.get("deck", C, "least-squares")
 
     def test_home_is_the_dashboard_once_signed_in(self):

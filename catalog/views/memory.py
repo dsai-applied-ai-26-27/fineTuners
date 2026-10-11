@@ -5,7 +5,7 @@ from .common import load_course, scope_topics
 
 
 def memory(request, course):
-    course, context = load_course(course, "memory")
+    course, context = load_course(request, course, "memory")
     hooks = course.hooks.select_related("topic", "card__deck")
     palaces = course.palaces.annotate(n_loci=Count("loci")).select_related("topic")
     topics, label = scope_topics(request, course)
@@ -17,7 +17,7 @@ def memory(request, course):
 
 
 def palace(request, course, slug):
-    course, context = load_course(course, "memory")
+    course, context = load_course(request, course, "memory")
     palace = get_object_or_404(course.palaces.select_related("topic"), slug=slug)
     loci = list(palace.loci.all())
     context.update(

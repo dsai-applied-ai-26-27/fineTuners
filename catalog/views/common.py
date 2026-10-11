@@ -1,7 +1,9 @@
 from django.conf import settings
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils.functional import SimpleLazyObject
 
+from desk.switches import switches
 from ingest.discover import find_course, newest_mtime
 
 from .. import editions
@@ -9,11 +11,16 @@ from ..models import Course
 from ..nav import course_data
 
 
-def load_course(slug, active=""):
+def load_course(request, slug, active=""):
     """Fetch a course (404 if unknown) plus the context every page inside it shares.
 
-    `active` is the key of the navigation entry to highlight."""
+    `active` is the key of the navigation entry to highlight. A course the owner has not
+    opened yet is "no such page" to everyone but staff, who see it with a note saying
+    so: that is how the owner looks at a course before opening it."""
     course = get_object_or_404(Course, slug=slug)
+    is_open = switches(request).is_open(course)
+    if not is_open and not request.user.is_staff:
+        raise Http404
     data = course_data(course)
     context = {
         "course": course,
@@ -22,6 +29,7 @@ def load_course(slug, active=""):
         "counts": data["counts"],
         "manifest": data["manifest"],
         "active": active,
+        "closed": not is_open,
         # The years this course exists in, newest first, for the switch at the top.
         # Lazy: only the course's front page shows the switch, so only it pays the query.
         "editions": SimpleLazyObject(lambda: editions.of(course)),

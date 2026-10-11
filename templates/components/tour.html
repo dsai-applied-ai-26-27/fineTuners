@@ -1,17 +1,21 @@
 {% load ui %}
-{% comment %} The tour: five short steps on how the site is meant to be used
-   (static/js/components/tour.js). It opens by itself the first time someone reaches the
-   dashboard in a browser, and again whenever a `tour` event is dispatched: the dashboard's
-   "How it works" button and the Settings page do that.
+{% comment %} The tour: a few short steps on how the site is meant to be used
+   (static/js/components/tour.js). It opens by itself once, the first time a person reaches
+   their dashboard (`welcome.tour`, from catalog/welcome.py), and again whenever a `tour`
+   event is dispatched: the dashboard's "How it works" button and the Settings page do that.
+
+   There is one tour, this one, rewritten when the site changes. What changed since someone
+   took it is told separately (components/news.html).
 
    A native <dialog>: the browser traps focus, closes it on Escape and draws the backdrop.
    The small pictures are stand-ins made from the site's own parts, so they are hidden from
    screen readers; the words carry the meaning. {% endcomment %}
-<dialog class="dialog tour" x-data="tour({% if active == 'home' %}true{% else %}false{% endif %})"
-        @tour.window="open()" @close="seen()" @keydown.right="next()" @keydown.left="back()"
+<dialog class="dialog tour" x-data="tour({% if welcome.tour and active == 'home' %}true{% else %}false{% endif %})"
+        data-seen="{% url 'catalog:seen' %}" data-upto="{{ news_latest }}"
+        @tour.window="open($event)" @close="seen()" @keydown.right="next()" @keydown.left="back()"
         aria-labelledby="tour-title">
   <div class="tour__bar">
-    <p id="tour-title">How it works · <span x-text="step + 1">1</span> of <span x-text="count">5</span></p>
+    <p id="tour-title">How it works · <span x-text="step + 1">1</span> of <span x-text="count">{% if user.is_authenticated %}6{% else %}5{% endif %}</span></p>
     <button class="btn btn--small" type="button" @click="$root.close()" x-show="!last">Skip</button>
   </div>
 
@@ -71,8 +75,26 @@
         </div>
       </div>
       <h3>Watch the bar fill</h3>
-      <p>Everything you rate or grade adds to the bar of its course. {% if user.is_authenticated %}It is saved to your account, so it is the same on your phone. This tour stays in Settings, and <strong>Choose courses</strong> on the dashboard changes which courses you see.{% else %}It is kept in this browser. This tour stays in Settings if you want it again.{% endif %}</p>
+      <p>Everything you rate or grade adds to the bar of its course. {% if user.is_authenticated %}It is saved to your account, so it is the same on your phone. <strong>Choose courses</strong> on the dashboard changes which courses you see.{% else %}It is kept in this browser. This tour stays in Settings if you want it again.{% endif %}</p>
     </section>
+
+    {% if user.is_authenticated %}
+    {# The forms need an account, so the step about them is for someone signed in. #}
+    <section class="tour__step" data-step :data-on="step === 5">
+      <div class="tour__figure" aria-hidden="true">
+        <div class="tour__card">
+          <p class="nextup__label"><span>Ask or report</span></p>
+          <div class="tour__asks">
+            <span data-on>Content for a course</span>
+            <span>Something is wrong</span>
+            <span>An idea for the site</span>
+          </div>
+        </div>
+      </div>
+      <h3>Missing something? Say so</h3>
+      <p><strong>Ask or report</strong> in the menu is one short form: content a course lacks, a mistake you found, an idea for the site. The answer comes back on the same page. The courses are written by students, so a course with nothing in it yet also lets you apply to become its <strong>educator</strong> and write it. This tour stays in Settings, beside what is new on the site.</p>
+    </section>
+    {% endif %}
   </div>
 
   <div class="tour__foot">

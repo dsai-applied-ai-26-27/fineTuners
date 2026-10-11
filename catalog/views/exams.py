@@ -7,13 +7,13 @@ from .practice import paper_context
 
 
 def exams(request, course):
-    course, context = load_course(course, "exams")
+    course, context = load_course(request, course, "exams")
     context["assessments"] = course.assessments.prefetch_related("topics", "papers")
     return render(request, "catalog/exams.html", context)
 
 
 def assessment(request, course, assessment):
-    course, context = load_course(course, "exams")
+    course, context = load_course(request, course, "exams")
     exam = get_object_or_404(course.assessments, slug=assessment)
     topics = list(exam.topics.all())
     # Rows reached through the exam do not carry their course; join it in for their URLs.
@@ -49,7 +49,7 @@ def assessment(request, course, assessment):
 
 
 def paper(request, course, assessment, paper):
-    course, context = load_course(course, "exams")
+    course, context = load_course(request, course, "exams")
     question_set = get_object_or_404(
         course.questionsets.select_related("assessment"),
         assessment__slug=assessment,

@@ -6,7 +6,7 @@ from .common import load_course, scope_topics
 
 
 def cards(request, course):
-    course, context = load_course(course, "cards")
+    course, context = load_course(request, course, "cards")
     context["decks"] = course.decks.annotate(n_cards=Count("cards")).select_related(
         "topic", "lecture"
     )
@@ -28,7 +28,7 @@ def _player(request, course, title, queryset, **extra):
 
 
 def deck(request, course, slug):
-    course, context = load_course(course, "cards")
+    course, context = load_course(request, course, "cards")
     deck = get_object_or_404(course.decks.select_related("topic", "lecture"), slug=slug)
     context.update(
         deck=deck,
@@ -40,7 +40,7 @@ def deck(request, course, slug):
 
 def review(request, course):
     """The player over every card of the course, optionally narrowed to an exam or topic."""
-    course, context = load_course(course, "cards")
+    course, context = load_course(request, course, "cards")
     queryset = course.cards.all()
     topics, label = scope_topics(request, course)
     heading = "All cards"
@@ -56,7 +56,7 @@ def review(request, course):
 
 
 def problems(request, course):
-    course, context = load_course(course, "problems")
+    course, context = load_course(request, course, "problems")
     context["problem_sets"] = (
         course.questionsets.filter(kind=QuestionSet.Kind.PRACTICE)
         .annotate(n_questions=Count("questions"))
@@ -87,7 +87,7 @@ def paper_context(course, question_set, mode):
 
 
 def problem_set(request, course, slug):
-    course, context = load_course(course, "problems")
+    course, context = load_course(request, course, "problems")
     question_set = get_object_or_404(
         course.questionsets.select_related("topic"), slug=slug, kind=QuestionSet.Kind.PRACTICE
     )

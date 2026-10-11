@@ -49,10 +49,10 @@ Why it has this shape:
 | What | Where | In git |
 |---|---|---|
 | Application code | GitHub; on the server as the image `dsai-vault:live` | yes |
-| Course files (`course.yaml`, `content/`) | your computer, `courses/`; a copy on the server in `~/dsai-vault/courses/` | no |
+| Course files (`course.yaml`, `content/`) | your computer, `courses/`; a copy on the server in `~/dsai-vault/courses/` | not in this repository: in [their own](#the-content-repository) |
 | Source material (`source/`: slides, past papers) | your computer only | no |
 | Database: course content | the server, Docker volume `dsai-vault_data` | no, it is rebuilt from the course files |
-| Database: accounts and study progress | the same file | no, and nothing rebuilds it: it is backed up |
+| Database: accounts, study progress, requests, educators, the switches for a course | the same file | no, and nothing rebuilds it: it is backed up |
 | Images used by content | the same volume, under `media/` | no, copied by `sync_content` |
 | Secrets | the server's `~/dsai-vault/.env`; GitHub Actions secrets; Cloudflare Pages secrets | never |
 | A working copy of each person's progress | that person's browser | — |
@@ -119,6 +119,39 @@ deleted disappears there too. `--dry-run` does steps 1 and 2 only.
 
 Publishing shows the content to everyone who can sign in. It is done when the owner asks
 for it, not at the end of every content session.
+
+## The content repository
+
+The course files have a repository of their own, separate from the application's:
+`courses/` on your computer is a git checkout of it. It exists for the people who write
+courses (educators), who must be able to change course files without being anywhere
+near the code or the server.
+
+```
+courses/                      the content repository (private)
+  AGENTS.md  README.md        how to write content, for a person and for an AI assistant
+  docs/                       a copy of the authoring guide, the field reference and the schemas
+  tools/check.py              a quick structural check that needs nothing but Python
+  semester-5/rl/course.yaml
+  semester-5/rl/content/**    what the site shows
+  semester-5/rl/source/**     raw material: ignored by git, never leaves a computer
+```
+
+- Courses are grouped in `semester-N/` folders. That is for people; a course's address is
+  still its own folder's name, `publish` sends it as `<slug>/`, and the server keeps the
+  courses side by side as before.
+- An educator is given access to that repository on GitHub, works on a branch and opens
+  a pull request. Merging it is your review. Nothing they push is on the site until you
+  pull and run `publish`, which validates every course first and refuses to send anything
+  if one has an error.
+- The repository's `docs/` is a copy. After changing the authoring docs or a schema here,
+  refresh it: `uv run python manage.py export_authoring courses` and commit there.
+- `source/` is ignored there by a `.gitignore` rule. Slides and past papers are the
+  lecturers' and are never committed, there or here.
+
+On a free personal GitHub account a collaborator on a private repository can push to its
+`main` branch; a pull request is a habit you ask for, not something GitHub enforces. What
+protects the site is the step that only you take: `publish`.
 
 ## Shipping code
 
@@ -258,6 +291,32 @@ new value. Between the two steps the site answers 404.
 
 **Changing `DJANGO_SECRET_KEY`** logs everyone out and invalidates open forms; nothing else.
 
+**Being told when something arrives.** When a request or an educator application is
+stored, the site posts a short message to the owner's notification bot
+([desk/notify.py](../desk/notify.py)). It needs two values in the server's `.env`, the
+bot's address (https) and its token:
+
+```
+ssh <server> dsai-vault/bin/deploy setenv BMO_NOTIFY_URL
+ssh <server> dsai-vault/bin/deploy setenv BMO_NOTIFY_TOKEN
+ssh <server> dsai-vault/bin/deploy restart
+```
+
+Each `setenv` waits for the value on standard input: type or paste it and press Enter, so
+it is never part of a command line. The two variables reach the container through
+`compose.yaml`, so the first time this is set up the files under `deploy/` must be put on
+the server too ([What a deploy cannot change](#what-a-deploy-cannot-change)). Without the
+two values everything still works: requests are stored and shown in the admin, nobody is
+told, and the log says so once at start-up. A message never contains a name, a phone
+number or what was written.
+
+**Opening a course, and who writes it.** In the admin, under Courses: tick the course and
+choose an action. *Open to students* and *Close* decide whether students see it at all;
+a course whose file says `enabled: false` stays hidden until it is opened here. *Ask for
+an educator* and *Someone writes it* decide what its page says while it is empty.
+*Clear my switches* goes back to what the course file says. Applications to write a
+course are under Requests and educators; accepting one makes that person its educator.
+
 **Revoking the CI key.** Delete its line (it ends in `github-actions deploy (…)`) from
 `~/.ssh/authorized_keys` on the server.
 
@@ -309,9 +368,17 @@ On a new server, start at [Setting it up from scratch](#setting-it-up-from-scrat
   requests on them; without it the terms can only say "tell the person who runs the
   site". Set it with `deploy setenv DSAI_CONTACT_EMAIL`, then `deploy restart`.
 - About each person the site stores what Google hands over at sign-in (name, e-mail
-  address, Google's id for the account), which courses they chose, and their study
-  progress. No passwords. A person
+  address, Google's id for the account), which courses they chose, their study
+  progress, whether they have taken the tour, and what they sent themselves: requests,
+  and an application to write a course with its phone number. No passwords. A person
   can delete all of it from Settings; deleting the user in the admin does the same.
+- A request about a course is shown to that course's educator without the name of who
+  sent it. Applications, with their phone numbers, are in the admin only. The
+  notification sent to the owner's bot carries none of it.
+- A course the owner has not opened answers 404 to everyone but staff, and is left out
+  of every list and of search.
+- Asking, applying and the educators' page are rate limited like the rest, and one
+  account can send ten requests a day.
 - No secret is in the repository, in an image, or in a log. `.env` on the server is
   readable by its owner only.
 - The containers run as an unprivileged user without Linux capabilities, on a read-only

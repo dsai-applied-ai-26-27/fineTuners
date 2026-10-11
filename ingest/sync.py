@@ -17,7 +17,7 @@ from catalog.models import Course
 from . import mathcheck, store
 from .assets import Assets
 from .build import Builder
-from .discover import content_hash, discover, find_courses
+from .discover import clashes, content_hash, discover, find_courses
 from .load import load_bundle
 from .markdown import Renderer
 from .refs import Resolver
@@ -78,6 +78,19 @@ def sync_all(*, only=None, check_only=False, force=False):
     """Sync every course under settings.CONTENT_ROOTS (or just the slugs in `only`)."""
     courses = find_courses(settings.CONTENT_ROOTS)
     reports = []
+    twice = clashes(settings.CONTENT_ROOTS)
+    for slug, folders in twice.items():
+        # Neither folder is loaded: picking one would be a guess about which is meant.
+        report = Report(course=slug, status="failed")
+        places = " and ".join(f"{folder.parent.name}/{folder.name}" for folder in folders)
+        report.error(
+            "course.yaml",
+            f"two folders are named `{slug}`: {places}",
+            hint="a course's address is its folder's name, so it must be unique. "
+            "Rename or remove one of them",
+        )
+        reports.append(report)
+        courses.pop(slug, None)
     for slug in only or []:
         if slug not in courses:
             report = Report(course=slug, status="failed")
@@ -94,7 +107,7 @@ def sync_all(*, only=None, check_only=False, force=False):
         reports.append(sync_course(path, check_only=check_only, force=force))
 
     if not only and not check_only:
-        for course in Course.objects.exclude(slug__in=courses):
+        for course in Course.objects.exclude(slug__in=[*courses, *twice]):
             report = Report(course=course.slug, status="removed")
             report.notes.append("its folder no longer exists, so it was removed from the database")
             course.delete()

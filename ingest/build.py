@@ -333,6 +333,8 @@ class Builder:
                 "series": spec.series or self.files.slug,
                 "semester": spec.semester,
                 "status": spec.status,
+                "enabled": spec.enabled,
+                "has_educator": spec.has_educator,
                 "hue": spec.hue,
                 "order": spec.order,
                 "description": spec.description.strip(),

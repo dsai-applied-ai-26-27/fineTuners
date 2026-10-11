@@ -2,13 +2,16 @@ from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
+from desk.switches import switches
+
 from ..mine import chosen
 from ..models import Document, QuestionSet
+from ..welcome import welcome
 from .common import load_course
 
 
 def course(request, course):
-    course, context = load_course(course, "overview")
+    course, context = load_course(request, course, "overview")
     documents = {kind: [] for kind in Document.SECTIONS}
     # defer(): leave the big rendered columns in the database; a list only shows titles.
     listed = course.documents.exclude(kind=Document.Kind.SHEET).defer("body_html", "search_text")
@@ -36,12 +39,18 @@ def course(request, course):
         # Whether this course is on the visitor's dashboard: decides which of the two
         # buttons (Add, Remove) the page shows. None when nobody is signed in.
         on_dashboard=None if chosen(request) is None else course.series in chosen(request),
+        # What the page says about itself at the bottom (or instead of content, when
+        # there is none): whether someone writes this course, and whether this is the
+        # year being taught now. An earlier year is finished and asks for nothing.
+        has_educator=switches(request).has_educator(course),
+        is_current=context["editions"][0].pk == course.pk,
+        welcome=welcome(request),
     )
     return render(request, "catalog/course.html", context)
 
 
 def topic(request, course, key):
-    course, context = load_course(course, "overview")
+    course, context = load_course(request, course, "overview")
     topic = get_object_or_404(course.topics, key=key)
     context.update(
         topic=topic,

@@ -65,6 +65,12 @@ succeeds. More in [DEPLOYMENT.md](DEPLOYMENT.md#publishing-course-content).
 A new course starts with
 `uv run python manage.py startcourse <slug> --title "…" --code X --year "2026-27"`.
 
+**Where a course folder sits.** Directly in `courses/`, or one level down in a folder
+that groups courses by semester (`courses/semester-5/rl/`). The grouping is only for
+finding things: a course's address is its own folder's name either way, and that name
+must be unique across all of them. Wherever these pages write `courses/<course>/`, read
+"the course's folder".
+
 ## Where things go
 
 A file's meaning comes only from its location. You never declare a type.

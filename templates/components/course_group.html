@@ -1,6 +1,6 @@
 {% comment %} The courses of one section of the dashboard (`group`, from catalog.views.home). Those with
-   something in them get a card. The rest are only named: an empty card would be a button
-   that leads nowhere. {% endcomment %}
+   something in them get a card. The rest are only named: an empty card would promise
+   something to study. {% endcomment %}
 <div class="semester__body">
   {% if group.ready %}
   <div class="grid">
@@ -8,6 +8,7 @@
   </div>
   {% endif %}
   {% if group.waiting %}
-  <p class="semester__waiting">Not written up yet: {% for c in group.waiting %}<b>{{ c.title }}</b>{% if not forloop.last %}, {% endif %}{% endfor %}.</p>
+  {# Named and linked: the course's own page is where it can be asked for. #}
+  <p class="semester__waiting">Not written up yet: {% for c in group.waiting %}<a href="{{ c.get_absolute_url }}"><b>{{ c.title }}</b></a>{% if not forloop.last %}, {% endif %}{% endfor %}.{% if user.is_authenticated %} Open one to ask for it.{% endif %}</p>
   {% endif %}
 </div>

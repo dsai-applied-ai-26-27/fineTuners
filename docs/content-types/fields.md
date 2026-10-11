@@ -23,6 +23,8 @@ What the course is, and its list of topics.
 | `series` | id |  | Only when this folder is another year of a course that already has a folder: the name of that first folder, e.g. `mlpr`. Folders sharing a `series` are one course in different years: the dashboard opens the latest, and the course page offers every year at the top. |
 | `semester` | whole number |  | Which semester of the programme the course belongs to, e.g. `5`. The dashboard groups courses by it. |
 | `status` | `active` \| `archived` | default `active` | `archived` is a finished course: it is left out of Next up and of the landing page, and without a `semester` it folds away at the bottom of the dashboard. |
+| `enabled` | `true` \| `false` | default `true` | `false` keeps the course out of sight until the owner switches it on (here, or in the admin). For a course nobody has reached yet. |
+| `has_educator` | `true` \| `false` | default `false` | `true` says someone is writing this course. While it has no content its page then says the content is on its way, instead of asking for an educator. |
 | `hue` | whole number | default `250` | Colour of the course, 0-359 on the hue wheel. |
 | `order` | whole number | default `0` | Position among courses of the same semester. |
 | `description` | text |  | One or two sentences shown under the title. |

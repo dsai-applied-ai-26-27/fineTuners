@@ -1,8 +1,8 @@
 from django.conf import settings
 from django.utils.functional import SimpleLazyObject
 
-from . import editions
-from .mine import mine
+from . import news
+from .mine import catalogue, mine
 from .models import Course
 from .nav import has_content
 
@@ -17,10 +17,13 @@ def site(request):
         # latest is listed, only while that one is active, and only once there is
         # something in it to open.
         active = Course.Status.ACTIVE
-        latest = mine(request, editions.latest(list(Course.objects.all())))
+        latest = mine(request, catalogue(request))
         return [c for c in latest if c.status == active and has_content(c)]
 
     return {
         "nav_courses": SimpleLazyObject(current),
         "debug": settings.DEBUG,
+        # The number of the site's latest update: the tour and the news dialog send it
+        # back when they are shown (catalog/welcome.py).
+        "news_latest": news.LATEST,
     }

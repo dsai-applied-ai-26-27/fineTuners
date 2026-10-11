@@ -11,9 +11,13 @@ is saved to their account.
 
 - Read [docs/AUTHORING.md](docs/AUTHORING.md) first, then the page for each content type you
   will write under [docs/content-types/](docs/content-types/).
-- Create and edit files **only** under `courses/<course>/content/` and
-  `courses/<course>/course.yaml`.
-- `courses/<course>/source/` is read-only raw material.
+- Create and edit files **only** under the course's own folder: its `content/` and its
+  `course.yaml`. The folder is `courses/<course>/`, or `courses/semester-N/<course>/`
+  where courses are grouped by semester.
+- The course's `source/` is read-only raw material.
+- `courses/` is a git repository of its own (the content repository, see
+  [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#the-content-repository)). Commit there only
+  when asked, and never anything under a `source/` folder.
 - Do not touch Python, templates, CSS or JavaScript. If the site cannot show something,
   report it; do not change code to make it fit.
 - Finish with `uv run python manage.py sync_content <course>` printing no errors.
@@ -32,11 +36,12 @@ The site also runs on a server, at https://dsai3.pages.dev.
 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) is the full account; read it before touching
 anything under `deploy/`, `edge/`, `.github/` or the `Dockerfile`.
 
-- **Nothing writes to the live database directly.** Not SQL, not the admin, not a copied
-  `db.sqlite3`. Course content changes in exactly one way: course files reach the server
-  and `sync_content` runs there. Accounts and progress change only by people using the
-  site, and by the owner through the admin's Users pages. Locally the rule is the same, which is why a content session only ever writes
-  files.
+- **Nothing writes to the live database directly.** Not SQL, not a copied `db.sqlite3`.
+  Course content changes in exactly one way: course files reach the server and
+  `sync_content` runs there. Accounts, progress, requests and applications change only
+  by people using the site, and by the owner through the admin (Users, Requests and
+  educators, and the switches on the Courses list). Locally the rule is the same, which
+  is why a content session only ever writes files.
 - **Content goes live with `publish`**, which validates all courses, sends their files to
   the server, and prints the server's own sync report. A content session ends at a clean
   local `sync_content`; it runs `publish` only when the owner asks.
@@ -62,6 +67,7 @@ uv run python manage.py sync_content --watch          re-sync whenever a file ch
 uv run --env-file .env python manage.py publish       send all course content to the live site
 uv run python manage.py startcourse <slug> --title "…" --code X --year "2026-27"
 uv run python manage.py export_schemas                regenerate docs/schemas and fields.md
+uv run python manage.py export_authoring courses      refresh the authoring docs kept in the content repository
 uv run python manage.py test                          all tests
 uv run ruff check . && uv run ruff format .           lint and format
 ```
@@ -72,13 +78,18 @@ uv run ruff check . && uv run ruff format .           lint and format
 config/      Django project: settings, root URL config
 catalog/     the site: models, views, URLs, templates, template tags
 progress/    each person's grades and marks, and the endpoint the browser saves them to
-accounts/    the pieces around signing in that are ours (the rest is django-allauth), and
-             which courses each person chose for their dashboard
+accounts/    the pieces around signing in that are ours (the rest is django-allauth),
+             which courses each person chose for their dashboard, and what the site has
+             already shown them (the tour, the news)
+desk/        what people send in (Ask or report, applications to write a course), who
+             writes which course (educators), the owner's switches for a course, and the
+             message to the owner's bot when something arrives
 ingest/      files -> database: schemas, Markdown renderer, sync, management commands
 templates/   base page and shared fragments
 static/      CSS, JavaScript (no build step), vendored libraries, fonts, icons
 docs/        AUTHORING.md, ARCHITECTURE.md, DEPLOYMENT.md, content-types/, schemas/, example-course/
-courses/     course folders: NOT in git (raw material and written content)
+courses/     course folders, grouped as semester-N/<course>/. Not in this repository:
+             a git repository of its own, which educators share (source/ is in neither)
 tools/       vendor_assets.py (fetch front-end libraries), make_icons.py (the logo, in
              every size, into static/brand/), make_figure.py (the chart on the landing
              page), katex_check.cjs
@@ -101,9 +112,19 @@ To sign in locally press "Development sign-in" on the landing page.
   is a new folder whose `course.yaml` says `series: <first folder>`; never rewrite a
   finished year in place, because people's progress is keyed to its ids.
 - The database holds two kinds of table. `catalog_*` is a cache of the course files and may
-  be rebuilt at will. Users, `progress_*` and `accounts_*` (the courses each person
-  chose) exist nowhere else: never delete `db.sqlite3`
-  on the server, and write a migration for any change to those models.
+  be rebuilt at will. Users, `progress_*`, `accounts_*` (the courses each person chose,
+  what they have been shown) and `desk_*` (requests, applications, educators, the
+  switches for a course) exist nowhere else: never delete `db.sqlite3` on the server, and
+  write a migration for any change to those models.
+- Whether students see a course, and whether it asks for an educator, start from its
+  `course.yaml` (`enabled`, `has_educator`) and are overridden by the owner's switches in
+  the admin. Ask `desk.switches`, never the course row alone, and list courses with
+  `catalog.mine.catalogue(request)`, which leaves out those not open.
+- What a person sent is theirs. A notification to the owner's bot says that something
+  arrived and never who sent it or what it says; an educator sees a request about their
+  course without the sender. Keep both that way: the privacy page promises it.
+- News for users is a list in `catalog/news.py`. A change people should know about gets an
+  entry at the top with the next number; the tour is edited in place, never versioned.
 - Every view needs a signed-in person unless it is marked `@login_not_required`. A new page
   is private by default; think before marking one public.
 - Stored HTML is trusted because `ingest/markdown.py` renders with raw HTML disabled. Keep it

@@ -1,6 +1,8 @@
 # course.yaml
 
-One per course, at `courses/<course>/course.yaml`. It names the course and lists its topics.
+One per course, at the top of the course's folder (`courses/<course>/course.yaml`, or
+`courses/semester-5/<course>/course.yaml` where courses are grouped by semester). It
+names the course and lists its topics.
 Fields: [fields.md#course](fields.md#course). Example:
 [example-course/example/course.yaml](../example-course/example/course.yaml).
 
@@ -11,6 +13,8 @@ year: "2026-27"          # quoted: an unquoted 2026-27 is fine too, but a bare 2
 # series: rl             # only for another year of an existing course, see below
 semester: 5              # semester of the programme, 1-12 | leave out
 status: active           # active | archived (a finished course)
+enabled: true            # false: hidden from students until it is opened in the admin
+has_educator: false      # true: someone is writing it
 hue: 150                 # the course's colour, 0-359 on the hue wheel
 order: 4                 # position among courses of the same semester
 description: Markov decision processes, dynamic programming, TD learning and policy gradients.
@@ -35,6 +39,24 @@ all archived follows.
 - `status: archived` means finished. The course stays readable in its semester, but
   Next up stops suggesting it and the landing page does not list it.
 - `order` sorts courses inside a section.
+
+## Open or closed, and who writes it
+
+Two fields say where a course stands. Both are starting points: the person who runs the
+site can switch either one in the admin, and a switch set there wins over the file until
+it is cleared.
+
+- `enabled: false` keeps the course out of sight: it is not on the dashboard, not in the
+  list to choose from, not in search, and its address answers "no such page". Use it for
+  a course nobody has reached yet. Left out, a course is open.
+- `has_educator: true` says someone is writing the course. It only matters while the
+  course has no content: its page then says the content is on its way. With
+  `has_educator: false` (or left out) the page says nobody is writing it yet and offers
+  to apply to become its educator. Once an application is accepted the page stops
+  asking, whatever the file says.
+
+Do not change either field as part of writing content. They are decisions of the person
+who runs the site.
 
 ## Another year of the same course
 
