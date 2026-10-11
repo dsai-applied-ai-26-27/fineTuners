@@ -1,0 +1,46 @@
+{% load static ui %}<!doctype html>
+{% comment %} The frame of the two pages anyone may read without signing in: Privacy and Terms.
+   Each extends this file and fills three blocks (title, changed, content). It stands
+   apart from base.html: no navigation, no Alpine, nothing that needs a signed-in person. {% endcomment %}
+<html lang="en" style="--hue: 255">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>{% block title %}{% endblock %} · DSAI Vault</title>
+  <script nonce="{{ csp_nonce }}">try{var t=localStorage.getItem("dsai:theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
+  <link rel="stylesheet" href="{% static 'fonts/fonts.css' %}">
+  <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  <link rel="stylesheet" href="{% static 'css/components.css' %}">
+  <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+  {% include "components/icons.html" %}
+</head>
+<body class="landing">
+
+<header class="landing__bar">
+  <a class="brand" href="{% url 'catalog:home' %}">
+    <span class="brand__mark" aria-hidden="true">{% include "components/logo.html" %}</span>
+    <span>DSAI<span class="brand__dot"> Vault</span></span>
+  </a>
+</header>
+
+<main class="legal">
+  <p class="overline">Last changed {% block changed %}{% endblock %}</p>
+  {% block content %}{% endblock %}
+
+  {% if contact %}
+  <h2>Questions</h2>
+  <p>Write to <a href="mailto:{{ contact }}">{{ contact }}</a>.</p>
+  {% endif %}
+
+  <p class="legal__back"><a class="link" href="{% url 'catalog:home' %}">{% icon "back" %}Back to the start</a></p>
+</main>
+
+<footer class="landing__foot">
+  <span>DSAI Vault</span>
+  <span>A study site for one programme. Not an official university page. · <a href="{% url 'catalog:privacy' %}">Privacy</a> · <a href="{% url 'catalog:terms' %}">Terms</a></span>
+</footer>
+
+</body>
+</html>

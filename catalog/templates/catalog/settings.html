@@ -24,7 +24,7 @@
         <span class="spacer"></span>
         <form method="post" action="{% url 'account_logout' %}">{% csrf_token %}<button class="btn btn--tonal" type="submit">Sign out</button></form>
       </div>
-      <p class="faint mt-4">Signed in with Google. The site stores your name, your e-mail address and your study progress, and nothing else. <a class="link" href="{% url 'catalog:privacy' %}">Privacy</a></p>
+      <p class="faint mt-4">Signed in with Google. The site stores your name, your e-mail address and your study progress, and nothing else. <a class="link" href="{% url 'catalog:privacy' %}">Privacy</a> · <a class="link" href="{% url 'catalog:terms' %}">Terms</a></p>
       <div class="row mt-4">
         <span class="spacer"></span>
         <button class="btn" type="button" @click="$refs.remove.showModal()">{% icon "delete" %}Delete my account</button>

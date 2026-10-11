@@ -1,32 +1,12 @@
-{% load static ui %}<!doctype html>
+{% extends "catalog/legal_base.html" %}
 {% comment %} What the site keeps about a person, in plain words. Public: Google asks for a link
    to it before "Continue with Google" may be offered to everyone, and people should be able
    to read it before they sign in. Rendered by catalog.views.privacy. {% endcomment %}
-<html lang="en" style="--hue: 255">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light dark">
-  <title>Privacy · DSAI Vault</title>
-  <script nonce="{{ csp_nonce }}">try{var t=localStorage.getItem("dsai:theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
-  <link rel="stylesheet" href="{% static 'fonts/fonts.css' %}">
-  <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
-  <link rel="stylesheet" href="{% static 'css/base.css' %}">
-  <link rel="stylesheet" href="{% static 'css/components.css' %}">
-  <link rel="stylesheet" href="{% static 'css/landing.css' %}">
-  {% include "components/icons.html" %}
-</head>
-<body class="landing">
 
-<header class="landing__bar">
-  <a class="brand" href="{% url 'catalog:home' %}">
-    <span class="brand__mark" aria-hidden="true">{% include "components/logo.html" %}</span>
-    <span>DSAI<span class="brand__dot"> Vault</span></span>
-  </a>
-</header>
+{% block title %}Privacy{% endblock %}
+{% block changed %}October 2026{% endblock %}
 
-<main class="legal">
-  <p class="overline">Last changed October 2026</p>
+{% block content %}
   <h1>Privacy</h1>
   <p class="lead">DSAI Vault is a study site for one university programme, run by a student. It is not an official university service. This page says what it keeps about you and how to remove it.</p>
 
@@ -47,18 +27,5 @@
   <h2>Removing it</h2>
   <p>Open Settings and choose <strong>Delete my account</strong>. Your account and all progress saved to it are removed from the server at once, and from the remaining backup copies as they are replaced over the following two weeks. Clearing progress for one course, or all of it, is on the same page.</p>
 
-  {% if contact %}
-  <h2>Questions</h2>
-  <p>Write to <a href="mailto:{{ contact }}">{{ contact }}</a>.</p>
-  {% endif %}
-
-  <p class="legal__back"><a class="link" href="{% url 'catalog:home' %}">{% icon "back" %}Back to the start</a></p>
-</main>
-
-<footer class="landing__foot">
-  <span>DSAI Vault</span>
-  <span>A study site for one programme. Not an official university page.</span>
-</footer>
-
-</body>
-</html>
+  <p>What you may expect of the site, and it of you, is in the <a href="{% url 'catalog:terms' %}">terms of use</a>.</p>
+{% endblock %}

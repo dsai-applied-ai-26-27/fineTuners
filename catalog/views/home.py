@@ -36,6 +36,12 @@ def privacy(request):
     return render(request, "catalog/privacy.html", {"contact": settings.CONTACT_EMAIL})
 
 
+@login_not_required
+def terms(request):
+    """What a person may expect of the site and the site of them. Public, like privacy."""
+    return render(request, "catalog/terms.html", {"contact": settings.CONTACT_EMAIL})
+
+
 def dashboard_groups(courses):
     """Sort courses into the sections of the dashboard.
 

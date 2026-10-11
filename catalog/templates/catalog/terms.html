@@ -1,0 +1,30 @@
+{% extends "catalog/legal_base.html" %}
+{% comment %} What a person may expect of the site, and the site of them, in plain words. Public, like
+   the privacy page, and linked from Google's consent screen. Rendered by catalog.views.terms.
+   When the wording changes, change the month in the `changed` block as well. {% endcomment %}
+
+{% block title %}Terms of use{% endblock %}
+{% block changed %}October 2026{% endblock %}
+
+{% block content %}
+  <h1>Terms of use</h1>
+  <p class="lead">DSAI Vault is a study site for one university programme, run by a student. It is free, and it is not an official university service. By signing in you agree to what is on this page.</p>
+
+  <h2>The material can be wrong</h2>
+  <p>The notes, flashcards, solutions and exam predictions here are written by a student, with the help of AI tools, from lectures and past papers. They can contain mistakes and they can be out of date. What your lecturers say and hand out is what counts. Nothing here promises what an exam will ask, and the site is not responsible for a mark you get after studying from it.</p>
+
+  <h2>What it is for</h2>
+  <p>For your own study. Read it, drill it, print a sheet for yourself. Do not republish it, sell it, or copy the site wholesale, and do not load it with scripts harder than a person studying would.</p>
+
+  <h2>Your account</h2>
+  <p>You sign in with a Google account, and the account is yours alone. You can delete it and everything saved to it at any time in Settings; the <a href="{% url 'catalog:privacy' %}">privacy page</a> says exactly what is stored. An account that is used to harm the site or other people may be closed.</p>
+
+  <h2>Whose material it is</h2>
+  <p>Course material belongs to the lecturers and the faculty who made it. What is written here are study summaries of it; the original slides and handouts are not published.{% if contact %} If something here is yours and you want it changed or removed, write to <a href="mailto:{{ contact }}">{{ contact }}</a> and it will be.{% else %} If something here is yours and you want it changed or removed, tell the person who runs the site and it will be.{% endif %}</p>
+
+  <h2>No guarantee</h2>
+  <p>The site is offered as it is. It may be unavailable, change, or close, and progress saved to it may be lost. If yours matters to you, export a copy now and then from Settings.</p>
+
+  <h2>Changes to these terms</h2>
+  <p>If this page changes, the date at its top changes with it. Using the site after that means you agree to the new text.</p>
+{% endblock %}

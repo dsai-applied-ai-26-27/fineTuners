@@ -302,9 +302,12 @@ On a new server, start at [Setting it up from scratch](#setting-it-up-from-scrat
   original files is switched off outside DEBUG.
 - The server only answers requests that carry the secret, so nothing is readable under the
   server's own name.
-- `/privacy/` says in plain words what is stored and how to remove it. It is public, and
-  Google's consent screen links to it. `DSAI_CONTACT_EMAIL` in the server's `.env` adds
-  an address for questions to it.
+- `/privacy/` says in plain words what is stored and how to remove it, and `/terms/`
+  what the site is for, that its material can be wrong, and how to ask for something to
+  be removed. Both are public, and Google's consent screen links to both.
+  `DSAI_CONTACT_EMAIL` in the server's `.env` puts an address for questions and removal
+  requests on them; without it the terms can only say "tell the person who runs the
+  site". Set it with `deploy setenv DSAI_CONTACT_EMAIL`, then `deploy restart`.
 - About each person the site stores what Google hands over at sign-in (name, e-mail
   address, Google's id for the account), which courses they chose, and their study
   progress. No passwords. A person
@@ -354,6 +357,7 @@ account that should own this:
    ```
    Application home page            https://dsai3.pages.dev/
    Application privacy policy link  https://dsai3.pages.dev/privacy/
+   Application terms of service     https://dsai3.pages.dev/terms/
    Authorized domains               dsai3.pages.dev
    ```
 4. **Audience → Publish app** ("In production"). While it is in "Testing", only the
