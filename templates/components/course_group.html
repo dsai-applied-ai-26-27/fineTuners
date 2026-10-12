@@ -8,7 +8,9 @@
   </div>
   {% endif %}
   {% if group.waiting %}
-  {# Named and linked: the course's own page is where it can be asked for. #}
-  <p class="semester__waiting">Not written up yet: {% for c in group.waiting %}<a href="{{ c.get_absolute_url }}"><b>{{ c.title }}</b></a>{% if not forloop.last %}, {% endif %}{% endfor %}.{% if user.is_authenticated %} Open one to ask for it.{% endif %}</p>
+  {% comment %} Named and linked to their own pages. And the way to ask for one, where its
+     absence is noticed: the form for content, with the course filled in when it is the
+     only one. {% endcomment %}
+  <p class="semester__waiting">Not written up yet: {% for c in group.waiting %}<a href="{{ c.get_absolute_url }}"><b>{{ c.title }}</b></a>{% if not forloop.last %}, {% endif %}{% endfor %}.{% if user.is_authenticated %} Need {% if group.waiting|length == 1 %}it{% else %}one of them{% endif %}? <a class="link" href="{% url 'desk:ask' %}?kind=content{% if group.waiting|length == 1 %}&amp;course={{ group.waiting.0.series }}{% endif %}&amp;from={{ request.path|urlencode }}">Ask for it</a>{% endif %}</p>
   {% endif %}
 </div>
