@@ -8,11 +8,21 @@
 
 name: dsai-vault
 
+# Docker keeps what a container prints (gunicorn's line per request, Django's warnings) in
+# a file that by default grows for ever. Kept to five files of ten megabytes per service,
+# the oldest dropped: weeks of a study site's traffic, and a disk that cannot fill.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
   # Django, served by gunicorn. Reachable only by the proxy below.
   web:
     image: dsai-vault:live
     restart: unless-stopped
+    logging: *logging
     environment:
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?missing in .env}
       DJANGO_ALLOWED_HOSTS: ${PUBLIC_HOST:?missing in .env}
@@ -29,6 +39,13 @@ services:
       # application arrives (desk/notify.py). Empty: they are stored and nobody is told.
       BMO_NOTIFY_URL: ${BMO_NOTIFY_URL:-}
       BMO_NOTIFY_TOKEN: ${BMO_NOTIFY_TOKEN:-}
+      # Optional: a mail server, for e-mail to educators (desk/mail.py). Without a host
+      # the site writes to nobody.
+      DSAI_EMAIL_HOST: ${DSAI_EMAIL_HOST:-}
+      DSAI_EMAIL_PORT: ${DSAI_EMAIL_PORT:-587}
+      DSAI_EMAIL_USER: ${DSAI_EMAIL_USER:-}
+      DSAI_EMAIL_PASSWORD: ${DSAI_EMAIL_PASSWORD:-}
+      DSAI_EMAIL_FROM: ${DSAI_EMAIL_FROM:-}
     volumes:
       - data:/data # the database and the images copied from course content
       - ./courses:/courses:ro # course files, replaced by `deploy content`
@@ -47,6 +64,7 @@ services:
   proxy:
     image: caddy:2-alpine
     restart: unless-stopped
+    logging: *logging
     environment:
       ORIGIN_SECRET: ${ORIGIN_SECRET:?missing in .env}
       PUBLIC_HOST: ${PUBLIC_HOST}

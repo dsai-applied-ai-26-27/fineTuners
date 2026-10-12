@@ -10,12 +10,29 @@
     <h1>Educators</h1>
     <p class="dash-head__lead">The courses here are written by students. An educator takes one course and turns its lectures into what everyone else studies from.</p>
   </div>
+  <div class="dash-head__tools no-print">
+    <a class="btn btn--outlined btn--small" href="{% url 'desk:guide' %}">{% icon "guide" %}The guide</a>
+    {% if welcome.educator %}<button class="btn btn--outlined btn--small" type="button" @click="$dispatch('educator-tour')">{% icon "help" %}How it works</button>{% endif %}
+  </div>
 </header>
 
+{% if taken_back %}<p class="notice notice--top" role="status">{% icon "check" %}Taken back. The course on the site is as it was before that hand-in. Your own copy still has the work.</p>{% endif %}
 {% if applied %}<p class="notice notice--top" role="status">{% icon "check" %}Application sent, thank you. You will be contacted on the number you gave; its state shows below.</p>{% endif %}
 
+{% comment %} A new version of the educator kit, announced by the owner (desk/kit.py). Shown until
+   this person presses the button, which tells the server (static/js/components/notice.js). {% endcomment %}
+{% for version in kit_news %}
+<div class="notice notice--top notice--stack" role="status" x-data="notice" x-show="!gone"
+     data-seen="{% url 'catalog:seen' %}" data-upto="{{ version.number }}">
+  <p>{% icon "sync" %}<strong>Version {{ version.number }} of the educator kit is out: {{ version.title }}.</strong></p>
+  <ul>{% for change in version.changes %}<li>{{ change }}</li>{% endfor %}</ul>
+  <p>In your kit's folder run <code>git pull</code>. Your course is not touched by it.</p>
+  <button class="btn btn--small btn--tonal" type="button" @click="dismiss()">Got it</button>
+</div>
+{% endfor %}
+
 {% for course in writing %}
-<section class="semester">
+<section class="semester" id="course-{{ course.slug }}">
   <header class="semester__head tone" style="--hue: {{ course.hue }}">
     <p><span class="course-card__code">{{ course.code }}</span></p>
     <h2>{{ course.title }}</h2>
@@ -25,15 +42,65 @@
     <div class="plate brief">
       <h3>How to add to it</h3>
       <ol>
-        <li><strong>Get the files.</strong> {% if repo %}They are in a private repository: <a class="link" href="{{ repo }}">{{ repo }}</a>. If it says "not found", your GitHub account has not been added yet: ask.{% else %}You will be sent the address of the repository.{% endif %} This course is the folder <code>semester-{{ course.semester|default:"?" }}/{{ course.slug }}</code>.</li>
-        <li><strong>Add the material.</strong> Put the lecture slides, labs and past papers in that folder's <code>source/</code>. They stay on your computer; that folder is never uploaded.</li>
-        <li><strong>Let your assistant write.</strong> Open the repository in your AI assistant and give it this:
-          <pre class="brief__prompt">Update the CMS for this course: semester-{{ course.semester|default:"?" }}/{{ course.slug }}
-Follow AGENTS.md in this repository.</pre>
+        <li><strong>Get the educator kit.</strong> It holds the instructions for your AI assistant, the format and the tools, and no course content: <a class="link" href="{{ kit }}">{{ kit }}</a>. Clone it once; run <code>git pull</code> in it before each session.</li>
+        <li><strong>Start from what the site has.</strong>
+          {# A form, because the site also notes which version you now have. #}
+          <form class="inline-form" method="post" action="{% url 'desk:files' course.series %}">{% csrf_token %}<button class="btn btn--tonal btn--small" type="submit">{% icon "download" %}Download the course files</button></form>
+          Then, in the kit: <code>uv run tools/unpack.py {{ course.slug }}.zip</code>. It puts the course in <code>courses/{{ course.slug }}/</code> and bookmarks it with a commit in your own copy (nothing is uploaded by that): your starting point.</li>
+        <li><strong>Add the material.</strong> Lecture slides, labs and past papers go in <code>courses/{{ course.slug }}/source/</code>. They stay on your computer and are never packed or uploaded.</li>
+        <li><strong>Let your assistant write.</strong> Open the kit's folder in your AI assistant and give it this:
+          <pre class="brief__prompt">Update the CMS for this course: {{ course.slug }}</pre>
         </li>
-        <li><strong>Check, then hand it in.</strong> Read what it wrote against the lecture. Then open a pull request; it is checked automatically, and it is on the site once it has been accepted.</li>
+        <li><strong>Check, pack, hand in.</strong> Read what it wrote against the lecture; <code>git diff</code> shows every line that changed. Then <code>uv run tools/pack.py {{ course.slug }}</code>, and hand in the zip it makes, just below.</li>
       </ol>
-      <p class="brief__state">{% if course.ready %}On the site now: {{ course.counts.reading }} note{{ course.counts.reading|pluralize }}, {{ course.counts.cards }} card{{ course.counts.cards|pluralize }}, {{ course.counts.questions }} problem{{ course.counts.questions|pluralize }}. <a class="link" href="{{ course.get_absolute_url }}">Open the course</a>{% else %}Nothing is on the site for this course yet.{% endif %}</p>
+      <p class="brief__state">{% if course.ready %}On the site now: {{ course.counts.reading }} note{{ course.counts.reading|pluralize }}, {{ course.counts.cards }} card{{ course.counts.cards|pluralize }}, {{ course.counts.questions }} problem{{ course.counts.questions|pluralize }}. <a class="link" href="{{ course.get_absolute_url }}">Open the course</a>{% else %}Nothing is on the site for this course yet.{% endif %} · <a class="link" href="{% url 'desk:guide' %}">Every step in full</a></p>
+    </div>
+
+    <div class="plate brief">
+      <h3>Hand in</h3>
+      {% if course.handed %}
+      <div class="notice notice--stack" role="status">
+        <p>{% icon "check" %}<strong>Taken in: {{ course.handed.summary }}. It is on the site now.</strong></p>
+        <p>Note it down in your own copy, so that your next piece of work starts from here: <code>git add -A courses/{{ course.slug }}</code> then <code>git commit -m "{{ course.slug }}: handed in"</code>. That is a bookmark on your computer; it uploads nothing.</p>
+      </div>
+      {% endif %}
+      {% if course.refused %}{% include "desk/refused.html" with refused=course.refused %}{% endif %}
+
+      {% comment %} enctype="multipart/form-data" is what lets a form carry a file; without it the
+         browser would send only the file's name. The view finds it in request.FILES. {% endcomment %}
+      <form class="handin" method="post" enctype="multipart/form-data" action="{% url 'desk:hand_in' course.series %}">
+        {% csrf_token %}
+        <input class="input" type="file" name="zip" accept=".zip,application/zip" required aria-label="The zip made by pack.py">
+        <button class="btn btn--filled" type="submit">{% icon "upload" %}Hand in</button>
+        {# Unticked, a hand-in that takes something away is shown back first, not taken in. #}
+        <label class="handin__tick"><input type="checkbox" name="removals" value="yes"><span>It may change and remove what is there</span></label>
+      </form>
+      <p class="form__hint">The zip that <code>tools/pack.py</code> made. You may add, change and remove. A hand-in that removes or rewrites anything is first shown back to you, line by line, and is taken in when you tick the box: that catches a slip before it is live. It must be built on the version the site has. What passes is on the site at once, and every earlier version is kept below.</p>
+
+      {% if course.timeline %}
+      <h3 class="brief__sub">The course, step by step</h3>
+      <ol class="steps">
+        {% for step in course.timeline %}
+        <li>
+          <p class="sent__meta"><strong>{{ step.summary }}</strong><span>{{ step.created_at|date:"j M Y, H:i" }} · {% if step.user_id == user.pk %}you{% elif step.user %}{{ step.user.get_full_name|default:"another educator" }}{% else %}a former educator{% endif %}</span><span class="chip sent__status" data-status="{{ step.status }}">{{ step.get_status_display }}</span></p>
+          <details class="steps__files"><summary>Files, and this version</summary>
+            <ul>
+              {% for name in step.new_files %}<li><code>{{ name }}</code> new</li>{% endfor %}
+              {% for name, lines in step.grown.items %}<li><code>{{ name }}</code> +{{ lines }} line{{ lines|pluralize }}</li>{% endfor %}
+              {% for name, lines in step.shrunk.items %}<li><code>{{ name }}</code> {{ lines }} line{{ lines|pluralize }} removed or rewritten</li>{% endfor %}
+              {% for name in step.removed_files %}<li><code>{{ name }}</code> removed</li>{% endfor %}
+              {% if step.removed_ids %}<li>ids gone: {{ step.removed_ids|join:", " }}</li>{% endif %}
+            </ul>
+            {# The backup: the whole course as it stood after this step. #}
+            <p><a class="link" href="{% url 'desk:handin_zip' step.pk %}">Download the course as it was after this step</a></p>
+          </details>
+          {% if course.undo and course.undo.pk == step.pk %}
+          <form class="steps__undo" method="post" action="{% url 'desk:take_back' step.pk %}">{% csrf_token %}<button class="btn btn--small" type="submit">Take it back</button><span class="form__hint">The site returns to the version before it. Your copy keeps the work.</span></form>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ol>
+      {% endif %}
     </div>
 
     {% if course.asked %}
@@ -81,8 +148,8 @@ Follow AGENTS.md in this repository.</pre>
   </header>
   <div class="semester__body">
     <div class="plate brief">
-      <p><strong>The work.</strong> For each lecture: notes that can be read in one sitting, flashcards, and where the course has them, problems and past papers with worked answers. All of it is plain text files in a fixed format, kept in a shared repository.</p>
-      <p><strong>The tools.</strong> It can be done by hand or with a free chatbot. For a whole course, what works is a paid AI assistant that reads the slides and writes the files, with you checking every lecture against the original.</p>
+      <p><strong>The work.</strong> For each lecture: notes that can be read in one sitting, flashcards, and where the course has them, problems and past papers with worked answers. All of it is plain text files in a fixed format, written on your own computer.</p>
+      <p><strong>The tools.</strong> It can be done by hand or with a free chatbot. For a whole course, what works is a paid AI assistant that reads the slides and writes the files, with you checking every lecture against the original. <a class="link" href="{% url 'desk:guide' %}">The guide</a> shows the whole way, from the first clone to the hand-in.</p>
       <p><strong>What you get.</strong> The course you know best, in a form your whole year can study from, and requests about it come to you.</p>
     </div>
 

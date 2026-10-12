@@ -49,10 +49,11 @@ Why it has this shape:
 | What | Where | In git |
 |---|---|---|
 | Application code | GitHub; on the server as the image `dsai-vault:live` | yes |
-| Course files (`course.yaml`, `content/`) | your computer, `courses/`; a copy on the server in `~/dsai-vault/courses/` | not in this repository: in [their own](#the-content-repository) |
+| Course files (`course.yaml`, `content/`) | your computer, `courses/`; a copy on the server in `~/dsai-vault/courses/` | not in this repository: in [their own](#course-files-and-the-educator-kit) |
 | Source material (`source/`: slides, past papers) | your computer only | no |
 | Database: course content | the server, Docker volume `dsai-vault_data` | no, it is rebuilt from the course files |
-| Database: accounts, study progress, requests, educators, the switches for a course | the same file | no, and nothing rebuilds it: it is backed up |
+| Database: accounts, study progress, requests, educators, hand-ins, the switches for a course | the same file | no, and nothing rebuilds it: it is backed up |
+| Courses as handed in, unpacked | the same volume, under `handins/` | no, rebuilt from the hand-ins in the database |
 | Images used by content | the same volume, under `media/` | no, copied by `sync_content` |
 | Secrets | the server's `~/dsai-vault/.env`; GitHub Actions secrets; Cloudflare Pages secrets | never |
 | A working copy of each person's progress | that person's browser | — |
@@ -120,38 +121,83 @@ deleted disappears there too. `--dry-run` does steps 1 and 2 only.
 Publishing shows the content to everyone who can sign in. It is done when the owner asks
 for it, not at the end of every content session.
 
-## The content repository
+## Course files, and the educator kit
 
-The course files have a repository of their own, separate from the application's:
-`courses/` on your computer is a git checkout of it. It exists for the people who write
-courses (educators), who must be able to change course files without being anywhere
-near the code or the server.
+Three repositories, each with one job:
 
-```
-courses/                      the content repository (private)
-  AGENTS.md  README.md        how to write content, for a person and for an AI assistant
-  docs/                       a copy of the authoring guide, the field reference and the schemas
-  tools/check.py              a quick structural check that needs nothing but Python
-  semester-5/rl/course.yaml
-  semester-5/rl/content/**    what the site shows
-  semester-5/rl/source/**     raw material: ignored by git, never leaves a computer
-```
+| Repository | Holds | Who writes to it |
+|---|---|---|
+| this one | the application | you, through pull requests |
+| the content repository (`courses/` on your computer is its checkout; private) | every course's `course.yaml` and `content/`, grouped in `semester-N/` folders | you alone |
+| the educator kit (`educator-kit/` here is its checkout; **public**) | instructions for an AI assistant, the authoring docs, three tools. **No course** | you alone; educators clone it and pull |
 
-- Courses are grouped in `semester-N/` folders. That is for people; a course's address is
-  still its own folder's name, `publish` sends it as `<slug>/`, and the server keeps the
-  courses side by side as before.
-- An educator is given access to that repository on GitHub, works on a branch and opens
-  a pull request. Merging it is your review. Nothing they push is on the site until you
-  pull and run `publish`, which validates every course first and refuses to send anything
-  if one has an error.
-- The repository's `docs/` is a copy. After changing the authoring docs or a schema here,
-  refresh it: `uv run python manage.py export_authoring courses` and commit there.
-- `source/` is ignored there by a `.gitignore` rule. Slides and past papers are the
-  lecturers' and are never committed, there or here.
+Courses are grouped in `semester-N/` folders for people's sake. A course's address is
+still its own folder's name, `publish` sends it as `<slug>/`, and the server keeps the
+courses side by side as before. `source/` is ignored in the content repository: slides and
+past papers are the lecturers' and are never committed anywhere.
 
-On a free personal GitHub account a collaborator on a private repository can push to its
-`main` branch; a pull request is a habit you ask for, not something GitHub enforces. What
-protects the site is the step that only you take: `publish`.
+**How an educator's work reaches the site.** The site's guide (`/educators/guide/`) and
+the kit's README say it to them step by step. In short:
+
+1. They clone the kit, download their course's files on the Educators page, and unpack
+   them into the kit with `tools/unpack.py`, which commits that state in their copy.
+   Their course is tracked by git on their computer only; pushing is switched off.
+2. Their assistant writes; they check; `tools/pack.py` makes one zip.
+3. They upload that zip on the Educators page. They may add, change and remove. The
+   site takes it in if it is built on the version the site has and the full validation
+   passes; one that removes or rewrites anything is first shown back to them and needs a
+   tick. Then it is **live at once**. Otherwise it is refused with the reason and the
+   steps to take, and nothing changes.
+4. You are notified (the bell, and the bot if it is set up; more urgently when something
+   was removed), and the course's history on their page gains a step.
+
+**Backups of a course.** Every hand-in keeps the whole course as it stood after it, in
+the database, which is backed up with everything else. Each step can be downloaded (by
+the course's educators on their page, by you in the admin), and handing an earlier one
+in again brings it back. Your own course files, and their git history, are a second copy
+that no hand-in can touch.
+
+**What you do about a hand-in.** Nothing, for it to be live. Two things remain yours:
+
+- *Taking it into your course files.* The site shows the course as handed in, from a
+  folder of its own; your files do not have the additions until you fetch them. In the
+  admin, under Hand-ins, download the newest one for the course (each holds the whole
+  course as it stood) and run
+  ```
+  uv run python manage.py import_course rl-handin-12.zip
+  ```
+  It validates the zip. If you have not changed that course yourself since you last
+  published it, your files simply become the educators' version: what they added,
+  changed and removed. If you have, it takes what the zip adds and stops at any file
+  that differs otherwise, for you to decide (`--theirs`, `--mine`). Read the diff,
+  `sync_content rl`, commit in `courses/`, and `publish`. The command leaves a small file
+  in the course folder, `.merged`, saying which hand-in your files now include; commit
+  it too. `publish` sends it along, and the site then marks the hand-in merged and drops
+  its own copy. If you publish without doing this, nothing is lost: the site keeps
+  showing the hand-in, and the publish report says which courses lack hand-ins.
+- *Taking it off the site.* Hand-ins in the admin, tick it, **Take off the site**. It and
+  every later hand-in for that course are withdrawn and the course is loaded again as it
+  was. The educators of the course are told under their bell. Their own copies still
+  have the work, so say what was wrong before they hand in again. (An educator can take
+  back their own newest hand-in themselves.)
+
+When you change a course in your own files and publish, educators get the new version
+with their next download, and a hand-in built on the old one is refused until they do.
+
+**The kit.** It is generated from this repository: its texts are in
+[ingest/educator_kit/](../ingest/educator_kit/), its docs are `docs/`, its tools run
+copies of the importer's own Django-free modules, and its versions are listed in
+[desk/kit.py](../desk/kit.py). To release a change:
+
+1. Edit the sources, and add a version at the top of `desk/kit.py`. Merge.
+2. `uv run python manage.py export_authoring educator-kit`, then commit and push in
+   `educator-kit/`.
+3. In the admin, Kit announcements, add the version. Educators see a notice on their
+   page and are e-mailed to run `git pull`. Do this last: it tells people to pull.
+
+The kit's repository is public, so an educator needs no invitation and nobody but you
+can push to it. It contains no course and nothing secret; check that this stays true
+before each push (`git status`, `git diff` in `educator-kit/`).
 
 ## Shipping code
 
@@ -216,15 +262,19 @@ the certificate for the origin name. Its file has one block for us, which forwar
 **`proxy`** — [deploy/Caddyfile](../deploy/Caddyfile). Answers 404 to anything without the
 right secret header, so the site cannot be read around Cloudflare. Serves `/media/` from
 the volume. Sets the `Host` header to the public name and `X-Forwarded-Proto: https`
-before passing a request to Django, and asks search engines not to index anything.
+before passing a request to Django, and asks search engines not to index anything. It
+turns away a request larger than 30 MB, and tells browsers the site uses neither camera,
+microphone, location, payments nor USB.
 
 **`web`** — [Dockerfile](../Dockerfile). gunicorn with two workers, as an unprivileged
-user, on a read-only file system; `/data` is the only writable place. Static files are
+user, on a read-only file system; `/data` is the only writable place. Its line per
+request leaves out the query string and the referring page. Static files are
 served by WhiteNoise from inside the process, under hashed names
 ([config/storage.py](../config/storage.py)), so browsers keep them forever.
 
 **Settings** — one [config/settings.py](../config/settings.py) for laptop and server. With
-`DJANGO_DEBUG=0` it refuses to start without `DJANGO_SECRET_KEY`, trusts the proxy's
+`DJANGO_DEBUG=0` (which is also what it assumes once `DJANGO_ALLOWED_HOSTS` is set) it
+refuses to start without `DJANGO_SECRET_KEY`, trusts the proxy's
 `X-Forwarded-Proto`, marks cookies secure, sends HSTS, and logs errors to the console.
 `manage.py check --deploy` is clean and CI keeps it that way.
 
@@ -310,6 +360,24 @@ two values everything still works: requests are stored and shown in the admin, n
 told, and the log says so once at start-up. A message never contains a name, a phone
 number or what was written.
 
+**E-mail to educators.** The site writes to educators about their role: an accepted
+application, a new version of the kit, a hand-in taken off the site
+([desk/mail.py](../desk/mail.py)). It needs a mail server: any provider's SMTP details.
+Set each value with `deploy setenv`, then restart:
+
+```
+ssh <server> dsai-vault/bin/deploy setenv DSAI_EMAIL_HOST
+ssh <server> dsai-vault/bin/deploy setenv DSAI_EMAIL_USER
+ssh <server> dsai-vault/bin/deploy setenv DSAI_EMAIL_PASSWORD
+ssh <server> dsai-vault/bin/deploy setenv DSAI_EMAIL_FROM
+ssh <server> dsai-vault/bin/deploy restart
+```
+
+The port is 587 with STARTTLS unless `DSAI_EMAIL_PORT` says otherwise. Like the bot's
+values these reach the container through `compose.yaml`, so the files under `deploy/`
+must be on the server first. Without a host nothing is sent and nothing fails. The
+privacy page says who is written to and about what; keep it true if that grows.
+
 **Opening a course, and who writes it.** In the admin, under Courses: tick the course and
 choose an action. *Open to students* and *Close* decide whether students see it at all;
 a course whose file says `enabled: false` stays hidden until it is opened here. *Ask for
@@ -377,10 +445,34 @@ On a new server, start at [Setting it up from scratch](#setting-it-up-from-scrat
   notification sent to the owner's bot carries none of it.
 - A course the owner has not opened answers 404 to everyone but staff, and is left out
   of every list and of search.
+- An educator can change their own course and nothing else. What they upload is one
+  zip, checked before anything is written: paths, kinds of file, sizes, that it is built
+  on the version the site has, that anything it removes was confirmed, and the full
+  validation. It is unpacked only under the data volume, never into the published course
+  files, and the version before it stays in the database. One hand-in at a time per
+  course, twenty a day per person.
+- Images from course content are served with a policy that lets them run nothing when
+  opened on their own, and SVG files that carry a script are refused at the door.
+- The site sends e-mail only to educators, one message per person, and only if a mail
+  server is configured.
 - Asking, applying and the educators' page are rate limited like the rest, and one
   account can send ten requests a day.
+- A request larger than its page accepts is refused before it is read: 2.5 MB anywhere,
+  26 MB where a signed-in person hands in a course
+  ([config/bodylimit.py](../config/bodylimit.py)), and 30 MB at the proxy whatever the
+  page. Without that, any visitor could have the server write an upload of any size to
+  its temporary folder, which is memory.
 - No secret is in the repository, in an image, or in a log. `.env` on the server is
   readable by its owner only.
+- What the containers log is one line per request (time, page, answer, size, duration,
+  kind of browser) and Django's warnings. Not the visitor's address, not who was signed
+  in, and not what follows the `?` of an address, so no search term and no sign-in code.
+  A failed e-mail is logged by its kind, never with the address. Docker keeps at most
+  50 MB of it per service ([deploy/compose.yaml](../deploy/compose.yaml)). The server's
+  main Caddy is not part of this project: if it writes an access log of its own, that
+  log has the visitor's address and the secret header in it, and is yours to check.
+- Debug mode cannot come on by omission: it is off wherever `DJANGO_ALLOWED_HOSTS` is
+  set, unless `DJANGO_DEBUG=1` says otherwise.
 - The containers run as an unprivileged user without Linux capabilities, on a read-only
   file system, and are not published on any port of the server.
 - Every page carries a Content Security Policy: scripts, styles, fonts and images load

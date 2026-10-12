@@ -31,7 +31,8 @@ Five Django **apps** of our own, listed in `INSTALLED_APPS` in
 - **`accounts`** is the little that is ours around signing in. The sign-in itself is
   django-allauth's.
 - **`desk`** owns what people send to whoever runs the site (requests, applications to
-  write a course), who writes which course, and the owner's switches for a course.
+  write a course), who writes which course, what they hand in for it, and the owner's
+  switches for a course.
 
 The split between files and database is the main design decision: content is written as
 files (so an AI can author it and a human can read a diff), but served from a database (so
@@ -451,11 +452,95 @@ whether students see each course and who writes it; the join by series is done w
 **Why an educator is not given the admin.** The admin is one door: `is_staff` opens all
 of it, and narrowing it per table and per course is work that would have to be right
 every time. More to the point, the course tables are a cache. A row added there is gone
-at the next sync, because content only ever arrives as files. So an educator works where
-the content really lives: the course files, kept in a private repository of their own
-with instructions for an AI assistant (see [DEPLOYMENT.md](DEPLOYMENT.md#the-content-repository)).
-What they hand in is a pull request, the owner's review is the merge, and `publish`
-puts it on the site.
+at the next sync, because content only ever arrives as files. So an educator works on
+files, on their own computer, in a copy of the **educator kit**: a public repository with
+the instructions for an AI assistant, the authoring docs and three tools, and no course
+(see [DEPLOYMENT.md](DEPLOYMENT.md#course-files-and-the-educator-kit)).
+
+**A course as one zip** ([ingest/handin.py](../ingest/handin.py)) is how course files
+travel. The educators' page gives the course as a download (`desk.views.files`: a POST,
+because it also notes which version that person now has), the kit packs it again in the
+same shape, and the site takes that file back. The module imports no Django, so the kit
+runs the very same code. It trusts nothing in a zip: a path that leaves the course
+folder, a link, a kind of file a course is not made of, an image carrying a script and
+anything oversized are refused.
+
+**What a hand-in may do** (`handin.compare`). Anything: add, change, remove. `compare`
+does not forbid; it reports what one version does to another: new files, files that are
+gone, lines gained, lines removed or rewritten (the old lines are no longer a
+subsequence of the new ones), and the ids that disappear, since students' progress is
+stored under them. Two things stand between a slip and the live site:
+
+- *It has to be meant.* A hand-in that takes anything away is first shown back to the
+  person, line by line, and taken in only with the box on the form ticked (`confirmed`).
+- *It has to be built on what the site has.* The site remembers the version of the course
+  each educator last took from it or gave it (`Educator.synced_version`; a version is
+  `handin.version_of`, a fingerprint of the files). If the course has changed since,
+  taking the zip in would undo someone else's work, so it is refused and the page shows
+  how to put the work on top of the latest version. That is why the download is a POST:
+  it records the version.
+
+**Taking one in** ([desk/handins.py](../desk/handins.py), `take`). The view
+(`desk.views.hand_in`) receives the file in `request.FILES`; the form says
+`enctype="multipart/form-data"`, which is what lets a browser send a file. Under a lock
+per course (a file made with `O_EXCL`, which works across the server's worker processes),
+the zip is checked, unpacked into a folder of its own, and given to `sync_course`, which
+validates everything and writes to the database only if nothing is wrong. So one call is
+both the check and the going live. A refusal (`Refused`, with a kind and the lines of the
+reason) changes nothing and is shown on the page with what to do about it.
+
+**Nothing is lost.** Each `HandIn` row keeps the whole course as it stood after that step
+(`archive`, a zip in the database, which is what backups contain), with the version
+before and after. The steps of a course are its history: on the educators' page each can
+be downloaded and, to go back to it, handed in again. An educator can take back their
+own newest hand-in, and the owner any, in the admin (`handins.withdraw`): it and every
+later one for the course are withdrawn, since each was built on the one before, and the
+course is loaded again as it was.
+
+**Where the site reads a course from** ([ingest/live.py](../ingest/live.py)). The owner's
+course files are a folder the application cannot write to, replaced as a whole by
+`publish`. A hand-in therefore never touches them. `live.folders()` gives the folder to
+read each course from: the owner's, unless there are hand-ins on the site that the
+owner's files do not include yet, in which case it is the newest hand-in, unpacked under
+`settings.HANDINS_DIR`. `ingest` does not know about hand-ins; `desk` registers
+`handins.overlay` with it when Django starts (`DeskConfig.ready`). A real sync also
+settles: the owner's files include a hand-in when they say so (`import_course` writes
+the hand-in's version into a file, `.merged`, which `publish` sends along), or when they
+are the very same files. Then it is marked merged and its folder removed. If the owner
+publishes without it, the site keeps showing the hand-in and the sync report says so.
+The unpacked folder is a working copy, rebuilt from the database when missing.
+
+**Notifications** ([desk/notices.py](../desk/notices.py), `desk.Notification`). The bell at
+the top of every page lists what the site has to tell a person: an answer to their
+request, a decision on their application, a change to a course they write, a new version
+of the kit; the owner gets theirs there too, beside the message to the bot.
+`notices.tell(users, title, body, url)` leaves one row per person, at the place where
+the thing happens. The context processor hands the newest few to every page lazily, so
+it is one query, and only for someone signed in. Opening the bell posts to
+`/notifications/read/` ([bell.js](../static/js/components/bell.js)), which is what makes
+the number go away on every device. A notification says what happened and where to
+look, never who sent something or what they wrote.
+
+**Kit versions and telling educators** ([desk/kit.py](../desk/kit.py)). The versions of
+the kit are a list in code, written into the kit as `VERSION` and `CHANGELOG.md`. A
+version is announced by adding a row under Kit announcements in the admin. That is a
+step of its own because the site learns the number at deploy, which can be before the
+kit's repository has it. An announcement puts a notice on each educator's page until
+they dismiss it (`Profile.kit_seen`) and e-mails them.
+
+**E-mail** ([desk/mail.py](../desk/mail.py)) is the same news by another road, for
+when a mail server is configured; without one the bell is the only channel. It goes to
+educators only, about their role.
+`settings.MAILERS` names where mail goes, as `DATABASES` names where data goes: a real
+server once `DSAI_EMAIL_HOST` is set, the terminal in development, nowhere otherwise.
+One message per person, sent from a thread, and a failure is a log line.
+
+**The educator tour** ([desk/templates/desk/educator_tour.html](../desk/templates/desk/educator_tour.html))
+is a second dialog on the parts of the first (`tour(offer, 'educator')` in
+[tour.js](../static/js/components/tour.js)). It is offered once, the first time someone
+arrives after being given the role (`welcome()["educator_tour"]`), before any news, and
+stays in Settings beside the first tour. [desk/templates/desk/guide.html](../desk/templates/desk/guide.html)
+is the long form: the kit's README told from the site's side.
 
 ## Tests
 
@@ -475,6 +560,14 @@ puts it on the site.
   is reachable signed out, the development sign-in is closed outside DEBUG, deleting an
   account takes its progress with it.
 
+- The educator kit is exported to a temporary folder and its tools are run as separate
+  Python processes, the way an educator runs them, in a real git repository: unpack,
+  stash, unpack the newer version, pop.
+- [desk/tests/test_handins.py](../desk/tests/test_handins.py): what one version does
+  to another; additions going live; a removal shown first and taken in once confirmed; a
+  stale copy, invalid content and a changed course code each refused with nothing
+  changed; every step downloadable and an earlier one brought back; taking a hand-in
+  back; a publish with and without the hand-in.
 - [desk/tests/](../desk/tests/): asking, applying, the educator's page, the switches
   and a closed course, the admin actions, and that a notification never carries what a
   person wrote. The bot is never contacted: the one function that opens a connection is
@@ -493,7 +586,7 @@ tests that need no database.
 
 There is one [config/settings.py](../config/settings.py). It reads environment variables,
 and with none set you get local development. The server sets `DJANGO_DEBUG=0` and its own
-values; the block at the end of the file, `if not DEBUG:`, is everything that then changes.
+values (naming its hosts in `DJANGO_ALLOWED_HOSTS` turns debug mode off by itself); the block at the end of the file, `if not DEBUG:`, is everything that then changes.
 [DEPLOYMENT.md](DEPLOYMENT.md) covers the server; the Django side of it is this:
 
 - **WSGI.** `runserver` is a development convenience. In production
@@ -523,10 +616,21 @@ values; the block at the end of the file, `if not DEBUG:`, is everything that th
   signed out, one address) may make to it; the call after that gets `429` with
   `Retry-After`. It covers saving progress, search and starting a sign-in. The
   browser treats a refused save like being offline and sends it with the next one.
+- **Request size.** [config/bodylimit.py](../config/bodylimit.py), a second small
+  middleware. Django's `DATA_UPLOAD_MAX_MEMORY_SIZE` limits a form's fields but not the
+  files sent with it, and the CSRF check reads the whole form, files included, before
+  the login check has asked who is there. So a request that declares more than that
+  setting is answered `413` before anything reads it, except on the paths in
+  `BODY_LIMITS` for a signed-in person: the page where an educator hands in a course.
+  It answers in `__call__`, because the CSRF check is a `process_view` hook and those
+  run after every middleware has let the request through.
+- **Debug mode** is on only where `DJANGO_ALLOWED_HOSTS` is empty, or where
+  `DJANGO_DEBUG=1` asks for it. A server has to name its hosts, so one where
+  `DJANGO_DEBUG=0` was forgotten still runs with debug off.
 - **`check --deploy`** is Django's own review of exactly these settings. A test
   ([config/tests.py](../config/tests.py)) and CI keep it clean.
 - **Tests** always run with development settings, because `config/settings.py` is read
-  with no variables set. The two tests that need the production side start a second
+  with no variables set. The tests that need the production side start a second
   Python process with the server's variables.
 
 ## Not built yet, and where it would go

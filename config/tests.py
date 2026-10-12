@@ -1,5 +1,5 @@
-"""What config/ adds around the apps: the security policy, the rate limits, and the
-production side of config/settings.py.
+"""What config/ adds around the apps: the security policy, the rate limits, the limit on
+the size of a request, and the production side of config/settings.py.
 
 Settings are read once, when Django starts, from environment variables. To see what a
 server would get, the production tests start a second Python process with the server's
@@ -10,11 +10,15 @@ import os
 import re
 import subprocess
 import sys
+from unittest import mock
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.cache import caches
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, SimpleTestCase, TestCase, override_settings
+
+from desk import handins
 
 PRODUCTION = {
     "DJANGO_DEBUG": "0",
@@ -24,11 +28,14 @@ PRODUCTION = {
 }
 
 
-def manage(*args, **env):
+def manage(*args, unset=(), **env):
+    environment = {**os.environ, **PRODUCTION, **env}
+    for name in unset:
+        environment.pop(name, None)
     return subprocess.run(
         [sys.executable, "manage.py", *args],
         cwd=settings.BASE_DIR,
-        env={**os.environ, **PRODUCTION, **env},
+        env=environment,
         capture_output=True,
         text=True,
         check=False,
@@ -124,7 +131,99 @@ class RateLimitTests(TestCase):
         self.assertGreaterEqual(limits["sign-in"], 100)  # a class signing in at once
 
 
+class BodyLimitTests(TestCase):
+    """config/bodylimit.py: a request too large for its page is refused before it is read."""
+
+    HAND_IN = "/educators/courses/example/hand-in/"
+    MB = 1024 * 1024
+
+    def setUp(self):
+        caches["limits"].clear()
+        self.addCleanup(caches["limits"].clear)
+        self.ada = get_user_model().objects.create_user("ada")
+
+    def upload(self, megabytes=3):
+        return {"zip": SimpleUploadedFile("course.zip", b"0" * megabytes * self.MB)}
+
+    def test_a_visitor_cannot_make_the_server_store_an_upload(self):
+        """The CSRF check reads the form, files and all, before the site asks who is
+        there. So the refusal has to come first: the body is never parsed.
+
+        The check only gets that far for a request carrying a CSRF cookie, which is no
+        obstacle: a visitor's own program sends whatever cookie it likes."""
+        visitor = Client(enforce_csrf_checks=True)
+        visitor.cookies["csrftoken"] = "a" * 32
+        with mock.patch("django.http.multipartparser.MultiPartParser.parse") as parse:
+            answer = visitor.post("/", self.upload())
+        self.assertEqual(answer.status_code, 413)
+        parse.assert_not_called()
+
+    def test_nor_on_the_page_that_takes_files(self):
+        self.assertEqual(self.client.post(self.HAND_IN, self.upload()).status_code, 413)
+
+    def test_signed_in_a_large_request_is_refused_on_every_other_page(self):
+        self.client.force_login(self.ada)
+        answer = self.client.post("/ask/", self.upload())
+        self.assertEqual(answer.status_code, 413)
+        self.assertIn(b"more than this page accepts", answer.content)
+
+    def test_signed_in_the_hand_in_page_takes_a_file(self):
+        """Ada writes no course, so the page turns her away; but it is the page that
+        answers, having received the file."""
+        self.client.force_login(self.ada)
+        answer = self.client.post(self.HAND_IN, self.upload())
+        self.assertNotEqual(answer.status_code, 413)
+
+    def test_and_refuses_one_larger_than_a_hand_in_may_be(self):
+        """The size is the one the request declares; nothing that large is built here."""
+        self.client.force_login(self.ada)
+        answer = self.client.post(self.HAND_IN, {}, CONTENT_LENGTH=str(40 * self.MB))
+        self.assertEqual(answer.status_code, 413)
+        self.assertIn(b"26 MB at most", answer.content)
+
+    def test_the_api_is_refused_in_json(self):
+        self.client.force_login(self.ada)
+        answer = self.client.post(
+            "/api/progress/sync/",
+            "{}",
+            content_type="application/json",
+            CONTENT_LENGTH=str(3 * self.MB),
+        )
+        self.assertEqual(answer.status_code, 413)
+        self.assertEqual(answer.json(), {"error": "request too large"})
+
+    def test_a_length_that_is_not_a_number_counts_as_no_body(self):
+        self.client.force_login(self.ada)
+        self.assertEqual(self.client.get("/settings/", CONTENT_LENGTH="lots").status_code, 200)
+
+    def test_the_limit_shipped_leaves_room_for_the_largest_hand_in(self):
+        """Two numbers in two files: the page's own limit must be the one a person meets,
+        because it answers with a sentence about their zip."""
+        limits = dict(settings.BODY_LIMITS)
+        self.assertGreater(limits["/educators/courses/"], handins.MAX_UPLOAD + 64 * 1024)
+        self.assertTrue(self.HAND_IN.startswith("/educators/courses/"))
+
+
 class ProductionSettingsTests(SimpleTestCase):
+    DEBUG = "from django.conf import settings; print('DEBUG IS', settings.DEBUG)"
+
+    def test_debug_is_off_on_a_server_even_when_nobody_said_so(self):
+        """A server names its hosts. If DJANGO_DEBUG was forgotten there, the answer must
+        still be off: debug mode shows settings in error pages and offers a sign-in
+        without Google."""
+        result = manage("shell", "-c", self.DEBUG, unset=["DJANGO_DEBUG"])
+        self.assertIn("DEBUG IS False", result.stdout, msg=result.stderr)
+
+    def test_debug_is_on_where_nothing_is_configured(self):
+        """The laptop: no variables at all, and `runserver` just works."""
+        unset = ["DJANGO_DEBUG", "DJANGO_ALLOWED_HOSTS", "DJANGO_SECRET_KEY"]
+        result = manage("shell", "-c", self.DEBUG, unset=unset)
+        self.assertIn("DEBUG IS True", result.stdout, msg=result.stderr)
+
+    def test_debug_can_be_asked_for_by_name(self):
+        result = manage("shell", "-c", self.DEBUG, DJANGO_DEBUG="1")
+        self.assertIn("DEBUG IS True", result.stdout, msg=result.stderr)
+
     def test_refuses_to_start_without_a_secret_key(self):
         """The key in the repository is public; a server must never fall back to it."""
         result = manage("check", DJANGO_SECRET_KEY="")

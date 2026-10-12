@@ -16,7 +16,13 @@ class DeskConfig(AppConfig):
         # ready() runs once when Django has loaded every app: the place for a start-up
         # check. On a server without the bot's settings, say so once; requests are still
         # stored and shown in the admin.
+        from ingest import live
+
+        from . import handins
         from .notify import configured
+
+        # The site reads a course from its hand-ins where there are any (ingest/live.py).
+        live.provide(handins.overlay)
 
         if settings.DEBUG or settings.TESTING or configured():
             return

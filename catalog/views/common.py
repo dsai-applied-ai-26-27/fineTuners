@@ -4,7 +4,8 @@ from django.shortcuts import get_object_or_404
 from django.utils.functional import SimpleLazyObject
 
 from desk.switches import switches
-from ingest.discover import find_course, newest_mtime
+from ingest import live
+from ingest.discover import newest_mtime
 
 from .. import editions
 from ..models import Course
@@ -42,7 +43,7 @@ def _files_changed(course):
     """Development aid: true when the course's files are newer than the last sync."""
     if not settings.DEBUG or course.synced_at is None:
         return False
-    folder = find_course(course.slug, settings.CONTENT_ROOTS)
+    folder = live.folder(course.slug)
     return folder is not None and newest_mtime(folder) > course.synced_at.timestamp() + 1
 
 

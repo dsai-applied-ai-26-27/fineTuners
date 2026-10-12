@@ -16,8 +16,11 @@ is saved to their account.
   where courses are grouped by semester.
 - The course's `source/` is read-only raw material.
 - `courses/` is a git repository of its own (the content repository, see
-  [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#the-content-repository)). Commit there only
-  when asked, and never anything under a `source/` folder.
+  [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#course-files-and-the-educator-kit)). Commit there
+  only when asked, and never anything under a `source/` folder.
+- Educators hand their work in on the site, where it goes live at once. To bring a
+  hand-in into the course files, download it from the admin (Hand-ins) and run
+  `manage.py import_course <zip>`. Never unpack one by hand: the command is what checks it.
 - Do not touch Python, templates, CSS or JavaScript. If the site cannot show something,
   report it; do not change code to make it fit.
 - Finish with `uv run python manage.py sync_content <course>` printing no errors.
@@ -67,7 +70,8 @@ uv run python manage.py sync_content --watch          re-sync whenever a file ch
 uv run --env-file .env python manage.py publish       send all course content to the live site
 uv run python manage.py startcourse <slug> --title "…" --code X --year "2026-27"
 uv run python manage.py export_schemas                regenerate docs/schemas and fields.md
-uv run python manage.py export_authoring courses      refresh the authoring docs kept in the content repository
+uv run python manage.py export_authoring educator-kit  rebuild the educator kit (then commit and push there)
+uv run python manage.py import_course <zip>           take in the course files an educator handed in
 uv run python manage.py test                          all tests
 uv run ruff check . && uv run ruff format .           lint and format
 ```
@@ -82,14 +86,18 @@ accounts/    the pieces around signing in that are ours (the rest is django-alla
              which courses each person chose for their dashboard, and what the site has
              already shown them (the tour, the news)
 desk/        what people send in (Ask or report, applications to write a course), who
-             writes which course (educators), the owner's switches for a course, and the
-             message to the owner's bot when something arrives
+             writes which course (educators) and what they hand in for it, the owner's
+             switches for a course, notifications (the bell), and the message to the
+             owner's bot when something arrives
 ingest/      files -> database: schemas, Markdown renderer, sync, management commands
 templates/   base page and shared fragments
 static/      CSS, JavaScript (no build step), vendored libraries, fonts, icons
 docs/        AUTHORING.md, ARCHITECTURE.md, DEPLOYMENT.md, content-types/, schemas/, example-course/
 courses/     course folders, grouped as semester-N/<course>/. Not in this repository:
-             a git repository of its own, which educators share (source/ is in neither)
+             a private git repository of its own, the owner's (source/ is in neither)
+educator-kit/ the checkout of the educator kit's repository, which is PUBLIC: instructions
+             for an AI assistant, docs and tools for educators, no course. Not in this
+             repository; generated from ingest/educator_kit/, docs/ and desk/kit.py
 tools/       vendor_assets.py (fetch front-end libraries), make_icons.py (the logo, in
              every size, into static/brand/), make_figure.py (the chart on the landing
              page), katex_check.cjs
@@ -123,6 +131,21 @@ To sign in locally press "Development sign-in" on the landing page.
 - What a person sent is theirs. A notification to the owner's bot says that something
   arrived and never who sent it or what it says; an educator sees a request about their
   course without the sender. Keep both that way: the privacy page promises it.
+- The site reads a course from `ingest.live.folder(slug)`, not straight from
+  `courses/`: for a course educators have changed, that is the course as handed in
+  (`desk/handins.py`). A hand-in may add, change and remove, behind three guards that
+  must stay: it is built on the version the site has, what it removes is confirmed by
+  the person, and the whole course as it stood is kept with every hand-in. Never write
+  into the owner's course files from the application.
+- When something happens that a person should hear of, leave them a notification
+  (`desk.notices.tell`): what happened and where to look, never who sent it or what it
+  says.
+- The educator kit's repository is public. Nothing may go into `ingest/educator_kit/` or
+  be exported to `educator-kit/` that is not fit for anyone to read: no course content,
+  no address of the server, no secret. Push there only when the owner asks.
+- A new version of the kit is an entry at the top of `desk/kit.py`; the owner announces
+  it in the admin after pushing the kit. The site e-mails educators only, about their
+  role (`desk/mail.py`); the privacy page lists what it writes about.
 - News for users is a list in `catalog/news.py`. A change people should know about gets an
   entry at the top with the next number; the tour is edited in place, never versioned.
 - Every view needs a signed-in person unless it is marked `@login_not_required`. A new page

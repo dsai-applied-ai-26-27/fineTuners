@@ -88,6 +88,13 @@
         {# The tour's dialog is part of every page (templates/components/tour.html). #}
         <button class="btn btn--tonal" type="button" @click="$dispatch('tour')">{% icon "help" %}Show the tour</button>
       </div>
+      {% if educator %}
+      <div class="row row--split">
+        <div><strong>Educator tour</strong><p class="faint">How writing a course works: the kit, your course files, handing in. The <a class="link" href="{% url 'desk:guide' %}">guide</a> has every step in full.</p></div>
+        <span class="spacer"></span>
+        <button class="btn btn--tonal" type="button" @click="$dispatch('educator-tour')">{% icon "guide" %}Show the educator tour</button>
+      </div>
+      {% endif %}
       <div class="row row--split">
         <div><strong>What's new</strong><p class="faint">What changed on the site, and what came after you took the tour.</p></div>
         <span class="spacer"></span>

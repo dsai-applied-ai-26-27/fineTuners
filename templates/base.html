@@ -85,7 +85,7 @@
         <span x-show="theme === 'dark'">{% icon "light" %}</span>
         <span x-show="theme === 'light'" x-cloak>{% icon "dark" %}</span>
       </button>
-      {% if user.is_authenticated %}{% include "components/account.html" %}{% endif %}
+      {% if user.is_authenticated %}{% include "components/bell.html" %}{% include "components/account.html" %}{% endif %}
     </header>
 
     <main class="page" id="main">
@@ -109,6 +109,8 @@
 
   {% include "components/dialogs.html" %}
   {% include "components/tour.html" %}
+  {# Only someone who writes a course carries the second tour around. #}
+  {% if welcome.educator or educator %}{% include "desk/educator_tour.html" %}{% endif %}
   {% if welcome.news %}{% include "components/news.html" %}{% endif %}
 </div>
 

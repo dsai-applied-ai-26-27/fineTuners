@@ -1,0 +1,14 @@
+# Raw course material (slides, labs, homework, past papers) belongs to the lecturers. It
+# stays on your computer: it is never committed, never packed, never uploaded.
+/courses/*/source/
+
+# The zips that tools/pack.py makes.
+/out/
+
+# What tools and operating systems leave behind.
+__pycache__/
+*.pyc
+.venv/
+.DS_Store
+Thumbs.db
+desktop.ini

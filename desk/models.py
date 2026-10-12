@@ -9,6 +9,8 @@ from django.conf import settings
 from django.db import models, transaction
 from django.utils import timezone
 
+from ingest import handin
+
 
 class Request(models.Model):
     """Something a person sent to whoever runs the site."""
@@ -72,6 +74,9 @@ class EducatorApplication(models.Model):
     name = models.CharField(max_length=120)
     phone = models.CharField(max_length=40)
     year = models.CharField(max_length=10, choices=Year)
+    # No longer asked for: the educator kit is public and the course files come from
+    # the site, so nobody needs to be given access on GitHub. The column stays for the
+    # applications that already have one, until the owner decides to drop it.
     github = models.CharField(max_length=40, blank=True)
     tools = models.CharField(max_length=10, choices=Tools, default=Tools.UNSURE)
     note = models.TextField(max_length=1000, blank=True)
@@ -99,11 +104,37 @@ class EducatorApplication(models.Model):
         self.status = status
         self.decided_at = None if status == self.Status.PENDING else timezone.now()
         self.save(update_fields=["status", "decided_at"])
+        from . import notices
+
+        if status != self.Status.PENDING:
+            word = "accepted" if status == self.Status.ACCEPTED else "not accepted"
+            notices.tell(
+                [self.user],
+                f"Your application to write `{self.series}` was {word}",
+                "Your page is Educators in the menu." if word == "accepted" else "",
+                url="/educators/",
+            )
         role = Educator.objects.filter(user=self.user, series=self.series)
         if status == self.Status.ACCEPTED:
-            Educator.objects.get_or_create(user=self.user, series=self.series)
+            _, new = Educator.objects.get_or_create(user=self.user, series=self.series)
+            if new:
+                # After the commit, so that the mail is never about a role that was
+                # not given after all.
+                transaction.on_commit(self._welcome)
         else:
             role.delete()
+
+    def _welcome(self):
+        from . import mail
+
+        mail.send(
+            [self.user],
+            "You are an educator on DSAI Vault",
+            f"Your application to write `{self.series}` was accepted.\n\n"
+            "The next time you open the site it shows you how writing a course works. "
+            "Your page is Educators in the menu; the guide has every step, from getting "
+            f"the kit to handing in your work:\n\n{settings.SITE_URL}/educators/guide/",
+        )
 
 
 class Educator(models.Model):
@@ -114,6 +145,11 @@ class Educator(models.Model):
     )
     series = models.SlugField(max_length=64)
     since = models.DateTimeField(auto_now_add=True)
+    # The version of the course (its content hash) this person last took from the site
+    # or put on it. When a hand-in is refused, it tells "you removed something" apart
+    # from "the course moved on since your copy" (desk/handins.py).
+    synced_version = models.CharField(max_length=64, blank=True)
+    synced_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         constraints = [
@@ -139,3 +175,97 @@ class CourseSetting(models.Model):
 
     def __str__(self):
         return self.series
+
+
+class HandIn(models.Model):
+    """What an educator did to a course, taken in by the site (desk/handins.py).
+
+    One row is one step in the history of a course: who, when, what was added, changed
+    and removed. `archive` is the whole course as it stood after that step, as a zip.
+    That copy is the hand-in itself, and it is also the backup: the folder the site reads
+    the course from is unpacked from it, and any earlier step can be fetched and handed
+    in again.
+    """
+
+    class Status(models.TextChoices):
+        LIVE = "live", "On the site"
+        MERGED = "merged", "In the published files"
+        WITHDRAWN = "withdrawn", "Taken off the site"
+
+    # SET_NULL: when a person deletes their account, what they added to a course stays,
+    # without their name.
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="handins"
+    )
+    series = models.SlugField(max_length=64)
+    slug = models.SlugField(max_length=64)  # the year of the course it was handed in to
+    status = models.CharField(max_length=10, choices=Status, default=Status.LIVE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    settled_at = models.DateTimeField(null=True, blank=True)  # when it was merged or withdrawn
+    # The fingerprint of the course before this step and after it. A hand-in is taken
+    # only if it was built on the version the site has, so these link up into a chain.
+    base_version = models.CharField(max_length=64, blank=True)
+    version = models.CharField(max_length=64)
+    new_files = models.JSONField(default=list)  # names
+    removed_files = models.JSONField(default=list)  # names
+    grown = models.JSONField(default=dict)  # name -> lines added
+    shrunk = models.JSONField(default=dict)  # name -> lines removed or rewritten
+    removed_ids = models.JSONField(default=list)  # ids that disappeared with it
+    lines_added = models.PositiveIntegerField(default=0)
+    lines_removed = models.PositiveIntegerField(default=0)
+    archive = models.BinaryField()
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["slug", "status"])]
+
+    def __str__(self):
+        return f"{self.slug} #{self.pk}: {self.summary}"
+
+    @property
+    def summary(self):
+        return handin.summary(
+            len(self.new_files), self.lines_added, self.lines_removed, len(self.removed_files)
+        )
+
+    @property
+    def removes(self):
+        """Whether this step took something away: shown differently, looked at first."""
+        return bool(self.lines_removed or self.removed_files)
+
+
+class KitAnnouncement(models.Model):
+    """The owner told educators that a version of the educator kit is out (desk/kit.py).
+    Until a version is announced, nobody is told to pull it."""
+
+    number = models.PositiveIntegerField(unique=True)
+    announced_at = models.DateTimeField(auto_now_add=True)
+    recipients = models.PositiveIntegerField(default=0)  # how many were e-mailed
+
+    class Meta:
+        ordering = ["-number"]
+
+    def __str__(self):
+        return f"Kit version {self.number}"
+
+
+class Notification(models.Model):
+    """A line the site left for one person: an answer arrived, a course they write
+    changed, a new version of the kit is out. Shown under the bell at the top of every
+    page (desk/notices.py)."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notifications"
+    )
+    title = models.CharField(max_length=160)
+    body = models.CharField(max_length=300, blank=True)
+    url = models.CharField(max_length=300, blank=True)  # a path on this site
+    created_at = models.DateTimeField(auto_now_add=True)
+    read_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at", "-pk"]
+        indexes = [models.Index(fields=["user", "-created_at"])]
+
+    def __str__(self):
+        return self.title

@@ -35,7 +35,12 @@ def env_list(name):
 # (see deploy/env.example). https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env_flag("DJANGO_DEBUG", True)
+# On by default only where no host names are configured, which is a developer's machine.
+# A site that answers to a public name has to set DJANGO_ALLOWED_HOSTS (Django turns away
+# every other host), and from then on debug mode must be asked for by name. A server where
+# DJANGO_DEBUG=0 was forgotten therefore still starts with debug off, instead of showing
+# tracebacks and the development sign-in to the internet.
+DEBUG = env_flag("DJANGO_DEBUG", default=not os.environ.get("DJANGO_ALLOWED_HOSTS"))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # Sessions and CSRF tokens are signed with it. The fallback below is in the repository, so
@@ -102,6 +107,9 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     # Sets request.user from the session cookie.
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    # Answers 413 to a request larger than its page accepts, before anything reads it
+    # (BODY_LIMITS).
+    "config.bodylimit.BodyLimitMiddleware",
     # Answers 429 to an account or address that calls a costly page in a loop (RATE_LIMITS).
     "config.ratelimit.RateLimitMiddleware",
     # Then, for an anonymous visitor, sends every view that did not opt out to LOGIN_URL.
@@ -193,15 +201,23 @@ GOOGLE_SIGN_IN = bool(GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET)
 # Shown on the privacy page as the address for questions. Left out when empty.
 CONTACT_EMAIL = os.environ.get("DSAI_CONTACT_EMAIL", "")
 
+# The address of the site as people type it, for links in e-mail.
+SITE_URL = os.environ.get("DSAI_SITE_URL") or (
+    f"https://{ALLOWED_HOSTS[0]}" if ALLOWED_HOSTS and not DEBUG else "http://127.0.0.1:8000"
+)
+
 # The owner's assistant bot, told whenever a request or an application arrives
 # (desk/notify.py). Both come from the environment: the address is the server's own,
 # so like every server address it is kept out of the repository. Empty: no messages.
 BMO_NOTIFY_URL = os.environ.get("BMO_NOTIFY_URL", "")
 BMO_NOTIFY_TOKEN = os.environ.get("BMO_NOTIFY_TOKEN", "")
 
-# Where the course files are kept for those who write them: a private repository that
-# educators are given access to. Shown on the educators' page.
-CONTENT_REPO_URL = os.environ.get("DSAI_CONTENT_REPO", "https://github.com/vrosi21/dsai-courses")
+# The educator kit: the public repository every educator clones, with the instructions
+# for their AI assistant, the format and the tools, and no course content. Its address is
+# shown on the educators' pages. It is built by `manage.py export_authoring`.
+EDUCATOR_KIT_URL = os.environ.get(
+    "DSAI_EDUCATOR_KIT", "https://github.com/vrosi21/dsai-educator-kit"
+)
 
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
@@ -278,11 +294,30 @@ MEDIA_ROOT = Path(os.environ.get("DSAI_MEDIA_ROOT", BASE_DIR / "media"))
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 
-MAILERS = {
-    "default": {
-        "BACKEND": "django.core.mail.backends.console.EmailBackend",
-    },
-}
+# E-mail to educators (desk/mail.py). MAILERS names where mail goes, the way DATABASES
+# names where data goes: a real mail server once DSAI_EMAIL_HOST is set, the terminal
+# while developing, and nowhere at all on a server without one. There the site simply
+# does not write to anybody, and no address ends up in a log.
+DEFAULT_FROM_EMAIL = (
+    os.environ.get("DSAI_EMAIL_FROM") or os.environ.get("DSAI_EMAIL_USER") or "vault@localhost"
+)
+if os.environ.get("DSAI_EMAIL_HOST"):
+    MAILERS = {
+        "default": {
+            "BACKEND": "django.core.mail.backends.smtp.EmailBackend",
+            "OPTIONS": {
+                "host": os.environ["DSAI_EMAIL_HOST"],
+                "port": int(os.environ.get("DSAI_EMAIL_PORT") or 587),
+                "username": os.environ.get("DSAI_EMAIL_USER", ""),
+                "password": os.environ.get("DSAI_EMAIL_PASSWORD", ""),
+                "use_tls": True,
+                "timeout": 10,
+            },
+        },
+    }
+else:
+    _printed = "console" if DEBUG else "dummy"
+    MAILERS = {"default": {"BACKEND": f"django.core.mail.backends.{_printed}.EmailBackend"}}
 
 
 # Course content
@@ -296,12 +331,28 @@ EXAMPLE_COURSE_ROOT = BASE_DIR / "docs" / "example-course"
 
 # Every folder listed here is scanned for `<slug>/course.yaml`.
 CONTENT_ROOTS = [COURSES_DIR]
+# Where a course is unpacked when an educator has added to it and the owner's files do not
+# hold those additions yet (desk/handins.py). Beside the media folder: on the server that
+# is the data volume, the one place the application may write. It is a working copy and
+# can be deleted; the hand-ins themselves are rows in the database.
+HANDINS_DIR = Path(os.environ.get("DSAI_HANDINS_DIR", MEDIA_ROOT.parent / "handins"))
 if env_flag("DSAI_SHOW_EXAMPLE", DEBUG):
     CONTENT_ROOTS.append(EXAMPLE_COURSE_ROOT)
 
 # Lets a lecture page link to the original PDF under courses/<slug>/source/.
 # Off by default outside DEBUG: those files are usually someone else's copyright.
 SERVE_SOURCE_FILES = env_flag("DSAI_SERVE_SOURCE", DEBUG)
+
+
+# Request size
+# (start of the path, bytes a signed-in person may send there). Everywhere else, and for
+# a visitor everywhere, the ceiling is DATA_UPLOAD_MAX_MEMORY_SIZE: Django's own limit for
+# a form, 2.5 MB unless set, which this site never comes near. See config/bodylimit.py.
+
+BODY_LIMITS = [
+    # A hand-in: the zip of a course (desk.handins.MAX_UPLOAD, 25 MB) and the form around it.
+    ("/educators/courses/", 26 * 1024 * 1024),
+]
 
 
 # Rate limits
@@ -378,9 +429,8 @@ if not DEBUG:
         # Asks for the HSTS "preload" flag. That list is per registered domain, and the
         # site lives on a host name it does not own (pages.dev): nothing to submit.
         "security.W021",
-        # Objects to MAILERS printing to the console. The site sends no e-mail, so a
-        # message that does get sent should land in the logs. Remove this line when
-        # sign-in arrives and a real SMTP backend is configured.
+        # Objects to MAILERS not being a real mail server. Until DSAI_EMAIL_HOST is set
+        # the site sends no e-mail, on purpose (see MAILERS above).
         "mail.E001",
     ]
 

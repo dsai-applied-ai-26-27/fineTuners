@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block title %}Notifications · DSAI Vault{% endblock %}
+{% block crumbs %}<a href="{% url 'catalog:home' %}">Courses</a>{% icon "next" %}<span>Notifications</span>{% endblock %}
+{% block inner_class %}page__inner--narrow{% endblock %}
+
+{% block content %}
+<header class="dash-head">
+  <div>
+    <h1>Notifications</h1>
+    <p class="dash-head__lead">What the site had to tell you: answers to what you sent, and news about a course you write. The newest are also under the bell at the top.</p>
+  </div>
+</header>
+
+{% if rows %}
+<ul class="notes notes--page plate">
+  {% for note in rows %}
+  <li{% if not note.read_at %} data-new{% endif %}>
+    {% if note.url %}<a href="{{ note.url }}">{% endif %}
+      <strong>{{ note.title }}</strong>
+      {% if note.body %}<span>{{ note.body }}</span>{% endif %}
+      <time datetime="{{ note.created_at|date:'c' }}">{{ note.created_at|date:"j M Y, H:i" }}</time>
+    {% if note.url %}</a>{% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<div class="empty">{% icon "bell" %}<strong>Nothing yet</strong><p>Answers to what you send, and news about a course you write, show up here.</p></div>
+{% endif %}
+{% endblock %}

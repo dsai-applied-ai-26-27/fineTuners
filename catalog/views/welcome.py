@@ -25,14 +25,15 @@ def whats_new(request):
 
 @require_POST
 def seen(request):
-    """Posted by the tour and by the news dialog the moment they open (static/js/seen.js).
+    """Posted by a tour, the news dialog or a notice the moment it is shown
+    (static/js/seen.js).
 
     A POST, not something the page does while it is being built: showing a page must not
     change anything, or a browser that fetches pages ahead of time would mark the tour as
     seen for someone who never saw it.
     """
     what = request.POST.get("what")
-    if what not in ("tour", "news"):
+    if what not in ("tour", "news", "educator", "kit"):
         return HttpResponseBadRequest()
     try:
         upto = int(request.POST.get("upto", ""))
