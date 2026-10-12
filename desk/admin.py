@@ -16,7 +16,7 @@ from django.utils.html import format_html, format_html_join
 from catalog import editions
 from catalog.models import Course
 
-from . import handins, kit, mail
+from . import handins, kit, mail, notices
 from .models import Educator, EducatorApplication, HandIn, KitAnnouncement, Request
 
 
@@ -80,8 +80,22 @@ class RequestAdmin(CourseColumn, admin.ModelAdmin):
         # Text that a browser sent: only ever shown, never made into a link.
         return row.page or "-"
 
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        if form.changed_data:  # the status or the answer: the person is told
+            from .views import answered
+
+            answered(obj)
+
     def _mark(self, request, queryset, status):
+        from .views import answered
+
+        rows = list(queryset.select_related("user"))
         count = queryset.update(status=status)
+        if status != Request.Status.NEW:
+            for row in rows:
+                row.status = status
+                answered(row)
         label = Request.Status(status).label.lower()
         self.message_user(request, f"Marked {count} request{'' if count == 1 else 's'} as {label}.")
 
@@ -258,7 +272,7 @@ class HandInAdmin(CourseColumn, admin.ModelAdmin):
             record.refresh_from_db()
             if record.status != HandIn.Status.LIVE:
                 continue  # went with an earlier one of the same course
-            report = handins.withdraw(record)
+            report = handins.withdraw(record, by=request.user)
             if record.user:
                 mail.send(
                     [record.user],
@@ -308,6 +322,13 @@ class KitAnnouncementAdmin(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         obj.recipients = kit.tell_educators(obj.number)
         super().save_model(request, obj, form, change)
+        version = next(v for v in kit.VERSIONS if v.number == obj.number)
+        notices.tell(
+            notices.all_educators(),
+            f"Educator kit version {obj.number}: run git pull",
+            version.title,
+            url="/educators/",
+        )
         self.message_user(
             request,
             f"Educators now see the notice. {obj.recipients} e-mail(s) were sent"

@@ -143,11 +143,19 @@ the kit's README say it to them step by step. In short:
    them into the kit with `tools/unpack.py`, which commits that state in their copy.
    Their course is tracked by git on their computer only; pushing is switched off.
 2. Their assistant writes; they check; `tools/pack.py` makes one zip.
-3. They upload that zip on the Educators page. The site takes it in if it only adds
-   (new files, new lines), if it is built on the version the site has, and if the full
-   validation passes. Then it is **live at once**. Otherwise it is refused with the
-   reason and the steps to take, and nothing changes.
-4. You are notified (the bot), and the course's timeline on their page gains a line.
+3. They upload that zip on the Educators page. They may add, change and remove. The
+   site takes it in if it is built on the version the site has and the full validation
+   passes; one that removes or rewrites anything is first shown back to them and needs a
+   tick. Then it is **live at once**. Otherwise it is refused with the reason and the
+   steps to take, and nothing changes.
+4. You are notified (the bell, and the bot if it is set up; more urgently when something
+   was removed), and the course's history on their page gains a step.
+
+**Backups of a course.** Every hand-in keeps the whole course as it stood after it, in
+the database, which is backed up with everything else. Each step can be downloaded (by
+the course's educators on their page, by you in the admin), and handing an earlier one
+in again brings it back. Your own course files, and their git history, are a second copy
+that no hand-in can touch.
 
 **What you do about a hand-in.** Nothing, for it to be live. Two things remain yours:
 
@@ -158,19 +166,23 @@ the kit's README say it to them step by step. In short:
   ```
   uv run python manage.py import_course rl-handin-12.zip
   ```
-  It validates the zip and merges it file by file, never removing anything of yours.
-  Read the diff, `sync_content rl`, commit in `courses/`, and `publish`. Once the
-  published files hold everything a hand-in added, the site marks it merged and drops its
-  own copy. If you publish without doing this, nothing is lost: the site keeps showing
-  the hand-in, and the publish report says which courses lack hand-ins.
+  It validates the zip. If you have not changed that course yourself since you last
+  published it, your files simply become the educators' version: what they added,
+  changed and removed. If you have, it takes what the zip adds and stops at any file
+  that differs otherwise, for you to decide (`--theirs`, `--mine`). Read the diff,
+  `sync_content rl`, commit in `courses/`, and `publish`. The command leaves a small file
+  in the course folder, `.merged`, saying which hand-in your files now include; commit
+  it too. `publish` sends it along, and the site then marks the hand-in merged and drops
+  its own copy. If you publish without doing this, nothing is lost: the site keeps
+  showing the hand-in, and the publish report says which courses lack hand-ins.
 - *Taking it off the site.* Hand-ins in the admin, tick it, **Take off the site**. It and
   every later hand-in for that course are withdrawn and the course is loaded again as it
-  was. The educator is e-mailed. Their own copy still has the work, so tell them what
-  was wrong before they hand in again.
+  was. The educators of the course are told under their bell. Their own copies still
+  have the work, so say what was wrong before they hand in again. (An educator can take
+  back their own newest hand-in themselves.)
 
-A hand-in cannot remove or rewrite a line. When something that is live has to change,
-you change it in your files and publish; educators then get the new version with their
-next download, and a hand-in built on the old one is refused until they do.
+When you change a course in your own files and publish, educators get the new version
+with their next download, and a hand-in built on the old one is refused until they do.
 
 **The kit.** It is generated from this repository: its texts are in
 [ingest/educator_kit/](../ingest/educator_kit/), its docs are `docs/`, its tools run
@@ -429,11 +441,12 @@ On a new server, start at [Setting it up from scratch](#setting-it-up-from-scrat
   notification sent to the owner's bot carries none of it.
 - A course the owner has not opened answers 404 to everyone but staff, and is left out
   of every list and of search.
-- An educator can add to their own course and to nothing else. What they upload is one
-  zip, checked before anything is written: paths, kinds of file, sizes, that it removes
-  nothing, and the full validation. It is unpacked only under the data volume, never
-  into the published course files. One hand-in at a time per course, twenty a day per
-  person.
+- An educator can change their own course and nothing else. What they upload is one
+  zip, checked before anything is written: paths, kinds of file, sizes, that it is built
+  on the version the site has, that anything it removes was confirmed, and the full
+  validation. It is unpacked only under the data volume, never into the published course
+  files, and the version before it stays in the database. One hand-in at a time per
+  course, twenty a day per person.
 - Images from course content are served with a policy that lets them run nothing when
   opened on their own, and SVG files that carry a script are refused at the door.
 - The site sends e-mail only to educators, one message per person, and only if a mail

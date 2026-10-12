@@ -115,6 +115,7 @@ ICONS = {
     "paper": "edit_note",
     "due": "bolt",
     "flag": "flag",
+    "bell": "notifications",
     "schedule": "schedule",
     "streak": "local_fire_department",
     "trend": "trending_up",

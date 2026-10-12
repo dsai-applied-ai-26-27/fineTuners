@@ -86,8 +86,9 @@ accounts/    the pieces around signing in that are ours (the rest is django-alla
              which courses each person chose for their dashboard, and what the site has
              already shown them (the tour, the news)
 desk/        what people send in (Ask or report, applications to write a course), who
-             writes which course (educators), the owner's switches for a course, and the
-             message to the owner's bot when something arrives
+             writes which course (educators) and what they hand in for it, the owner's
+             switches for a course, notifications (the bell), and the message to the
+             owner's bot when something arrives
 ingest/      files -> database: schemas, Markdown renderer, sync, management commands
 templates/   base page and shared fragments
 static/      CSS, JavaScript (no build step), vendored libraries, fonts, icons
@@ -131,9 +132,14 @@ To sign in locally press "Development sign-in" on the landing page.
   arrived and never who sent it or what it says; an educator sees a request about their
   course without the sender. Keep both that way: the privacy page promises it.
 - The site reads a course from `ingest.live.folder(slug)`, not straight from
-  `courses/`: for a course educators have added to, that is the course as handed in
-  (`desk/handins.py`). A hand-in can only add; never loosen `ingest.handin.compare`, and
-  never write into the owner's course files from the application.
+  `courses/`: for a course educators have changed, that is the course as handed in
+  (`desk/handins.py`). A hand-in may add, change and remove, behind three guards that
+  must stay: it is built on the version the site has, what it removes is confirmed by
+  the person, and the whole course as it stood is kept with every hand-in. Never write
+  into the owner's course files from the application.
+- When something happens that a person should hear of, leave them a notification
+  (`desk.notices.tell`): what happened and where to look, never who sent it or what it
+  says.
 - The educator kit's repository is public. Nothing may go into `ingest/educator_kit/` or
   be exported to `educator-kit/` that is not fit for anyone to read: no course content,
   no address of the server, no secret. Push there only when the owner asks.

@@ -1,11 +1,11 @@
-"""Bring what educators added on the site into your own course files.
+"""Bring what educators did on the site into your own course files.
 
-    manage.py import_course rl-handin-12.zip
+    manage.py import_course rl-version-12.zip
 
 Educators hand their work in on the site, where it is checked and goes live at once
 (desk/handins.py). Your course files do not know about it until you take it in here. The
-zip is one hand-in, downloaded from the admin (Hand-ins), and holds the whole course as it
-stood after it. It is treated as untrusted all the same:
+zip is one step of a course's history, downloaded from the admin (Hand-ins), and holds the
+whole course as it stood after it. It is treated as untrusted all the same:
 
 1. It must be plainly one course that exists here: course.yaml and content/, nothing else
    (ingest/handin.py).
@@ -14,16 +14,21 @@ stood after it. It is treated as untrusted all the same:
 4. The course folder must have no uncommitted changes, so that what is taken in is a
    diff of its own that you can read and undo.
 
-Then the two are put together file by file, and nothing of yours is ever removed:
+Then your files become that version. How depends on whether you changed the course
+yourself since you last published it:
 
-    a file you do not have            is added
-    a file that only gained lines     is replaced by the longer version
-    a file where yours has more       is left alone (you are ahead)
-    a file both of you changed        stops everything (--theirs takes the hand-in's)
+- You did not (your files are the version the hand-ins were built on: the zip says which
+  that was). The course is replaced as a whole: what educators added, changed and removed.
+- You did. Then files you do not have are added and files that only gained lines are
+  taken. A file that differs in any other way stops everything until you decide: without
+  the version both started from there is no telling whether they removed a line or you
+  added one. `--theirs` replaces the course with the zip's version (your own changes stay
+  in git); `--mine` keeps your version of those files and takes only what the zip adds.
 
-Nothing is loaded into the database and nothing is published: read the diff, run
-sync_content, commit, publish. Once the published files hold everything a hand-in added,
-the site lets go of its own copy by itself.
+Either way a small file, `.merged`, records which hand-in your files now include. `publish`
+sends it along, and the site then lets go of its own copy of that hand-in. Nothing is
+loaded into the database and nothing is published here: read the diff, run sync_content,
+commit, publish.
 """
 
 import subprocess
@@ -35,6 +40,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 from ingest import handin
 from ingest.discover import find_courses
+from ingest.management.commands.publish import MERGED
 from ingest.management.commands.sync_content import safe_streams
 from ingest.sync import sync_course
 
@@ -54,7 +60,7 @@ def uncommitted(folder):
 
 
 class Command(BaseCommand):
-    help = "Validate a course zip from an educator and merge it into the course folder."
+    help = "Validate a course zip from the site and make your course files that version."
 
     def add_arguments(self, parser):
         parser.add_argument("zip", help="A hand-in downloaded from the admin, or a kit's zip.")
@@ -66,10 +72,16 @@ class Command(BaseCommand):
             action="store_true",
             help="Go ahead although the course folder has uncommitted changes.",
         )
-        parser.add_argument(
+        choice = parser.add_mutually_exclusive_group()
+        choice.add_argument(
             "--theirs",
             action="store_true",
-            help="Where you and the hand-in both changed a file, take the hand-in's.",
+            help="Replace the course with the zip's version, whatever you changed.",
+        )
+        choice.add_argument(
+            "--mine",
+            action="store_true",
+            help="Where you and the zip both changed a file, keep yours.",
         )
 
     def handle(self, *args, **options):
@@ -78,14 +90,14 @@ class Command(BaseCommand):
         if not source.is_file():
             raise CommandError(f"{source} is not a file.")
         try:
-            slug, files = handin.unzip(source)
+            slug, files, note = handin.unzip_with_note(source)
         except handin.HandInError as error:
             raise CommandError(f"Refused: {error}. Nothing was changed.") from error
 
         target = find_courses([settings.COURSES_DIR]).get(slug)
         if target is None:
             raise CommandError(
-                f"There is no course `{slug}` here. A hand-in can add to a course, not "
+                f"There is no course `{slug}` here. A hand-in can change a course, not "
                 "create one: make it with startcourse first."
             )
         mine = handin.files_of(target)
@@ -109,43 +121,53 @@ class Command(BaseCommand):
             report = sync_course(staged, check_only=True)
         if report.errors:
             self.stdout.write(self.style.ERROR(report.format()))
-            raise CommandError("The hand-in is not valid (above). Nothing was changed.")
+            raise CommandError("The zip is not valid (above). Nothing was changed.")
         for issue in report.warnings:
             self.stdout.write(self.style.WARNING(issue.format()))
 
-        added, longer, ahead, both = [], [], [], []
-        for name, data in sorted(files.items()):
-            if name not in mine:
-                added.append(name)
-            elif data == mine[name]:
-                continue
-            elif name == "course.yaml":
-                # Its description may be reworded, so lines say little here. What counts
-                # is the topics: whoever has all of the other's has the newer file.
-                theirs = set(handin.topic_ids(data.decode("utf-8", errors="replace")))
-                yours = set(handin.topic_ids(mine[name].decode("utf-8")))
-                (longer if yours <= theirs else ahead if theirs <= yours else both).append(name)
-            elif handin.extends(mine[name], data, name):
-                longer.append(name)
-            elif handin.extends(data, mine[name], name):
-                ahead.append(name)
-            else:
-                both.append(name)
-        summary = f"{len(added)} new, {len(longer)} longer"
-        if ahead:
-            summary += f", {len(ahead)} left alone (yours has more)"
-        if both and not options["theirs"]:
-            raise CommandError(
-                "You and the hand-in both changed:\n  "
-                + "\n  ".join(both)
-                + "\nNothing was changed. Put the two together by hand, or pass --theirs "
-                "to take the hand-in's version of these files (git keeps yours)."
-            )
+        # Are your files the version the hand-ins started from? Then theirs simply
+        # follows yours, and the course can be replaced as a whole.
+        untouched = bool(note.get("base")) and handin.version_of(mine) == note["base"]
+        write, remove, kept, both = {}, [], [], []
+        if untouched or options["theirs"]:
+            write = {name: data for name, data in files.items() if mine.get(name) != data}
+            remove = sorted(set(mine) - set(files))
+        else:
+            # You changed the course too. What the zip only adds is safe to take. Where
+            # a file differs in any other way there is no telling, without the version
+            # both started from, whether they removed a line or you added one.
+            for name, data in sorted(files.items()):
+                if (
+                    name not in mine
+                    or name == "course.yaml"
+                    or handin.extends(mine[name], data, name)
+                ):
+                    if mine.get(name) != data:
+                        write[name] = data
+                else:
+                    both.append(name)
+            if both and not options["mine"]:
+                raise CommandError(
+                    "You changed this course yourself since it was last published, and it "
+                    "differs from the zip in ways that cannot be put together by rule:\n  "
+                    + "\n  ".join(both)
+                    + "\nNothing was changed. --theirs replaces the course with the zip's "
+                    "version (your own changes stay in git, to put back by hand); --mine "
+                    "keeps your version of these files and takes only what the zip adds."
+                )
+            kept += both
+
+        change = handin.compare(mine, {**mine, **write} if not remove else files)
+        summary = str(change) if (write or remove) else "nothing to take"
+        if kept:
+            summary += f"; {len(kept)} of your files left as they are"
         if options["check"]:
             self.stdout.write(f"{slug}: valid. {summary}. Nothing was changed (--check).")
             return
-        take = [*added, *longer, *both]
-        if not take:
+        marker = target / MERGED
+        version = note.get("version") or handin.version_of(files)
+        if not write and not remove:
+            marker.write_text(version + "\n", encoding="utf-8", newline="\n")
             self.stdout.write(f"{slug}: your files already hold everything in it.")
             return
         dirty = uncommitted(target)
@@ -155,13 +177,16 @@ class Command(BaseCommand):
                 "first, so that what is taken in can be read and undone on its own, or "
                 "pass --force."
             )
-        for name in take:
+        for name in remove:
+            (target / name).unlink()
+        for name, data in write.items():
             (target / name).parent.mkdir(parents=True, exist_ok=True)
-            (target / name).write_bytes(files[name])
+            (target / name).write_bytes(data)
+        marker.write_text(version + "\n", encoding="utf-8", newline="\n")
 
-        if both:
-            summary += f", {len(both)} replaced by the hand-in's version"
         self.stdout.write(self.style.SUCCESS(f"{slug}: taken in. {summary}."))
+        for line in change.lost:
+            self.stdout.write(f"  gone: {line}")
         self.stdout.write(
             "Next: read the diff in the courses folder, then\n"
             f"  manage.py sync_content {slug}\n"

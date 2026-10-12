@@ -1,0 +1,31 @@
+{% load ui %}
+{% comment %} The bell: what the site has to tell this person (`notices`, from desk/notices.py through
+   the context processor). A native popover, like the account menu beside it. Opening it
+   tells the server that what is listed has been read (static/js/components/bell.js), so
+   the number goes away here and on every other device. {% endcomment %}
+<button class="icon-btn bell no-print" type="button" popovertarget="bell-pop" x-data="bell({{ notices.unread }})"
+        :aria-label="unread ? `Notifications, ${unread} new` : 'Notifications'" aria-label="Notifications">
+  {% icon "bell" %}
+  <span class="bell__count" x-show="unread" x-text="unread > 9 ? '9+' : unread" {% if not notices.unread %}x-cloak{% endif %}>{{ notices.unread }}</span>
+</button>
+
+<div id="bell-pop" class="popover bell-pop" popover x-data data-read="{% url 'desk:notifications_read' %}"
+     @toggle="if ($event.newState === 'open') $dispatch('bell-open', $el.dataset.read)">
+  <p class="bell-pop__head">Notifications</p>
+  {% if notices.rows %}
+  <ul class="notes">
+    {% for note in notices.rows %}
+    <li{% if not note.read_at %} data-new{% endif %}>
+      {% if note.url %}<a href="{{ note.url }}">{% endif %}
+        <strong>{{ note.title }}</strong>
+        {% if note.body %}<span>{{ note.body }}</span>{% endif %}
+        <time datetime="{{ note.created_at|date:'c' }}">{{ note.created_at|timesince }} ago</time>
+      {% if note.url %}</a>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  <p class="bell-pop__foot"><a class="link" href="{% url 'desk:notifications' %}">All notifications</a></p>
+  {% else %}
+  <p class="faint">Nothing yet. Answers to what you send, and news about a course you write, show up here.</p>
+  {% endif %}
+</div>

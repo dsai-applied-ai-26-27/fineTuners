@@ -2,18 +2,24 @@
 {% comment %} Why a hand-in was not taken in (`refused`, a desk.handins.Refused), and what to do
    about it. Nothing changed on the site. `course` is the course it was for. {% endcomment %}
 <div class="refused" role="alert">
-  {% if refused.kind == "conflict" %}
+  {% if refused.kind == "confirm" %}
+  <p class="refused__head">{% icon "warning" %}Not taken in yet: this hand-in removes or rewrites what is on the site.</p>
+  <p>That is allowed, but it has to be meant. Look at what would go, below. If it is what you want, choose the zip again, tick <strong>It may change and remove what is there</strong>, and hand in. If it is not (an assistant tidying up where it should not have), <code>git diff</code> shows what changed and <code>git checkout -- &lt;file&gt;</code> puts a file back; then pack again.</p>
+  {% elif refused.kind == "conflict" %}
   <p class="refused__head">{% icon "warning" %}Not taken in: the course changed on the site after you took your copy.</p>
-  <p>Someone added to it, or the owner published a change. Your zip does not have those lines, so taking it in would remove them. Put your work on top of the latest version, in the kit's folder:</p>
+  <p>Someone else handed something in, or the owner published a change (the list below shows the latest steps). Taking your zip in would undo that. Put your work on top of the latest version, in the kit's folder:</p>
   <pre class="brief__prompt">git stash
 # download the course files again (the button above)
 uv run tools/unpack.py {{ course.slug }}.zip
 git stash pop
 uv run tools/pack.py {{ course.slug }}</pre>
-  <p><code>git stash</code> sets your work aside, <code>unpack.py</code> brings in the site's version, and <code>git stash pop</code> puts your work back on top. If git marks a conflict in a file, both versions are in it between <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code> and <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code>: keep both sets of lines, delete the markers, or ask your assistant to. Then hand in the new zip.</p>
-  {% elif refused.kind == "removal" %}
-  <p class="refused__head">{% icon "warning" %}Not taken in: it removes or rewrites what is already there.</p>
-  <p>A hand-in may only add. Put the lines below back as they were (<code>git diff</code> shows what you changed, <code>git checkout -- &lt;file&gt;</code> restores a file), then pack and hand in again. If something on the site is wrong and has to change, say so with <a class="link" href="{% url 'desk:ask' %}?course={{ course.slug }}&amp;kind=bug">Ask or report</a>. If you did not touch these lines, the course changed on the site: download the course files again and put your work on top (<a class="link" href="{% url 'desk:guide' %}#moved">how</a>).</p>
+  <p><code>git stash</code> sets your work aside, <code>unpack.py</code> brings in the site's version, and <code>git stash pop</code> puts your work back on top. If git marks a conflict in a file, both versions are in it between <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code> and <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code>: decide what stays, delete the markers, or ask your assistant to. Then hand in the new zip.</p>
+  {% elif refused.kind == "start" %}
+  <p class="refused__head">{% icon "info" %}Not taken in: the site does not know which version you started from.</p>
+  <p>Press <strong>Download the course files</strong> above and unpack them into the kit with <code>uv run tools/unpack.py {{ course.slug }}.zip</code> (after <code>git stash</code>, if you have work already; <code>git stash pop</code> puts it back). From then on the site knows your starting point and can tell whether the course has changed under you.</p>
+  {% elif refused.kind == "owner" %}
+  <p class="refused__head">{% icon "warning" %}Not taken in: it changes what is not yours in course.yaml.</p>
+  <p>In <code>course.yaml</code> the topics and the description are yours. Put the rest back as it was; a topic's <code>id</code> cannot be changed or removed.</p>
   {% elif refused.kind == "invalid" %}
   <p class="refused__head">{% icon "error" %}Not taken in: the site's check found errors.</p>
   <p>These are things <code>tools/check.py</code> cannot see: links between files, the text itself, the maths. Give this report to your assistant, fix, pack and hand in again.</p>

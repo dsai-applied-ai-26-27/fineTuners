@@ -7,6 +7,7 @@
 
 import Alpine from "../vendor/alpine/alpine.esm.min.js";
 
+import bell from "./components/bell.js";
 import cover from "./components/cover.js";
 import flashcards from "./components/flashcards.js";
 import news from "./components/news.js";
@@ -47,6 +48,7 @@ Alpine.data("settingsPanel", settingsPanel);
 Alpine.data("tour", tour);
 Alpine.data("news", news);
 Alpine.data("notice", notice);
+Alpine.data("bell", bell);
 for (const [name, component] of Object.entries(widgets)) Alpine.data(name, component);
 
 // Typeset the maths that arrived in the page's HTML, then start Alpine.

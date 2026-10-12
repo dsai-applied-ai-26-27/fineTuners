@@ -465,41 +465,61 @@ runs the very same code. It trusts nothing in a zip: a path that leaves the cour
 folder, a link, a kind of file a course is not made of, an image carrying a script and
 anything oversized are refused.
 
-**A hand-in may only add** (`handin.compare`). Every file the course has must still be
-there, and every line of every text file, in the same order: the old lines must be a
-subsequence of the new ones. New files and new lines anywhere are what a hand-in is. The
-same test catches a course that has moved on since someone took their copy: their copy
-lacks what was added meanwhile, which looks exactly like a removal. `Educator.synced_version`
-remembers the version each person last had, only to tell them which of the two it was.
+**What a hand-in may do** (`handin.compare`). Anything: add, change, remove. `compare`
+does not forbid; it reports what one version does to another: new files, files that are
+gone, lines gained, lines removed or rewritten (the old lines are no longer a
+subsequence of the new ones), and the ids that disappear, since students' progress is
+stored under them. Two things stand between a slip and the live site:
+
+- *It has to be meant.* A hand-in that takes anything away is first shown back to the
+  person, line by line, and taken in only with the box on the form ticked (`confirmed`).
+- *It has to be built on what the site has.* The site remembers the version of the course
+  each educator last took from it or gave it (`Educator.synced_version`; a version is
+  `handin.version_of`, a fingerprint of the files). If the course has changed since,
+  taking the zip in would undo someone else's work, so it is refused and the page shows
+  how to put the work on top of the latest version. That is why the download is a POST:
+  it records the version.
 
 **Taking one in** ([desk/handins.py](../desk/handins.py), `take`). The view
 (`desk.views.hand_in`) receives the file in `request.FILES`; the form says
 `enctype="multipart/form-data"`, which is what lets a browser send a file. Under a lock
 per course (a file made with `O_EXCL`, which works across the server's worker processes),
-the zip is compared with what the site shows, unpacked into a folder of its own, and
-given to `sync_course`, which validates everything and writes to the database only if
-nothing is wrong. So one call is both the check and the going live. A refusal
-(`Refused`, with a kind and the lines of the reason) changes nothing and is shown on the
-page with what to do about it.
+the zip is checked, unpacked into a folder of its own, and given to `sync_course`, which
+validates everything and writes to the database only if nothing is wrong. So one call is
+both the check and the going live. A refusal (`Refused`, with a kind and the lines of the
+reason) changes nothing and is shown on the page with what to do about it.
+
+**Nothing is lost.** Each `HandIn` row keeps the whole course as it stood after that step
+(`archive`, a zip in the database, which is what backups contain), with the version
+before and after. The steps of a course are its history: on the educators' page each can
+be downloaded and, to go back to it, handed in again. An educator can take back their
+own newest hand-in, and the owner any, in the admin (`handins.withdraw`): it and every
+later one for the course are withdrawn, since each was built on the one before, and the
+course is loaded again as it was.
 
 **Where the site reads a course from** ([ingest/live.py](../ingest/live.py)). The owner's
 course files are a folder the application cannot write to, replaced as a whole by
 `publish`. A hand-in therefore never touches them. `live.folders()` gives the folder to
 read each course from: the owner's, unless there are hand-ins on the site that the
-owner's files do not hold yet, in which case it is the newest hand-in, unpacked under
+owner's files do not include yet, in which case it is the newest hand-in, unpacked under
 `settings.HANDINS_DIR`. `ingest` does not know about hand-ins; `desk` registers
 `handins.overlay` with it when Django starts (`DeskConfig.ready`). A real sync also
-settles: once the published files hold everything a hand-in added (`handin.holds`), it
-is marked merged and its folder removed. If the owner publishes without them, the site
-keeps showing the hand-in and the sync report says so. The unpacked folder is a working
-copy; each `HandIn` row keeps the whole course as a zip (`archive`), the folder is
-rebuilt from it, and that is what backups contain.
+settles: the owner's files include a hand-in when they say so (`import_course` writes
+the hand-in's version into a file, `.merged`, which `publish` sends along), or when they
+are the very same files. Then it is marked merged and its folder removed. If the owner
+publishes without it, the site keeps showing the hand-in and the sync report says so.
+The unpacked folder is a working copy, rebuilt from the database when missing.
 
-**The timeline** on the educators' page is the `HandIn` rows of a course, newest first:
-what was added, when, by whom (to fellow educators), and whether it is on the site,
-merged into the published files, or was taken off. The owner takes one off in the admin
-(`handins.withdraw`): it and every later one for the course are withdrawn, since each
-was built on the one before, and the course is loaded again as it was.
+**Notifications** ([desk/notices.py](../desk/notices.py), `desk.Notification`). The bell at
+the top of every page lists what the site has to tell a person: an answer to their
+request, a decision on their application, a change to a course they write, a new version
+of the kit; the owner gets theirs there too, beside the message to the bot.
+`notices.tell(users, title, body, url)` leaves one row per person, at the place where
+the thing happens. The context processor hands the newest few to every page lazily, so
+it is one query, and only for someone signed in. Opening the bell posts to
+`/notifications/read/` ([bell.js](../static/js/components/bell.js)), which is what makes
+the number go away on every device. A notification says what happened and where to
+look, never who sent something or what they wrote.
 
 **Kit versions and telling educators** ([desk/kit.py](../desk/kit.py)). The versions of
 the kit are a list in code, written into the kit as `VERSION` and `CHANGELOG.md`. A
@@ -508,7 +528,9 @@ step of its own because the site learns the number at deploy, which can be befor
 kit's repository has it. An announcement puts a notice on each educator's page until
 they dismiss it (`Profile.kit_seen`) and e-mails them.
 
-**E-mail** ([desk/mail.py](../desk/mail.py)) goes to educators only, about their role.
+**E-mail** ([desk/mail.py](../desk/mail.py)) is the same news by another road, for
+when a mail server is configured; without one the bell is the only channel. It goes to
+educators only, about their role.
 `settings.MAILERS` names where mail goes, as `DATABASES` names where data goes: a real
 server once `DSAI_EMAIL_HOST` is set, the terminal in development, nowhere otherwise.
 One message per person, sent from a thread, and a failure is a log line.
@@ -541,10 +563,11 @@ is the long form: the kit's README told from the site's side.
 - The educator kit is exported to a temporary folder and its tools are run as separate
   Python processes, the way an educator runs them, in a real git repository: unpack,
   stash, unpack the newer version, pop.
-- [desk/tests/test_handins.py](../desk/tests/test_handins.py): the rule that a hand-in
-  only adds; additions going live; a removed line, a stale copy, invalid content and a
-  changed course code each refused with nothing changed; a publish with and without the
-  hand-in; taking one off the site.
+- [desk/tests/test_handins.py](../desk/tests/test_handins.py): what one version does
+  to another; additions going live; a removal shown first and taken in once confirmed; a
+  stale copy, invalid content and a changed course code each refused with nothing
+  changed; every step downloadable and an earlier one brought back; taking a hand-in
+  back; a publish with and without the hand-in.
 - [desk/tests/](../desk/tests/): asking, applying, the educator's page, the switches
   and a closed course, the admin actions, and that a notification never carries what a
   person wrote. The bot is never contacted: the one function that opens a connection is

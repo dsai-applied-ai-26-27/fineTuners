@@ -260,7 +260,8 @@ class EducatorKitTests(CourseTestCase):
             "Update the CMS for this course: rl",
             "uv run tools/pack.py rl",
             "Hand in",
-            "Not remove, and not rewrite",
+            "Removing has to be meant",
+            "Download the course as it was after",
             "git stash pop",
             "source/",
         ):
@@ -463,12 +464,12 @@ class HandInTests(CourseTestCase):
         (self.course / "source/L1.pdf").write_bytes(b"%PDF")
 
         checked = run("import_course", self.packed(), "--check")
-        self.assertIn("1 new, 1 longer", checked)
+        self.assertIn("1 new file, 3 lines added", checked)
         self.assertIn("Nothing was changed", checked)
         self.assertNotIn("lsq-more", self.read("content/decks/least-squares.yaml"))
 
         text = run("import_course", self.packed())
-        self.assertIn("example: taken in. 1 new, 1 longer", text)
+        self.assertIn("example: taken in. 1 new file, 3 lines added", text)
         self.assertIn("lsq-more", self.read("content/decks/least-squares.yaml"))
         self.assertTrue((self.course / "content/guides/a-second-look.md").is_file())
         self.assertTrue((self.course / "content/guides/owners-note.md").is_file())
@@ -485,12 +486,10 @@ class HandInTests(CourseTestCase):
             "---\ntitle: New\n---\n\nNew.\n", "utf-8"
         )
         message = self.refused(self.packed())
-        self.assertIn("both changed", message)
+        self.assertIn("cannot be put together by rule", message)
         self.assertIn("content/decks/least-squares.yaml", message)
         self.assertFalse((self.course / "content/guides/new.md").exists())
-        self.assertIn(
-            "replaced by the hand-in's version", run("import_course", self.packed(), "--theirs")
-        )
+        self.assertIn("taken in", run("import_course", self.packed(), "--theirs"))
         self.assertIn("again", self.read("content/decks/least-squares.yaml"))
 
     def test_topics_and_the_description_are_theirs_to_change(self):

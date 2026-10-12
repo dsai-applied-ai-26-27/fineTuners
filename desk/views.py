@@ -18,7 +18,7 @@ from catalog.nav import course_data, has_content
 from catalog.welcome import educator_state
 from ingest import handin, live
 
-from . import handins, kit
+from . import handins, kit, notices
 from .forms import EducatorApplicationForm, RequestForm
 from .models import Educator, EducatorApplication, HandIn, Request
 from .notify import notify
@@ -80,6 +80,17 @@ def ask(request):
                 Request.Kind.IDEA: "New idea for the site",
             }[sent.kind] + (f" ({course.title})" if course else "")
             url = _admin_url(request, sent)
+            # Under the bell: the owner, and for a course whoever writes it. They are
+            # told what kind of thing arrived, not by whom.
+            notices.tell(
+                notices.owners(), title, url=reverse("admin:desk_request_change", args=[sent.pk])
+            )
+            if course and sent.kind != Request.Kind.IDEA:
+                notices.tell(
+                    notices.educators_of(sent.series, but=request.user),
+                    f"Asked about {course.title}: {sent.get_kind_display().lower()}",
+                    url=f"{reverse('desk:educators')}#course-{course.slug}",
+                )
             # After the row is safely stored, and never before: see desk/notify.py.
             transaction.on_commit(
                 lambda: notify(
@@ -142,6 +153,11 @@ def apply(request):
             offer.save()
             course = by_series[offer.series]
             url = _admin_url(request, offer)
+            notices.tell(
+                notices.owners(),
+                f"Educator application: {course.title}",
+                url=reverse("admin:desk_educatorapplication_change", args=[offer.pk]),
+            )
             transaction.on_commit(
                 lambda: notify(
                     f"Educator application: {course.title}",
@@ -197,6 +213,9 @@ def _educators_page(request, *, refused=None):
         course.ready = has_content(course)
         course.asked = [item for item in asked if item.series == name]
         course.timeline = [step for step in steps if step.series == name][:30]
+        # The newest step, if it is on the site and theirs, can be taken back by them.
+        newest = next((s for s in course.timeline if s.status == HandIn.Status.LIVE), None)
+        course.undo = newest if newest and newest.user_id == request.user.pk else None
         course.handed = next((s for s in course.timeline if str(s.pk) == handed), None)
         course.refused = refused[1] if refused and refused[0] == name else None
         writing.append(course)
@@ -217,6 +236,7 @@ def _educators_page(request, *, refused=None):
             # Versions of the kit this person has not been told about yet.
             "kit_news": kit.news_for(state["kit_seen"]) if series else [],
             "applied": "applied" in request.GET,
+            "taken_back": "taken_back" in request.GET,
             "welcome": {"educator": bool(series), "educator_tour": state["offer"]},
             "active": "educators",
         },
@@ -284,7 +304,9 @@ def hand_in(request, series):
         ).count()
         if today >= DAILY_HANDINS:
             raise handins.Refused("busy", ["That is a lot of hand-ins for one day. Try tomorrow."])
-        record = handins.take(request.user, course, upload)
+        # The box on the form: "what this removes or rewrites is meant".
+        confirmed = request.POST.get("removals") == "yes"
+        record = handins.take(request.user, course, upload, confirmed=confirmed)
     except handins.Refused as refusal:
         return _educators_page(request, refused=(series, refusal))
 
@@ -293,7 +315,8 @@ def hand_in(request, series):
         lambda: notify(
             f"Hand-in on the site: {course.title}",
             f"{record.summary}. It is live. Open the admin to see it or to take it back.",
-            level="success",
+            # One that removed something is worth a look sooner.
+            level="warning" if record.removes else "success",
             url=url,
             dedupe_key=f"dsai-handin-{record.pk}",
         )
@@ -302,13 +325,42 @@ def hand_in(request, series):
 
 
 @signed_in
-def handin_zip(request, pk):
-    """For the owner: one hand-in as the zip that `manage.py import_course` takes."""
-    if not request.user.is_staff:
+@require_POST
+def take_back(request, pk):
+    """An educator takes back their own hand-in, if it is the newest one on the site
+    for its course: the course returns to the version before it. (The owner can take
+    off any hand-in, in the admin.)"""
+    record = get_object_or_404(HandIn, pk=pk, status=HandIn.Status.LIVE)
+    newest = HandIn.objects.filter(slug=record.slug, status=HandIn.Status.LIVE).first()
+    if record.user_id != request.user.pk or newest.pk != record.pk:
         raise Http404
+    handins.withdraw(record, by=request.user)
+    notices.tell(
+        notices.owners(),
+        f"A hand-in for `{record.slug}` was taken back by its educator",
+        url=reverse("admin:desk_handin_change", args=[record.pk]),
+    )
+    return redirect(f"{reverse('desk:educators')}?taken_back=1#course-{record.slug}")
+
+
+@signed_in
+def handin_zip(request, pk):
+    """One step of a course's history as a zip: the whole course as it stood after it.
+
+    For the course's educators it is the backup: an earlier version to look at, or to
+    unpack and hand in again. For the owner it is what `manage.py import_course` takes;
+    theirs carries a note saying which version of their own files it was built on.
+    """
     record = get_object_or_404(HandIn, pk=pk)
-    response = HttpResponse(bytes(record.archive), content_type="application/zip")
-    name = f"{record.slug}-handin-{record.pk}.zip"
+    if not _may_write(request.user, record.series):
+        raise Http404
+    data = bytes(record.archive)
+    if request.user.is_staff:
+        slug, files = handin.unzip(data, handins.MAX_UNPACKED)
+        note = {"handin": record.pk, "version": record.version, "base": handins.root_base(record)}
+        data = handin.pack_files(slug, files, note)
+    response = HttpResponse(data, content_type="application/zip")
+    name = f"{record.slug}-version-{record.pk}.zip"
     response["Content-Disposition"] = f'attachment; filename="{name}"'
     return response
 
@@ -323,4 +375,31 @@ def resolve(request, pk):
     item.status = Request.Status.DONE
     item.answer = request.POST.get("answer", "").strip()[:1000]
     item.save(update_fields=["status", "answer"])
+    answered(item)
     return redirect("desk:educators")
+
+
+def answered(item):
+    """Tell the person who sent a request that it now has an answer or a new state."""
+    notices.tell(
+        [item.user],
+        f"Your request is {item.get_status_display().lower()}",
+        item.answer or f"{item.get_kind_display()}: {item.message[:120]}",
+        url=reverse("desk:ask"),
+    )
+
+
+@signed_in
+def notifications(request):
+    """Everything under the bell, for reading at length."""
+    rows = list(request.user.notifications.all()[:100])
+    return render(request, "desk/notifications.html", {"rows": rows, "active": "notifications"})
+
+
+@signed_in
+@require_POST
+def notifications_read(request):
+    """Posted when the bell is opened (static/js/components/bell.js): what was shown
+    counts as read, on every device."""
+    notices.mark_read(request.user)
+    return HttpResponse(status=204)

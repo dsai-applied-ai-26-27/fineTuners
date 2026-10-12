@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.utils.functional import SimpleLazyObject
 
+from desk import notices
+
 from . import news
 from .mine import catalogue, mine
 from .models import Course
@@ -22,6 +24,9 @@ def site(request):
 
     return {
         "nav_courses": SimpleLazyObject(current),
+        # What the bell at the top shows. Lazy as well, and only used for someone signed
+        # in: one query per page.
+        "notices": SimpleLazyObject(lambda: notices.latest(request.user)),
         "debug": settings.DEBUG,
         # The number of the site's latest update: the tour and the news dialog send it
         # back when they are shown (catalog/welcome.py).

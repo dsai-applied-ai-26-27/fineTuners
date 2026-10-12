@@ -4,6 +4,7 @@ a new version of the kit, and the e-mail that goes with those."""
 from datetime import date
 from unittest import mock
 
+from django.conf import settings
 from django.core import mail as outbox
 from django.test import override_settings
 from django.urls import reverse
@@ -11,8 +12,8 @@ from django.utils import timezone
 
 from accounts.models import Enrollment, Profile
 from catalog import news
-from desk import kit, mail
-from desk.models import Educator, EducatorApplication, KitAnnouncement
+from desk import kit, mail, notices
+from desk.models import Educator, EducatorApplication, KitAnnouncement, Notification, Request
 
 from .test_desk import DeskTestCase
 
@@ -22,6 +23,7 @@ SEEN = "/whats-new/seen/"
 PAGE = "/educators/"
 # Mail is sent from a thread; in a test it is delivered on the spot, into Django's outbox.
 INLINE = mock.patch("desk.mail._dispatch", side_effect=mail.deliver)
+OPEN_MIDDLEWARE = [name for name in settings.MIDDLEWARE if "LoginRequired" not in name]
 
 
 class EducatorCase(DeskTestCase):
@@ -86,7 +88,7 @@ class EducatorTourTests(EducatorCase):
             "uv run tools/unpack.py",
             "Update the CMS for this course",
             "uv run tools/pack.py",
-            "A hand-in may only add",
+            "what a hand-in removes is shown back to you first",
             "git stash pop",
             'href="/educators/guide/"',
         ):
@@ -103,7 +105,8 @@ class EducatorTourTests(EducatorCase):
             "uv run tools/unpack.py",
             "Update the CMS for this course: rl",
             "uv run tools/pack.py rl",
-            "Not remove, and not rewrite",
+            "Removing has to be meant",
+            "Nothing is lost",
             "git stash pop",
             f"version {kit.LATEST}",
         ):
@@ -164,6 +167,8 @@ class KitNewsTests(EducatorCase):
         told = KitAnnouncement.objects.get()
         self.assertEqual((told.number, told.recipients), (2, 1))
         (message,) = outbox.outbox  # Ada; not Bob, who writes nothing; not the one without mail
+        told = Notification.objects.filter(title__startswith="Educator kit version 2")
+        self.assertCountEqual([note.user for note in told], [self.ada, self.nameless])
         self.assertEqual(message.to, ["ada@example.test"])
         self.assertIn("run git pull", message.subject)
         self.assertIn("AGENTS.md says more about cloze cards.", message.body)
@@ -238,3 +243,96 @@ class MailTests(EducatorCase):
         ):
             mailers.default.send_messages.side_effect = OSError("no route")
             self.assertEqual(mail.deliver([object()]), 0)
+
+
+class BellTests(EducatorCase):
+    """The bell at the top of every page: what the site has to tell a person."""
+
+    READ = "/notifications/read/"
+
+    def bell(self, client=None, path="/settings/"):
+        return (client or self.client).get(path)
+
+    def test_it_is_there_for_anyone_signed_in_and_empty_at_first(self):
+        page = self.bell()
+        self.assertContains(page, 'x-data="bell(0)"')
+        self.assertContains(page, "Nothing yet.")
+        self.client.logout()
+        with override_settings(REQUIRE_LOGIN=False, MIDDLEWARE=OPEN_MIDDLEWARE):
+            self.assertNotContains(self.client_class().get("/"), 'popovertarget="bell-pop"')
+
+    def test_an_answer_to_a_request_reaches_the_person_who_asked(self):
+        ask = Request.objects.create(user=self.ada, kind="bug", series="rl", message="Card 4.")
+        self.client.force_login(self.admin)
+        change = reverse("admin:desk_request_change", args=[ask.pk])
+        self.client.post(change, {"status": "done", "answer": "Fixed, thank you."})
+        self.client.force_login(self.ada)
+
+        page = self.bell()
+        self.assertContains(page, 'x-data="bell(1)"')
+        self.assertContains(page, "Your request is done")
+        self.assertContains(page, "Fixed, thank you.")
+        self.assertContains(page, "data-new")
+        self.assertContains(page, 'href="/ask/"')
+        # Opening the bell tells the server, and the number is gone everywhere.
+        self.assertEqual(self.client.get(self.READ).status_code, 405)
+        self.assertEqual(self.client.post(self.READ).status_code, 204)
+        elsewhere = self.client_class()
+        elsewhere.force_login(self.ada)
+        page = self.bell(elsewhere)
+        self.assertContains(page, 'x-data="bell(0)"')
+        self.assertContains(page, "Your request is done")  # still listed, no longer new
+        self.assertNotContains(page, "data-new")
+        self.assertContains(self.client.get("/notifications/"), "Fixed, thank you.")
+        # Nobody else sees it.
+        self.client.force_login(self.bob)
+        self.assertNotContains(self.bell(), "Your request is done")
+        self.assertNotContains(self.client.get("/notifications/"), "Fixed, thank you.")
+
+    def test_asking_tells_the_owner_and_the_courses_educator_but_not_who_or_what(self):
+        Educator.objects.create(user=self.bob, series="rl")
+        self.client.post(
+            "/ask/", {"kind": "content", "series": "rl", "message": "Lecture 3, please."}
+        )
+        owners = Notification.objects.get(user=self.admin)
+        self.assertEqual(owners.title, "New request: content (Reinforcement Learning)")
+        self.assertIn("/admin/desk/request/", owners.url)
+        educators = Notification.objects.get(user=self.bob)
+        self.assertIn("Asked about Reinforcement Learning", educators.title)
+        self.assertEqual(educators.url, "/educators/#course-rl")
+        for note in (owners, educators):
+            self.assertNotIn("Ada", note.title + note.body)
+            self.assertNotIn("Lecture 3", note.title + note.body)
+        self.assertFalse(Notification.objects.filter(user=self.ada).exists())
+        # An idea for the site is the owner's alone.
+        self.client.post("/ask/", {"kind": "idea", "series": "rl", "message": "Purple."})
+        self.assertEqual(Notification.objects.filter(user=self.bob).count(), 1)
+
+    def test_an_educator_marking_a_request_done_tells_the_person_too(self):
+        Educator.objects.create(user=self.bob, series="rl")
+        ask = Request.objects.create(user=self.ada, kind="content", series="rl", message="More.")
+        self.client.force_login(self.bob)
+        self.client.post(reverse("desk:resolve", args=[ask.pk]), {"answer": "Added today."})
+        note = Notification.objects.get(user=self.ada)
+        self.assertEqual((note.title, note.body), ("Your request is done", "Added today."))
+
+    def test_a_decision_on_an_application_reaches_the_applicant(self):
+        self.client.post("/educators/apply/", self.application())
+        self.assertIn("Educator application", Notification.objects.get(user=self.admin).title)
+        offer = EducatorApplication.objects.get()
+        offer.decide(EducatorApplication.Status.ACCEPTED)
+        note = Notification.objects.get(user=self.ada)
+        self.assertEqual(note.title, "Your application to write `rl` was accepted")
+        self.assertEqual(note.url, "/educators/")
+        offer.decide(EducatorApplication.Status.DECLINED)
+        self.assertEqual(Notification.objects.filter(user=self.ada).count(), 2)
+
+    def test_the_bell_costs_one_query_and_shows_only_the_newest(self):
+        for number in range(15):
+            notices.tell([self.ada], f"Note {number}")
+        with self.assertNumQueries(1):
+            shown = notices.latest(self.ada)
+        self.assertEqual((len(shown["rows"]), shown["unread"]), (notices.SHOWN, notices.SHOWN))
+        self.assertEqual(shown["rows"][0].title, "Note 14")
+        self.assertContains(self.bell(), "9+")
+        self.assertEqual(notices.tell([self.ada, self.ada, None], "Once"), 1)

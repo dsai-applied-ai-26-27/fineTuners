@@ -27,6 +27,7 @@ from ingest.sync import sync_course
 
 # What the SSH connection runs on the server, relative to the login user's home folder.
 REMOTE_COMMAND = "dsai-vault/bin/deploy content"
+MERGED = ".merged"  # see desk/handins.py
 
 
 def pack(courses):
@@ -42,6 +43,9 @@ def pack(courses):
         for slug, folder in sorted(courses.items()):
             paths = [folder / "course.yaml"]
             paths += sorted(p for p in (folder / "content").rglob("*") if p.is_file())
+            # The note import_course leaves: which hand-in from the site these files
+            # include. The server lets go of its own copy of that hand-in when it sees it.
+            paths += [p for p in [folder / MERGED] if p.is_file()]
             for path in paths:
                 info = archive.gettarinfo(path, f"{slug}/{path.relative_to(folder).as_posix()}")
                 # Whoever unpacks it owns the files; nothing about this computer is kept.

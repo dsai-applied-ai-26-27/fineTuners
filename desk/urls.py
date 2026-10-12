@@ -14,5 +14,9 @@ urlpatterns = [
     path("educators/courses/<slug:series>/files.zip", views.files, name="files"),
     path("educators/courses/<slug:series>/hand-in/", views.hand_in, name="hand_in"),
     path("educators/hand-ins/<int:pk>.zip", views.handin_zip, name="handin_zip"),
+    path("educators/hand-ins/<int:pk>/take-back/", views.take_back, name="take_back"),
+    # The bell at the top of every page: the list, and the address that marks it read.
+    path("notifications/", views.notifications, name="notifications"),
+    path("notifications/read/", views.notifications_read, name="notifications_read"),
     path("educators/requests/<int:pk>/done/", views.resolve, name="resolve"),
 ]
