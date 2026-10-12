@@ -1,5 +1,8 @@
 {% extends "base.html" %}
 {% load ui %}
+{% comment %} Ask or report (desk.views.ask). Three kinds of thing can be sent, and each has a form
+   of its own, asking what that kind needs (desk/forms.py). The page shows one at a time:
+   the three at the top are links, and `?kind=` in the address says which form is drawn. {% endcomment %}
 
 {% block title %}Ask or report · DSAI Vault{% endblock %}
 {% block crumbs %}<a href="{% url 'catalog:home' %}">Courses</a>{% icon "next" %}<span>Ask or report</span>{% endblock %}
@@ -9,42 +12,97 @@
 <header class="dash-head">
   <div>
     <h1>Ask or report</h1>
-    <p class="dash-head__lead">Content you are missing, something that is wrong, or an idea for the site. It goes to the person who runs the site and, for a course, to whoever writes that course. The answer appears on this page.</p>
+    <p class="dash-head__lead">It goes to the person who runs the site and, when it is about a course, to whoever writes that course. The answer appears on this page.</p>
   </div>
 </header>
 
 <div class="desk">
 {% if sent %}<p class="notice" role="status">{% icon "check" %}Sent, thank you. The answer will show below, under what you have sent.</p>{% endif %}
 
-{% comment %} A plain form: the view (desk.views.ask) checks it and redirects. The fields are written out
-   by hand for the layout; their names, values and errors still come from the Django form. {% endcomment %}
+{% comment %} Links, not buttons: choosing one loads the page again with that kind's form. Where
+   the person came from travels along in each address, so nothing they did not type is lost. {% endcomment %}
+<nav class="kinds" aria-label="What is it?">
+  {% for item in kinds %}
+  <a class="kinds__item" href="{{ item.url }}"{% if item.current %} aria-current="page"{% endif %}>
+    <strong>{{ item.label }}</strong>
+    <span>{{ item.hint }}</span>
+  </a>
+  {% endfor %}
+</nav>
+
+{% comment %} A plain form: the view checks it and redirects. The fields are written out by hand
+   for the layout; their names, labels, values and errors still come from the Django form. {% endcomment %}
 <form class="form plate" method="post">
   {% csrf_token %}
+  <input type="hidden" name="kind" value="{{ kind }}">
   {{ form.page }}
   {% for error in form.non_field_errors %}<p class="form__error" role="alert">{{ error }}</p>{% endfor %}
 
-  <fieldset class="form__field">
-    <legend>What is it?</legend>
-    <div class="choose__list">
-      <label class="choose__item choose__item--plain"><input type="radio" name="kind" value="content"{% if form.kind.value == "content" %} checked{% endif %}><span class="choose__title">Content for a course</span><span class="choose__meta">a lecture, cards, a past paper</span></label>
-      <label class="choose__item choose__item--plain"><input type="radio" name="kind" value="bug"{% if form.kind.value == "bug" %} checked{% endif %}><span class="choose__title">Something is wrong</span><span class="choose__meta">a mistake in the material, a page that breaks</span></label>
-      <label class="choose__item choose__item--plain"><input type="radio" name="kind" value="idea"{% if form.kind.value == "idea" %} checked{% endif %}><span class="choose__title">An idea for the site</span><span class="choose__meta">something it should be able to do</span></label>
-    </div>
-    {% for error in form.kind.errors %}<p class="form__error">{{ error }}</p>{% endfor %}
-  </fieldset>
-
+  {% if kind == "content" %}
   <div class="form__field">
-    <label for="{{ form.series.id_for_label }}">Which course?</label>
+    <label for="{{ form.series.id_for_label }}">{{ form.series.label }}</label>
     {{ form.series }}
     {% for error in form.series.errors %}<p class="form__error">{{ error }}</p>{% endfor %}
   </div>
 
+  <fieldset class="form__field">
+    <legend>{{ form.wants.label }} <span class="form__optional">tick what applies</span></legend>
+    {# A field with several boxes can be walked through: each one has its tag and its label. #}
+    <div class="ticks">
+      {% for box in form.wants %}<label class="ticks__item">{{ box.tag }}<span>{{ box.choice_label }}</span></label>{% endfor %}
+    </div>
+    {% for error in form.wants.errors %}<p class="form__error">{{ error }}</p>{% endfor %}
+  </fieldset>
+
   <div class="form__field">
-    <label for="{{ form.message.id_for_label }}">What should we know?</label>
+    <label for="{{ form.message.id_for_label }}">{{ form.message.label }}</label>
     {{ form.message }}
-    <p class="form__hint">Be specific: which lecture, which card, what you expected to see. Leave out anything private: a request about a course is also read by the student who writes that course, without your name.</p>
+    <p class="form__hint">Name the lecture or the topic, and anything that helps: where the slides are, what the exam asks. The student who writes the course reads this too, without your name.</p>
     {% for error in form.message.errors %}<p class="form__error">{{ error }}</p>{% endfor %}
   </div>
+
+  {% elif kind == "bug" %}
+  <div class="form__pair">
+    <div class="form__field">
+      <label for="{{ form.where.id_for_label }}">{{ form.where.label }} <span class="form__optional">optional</span></label>
+      {{ form.where }}
+      {% for error in form.where.errors %}<p class="form__error">{{ error }}</p>{% endfor %}
+    </div>
+    <div class="form__field">
+      <label for="{{ form.series.id_for_label }}">{{ form.series.label }} <span class="form__optional">optional</span></label>
+      {{ form.series }}
+      {% for error in form.series.errors %}<p class="form__error">{{ error }}</p>{% endfor %}
+    </div>
+  </div>
+  {% if form.page.value %}<p class="form__hint form__hint--tight">The page you came from is sent along: <code>{{ form.page.value }}</code></p>{% endif %}
+
+  <div class="form__field">
+    <label for="{{ form.message.id_for_label }}">{{ form.message.label }}</label>
+    {{ form.message }}
+    <p class="form__hint">What you saw. A mistake in a course is also read by the student who writes that course, without your name.</p>
+    {% for error in form.message.errors %}<p class="form__error">{{ error }}</p>{% endfor %}
+  </div>
+
+  <div class="form__field">
+    <label for="{{ form.expected.id_for_label }}">{{ form.expected.label }} <span class="form__optional">optional</span></label>
+    {{ form.expected }}
+    {% for error in form.expected.errors %}<p class="form__error">{{ error }}</p>{% endfor %}
+  </div>
+
+  {% else %}
+  <div class="form__field">
+    <label for="{{ form.message.id_for_label }}">{{ form.message.label }}</label>
+    {{ form.message }}
+    {% for error in form.message.errors %}<p class="form__error">{{ error }}</p>{% endfor %}
+  </div>
+
+  <div class="form__field">
+    <label for="{{ form.why.id_for_label }}">{{ form.why.label }} <span class="form__optional">optional</span></label>
+    {{ form.why }}
+    <p class="form__hint">What you were trying to do when you missed it. It helps to build the right thing.</p>
+    {% for error in form.why.errors %}<p class="form__error">{{ error }}</p>{% endfor %}
+  </div>
+  {% endif %}
 
   <div class="form__foot">
     <button class="btn btn--filled" type="submit">Send</button>

@@ -435,6 +435,16 @@ view adds what the form cannot know (who is asking, with `save(commit=False)`), 
 successful POST redirects. The form only offers, and so only accepts, the courses this
 person can see.
 
+Ask or report is three forms, one per kind of thing (`REQUEST_FORMS`), because the three
+need different things asked: content needs a course and what is missing; a fault needs
+where, what, and what should be there instead; an idea needs what and what for, and no
+course. They share a base class and each adds its own questions. Those questions are form
+fields only: `compose()` writes the answers into the one `message` the model keeps, under
+a word that says which is which ("Where:", "Should be:"), so a new question is never a
+new column. The page shows one form at a time; the three kinds at its top are links to
+`?kind=…`, which carry along the page the person came from and its course. A fault seen
+on a course's page is about that course without the person saying so (`_course_of`).
+
 Educators has three pages, because one person may write several courses:
 
 - `/educators/` is the **dashboard** of someone who writes courses
@@ -540,7 +550,20 @@ the thing happens. The context processor hands the newest few to every page lazi
 it is one query, and only for someone signed in. Opening the bell posts to
 `/notifications/read/` ([bell.js](../static/js/components/bell.js)), which is what makes
 the number go away on every device. A notification says what happened and where to
-look, never who sent something or what they wrote.
+look, never who sent something or what they wrote. When someone asks for content of a
+course or reports a fault in it, the people who write that course are told this way
+(and nobody is told of what they sent themselves).
+
+**Announcements** (`desk.Announcement`, in the admin). Something the owner writes for
+everyone, or for educators only: a title, a few lines, an optional link. Adding one is
+announcing it: `notices.announce` leaves a copy under each person's bell, in one
+`bulk_create`. Each copy points back at the announcement (a nullable foreign key with
+`CASCADE`), and that is what makes one correctable: saving a change in the admin updates
+every copy (`notices.correct`), and deleting it lets the database delete the copies with
+it. `ModelAdmin.save_model` is the hook that does both. The link is checked by a
+validator on the model: a page of this site or an https address, nothing else, so what
+is typed there can never be a script under somebody's bell. People who join later do not
+get earlier announcements.
 
 **Kit versions and telling educators** ([desk/kit.py](../desk/kit.py)). The versions of
 the kit are a list in code, written into the kit as `VERSION` and `CHANGELOG.md`. A

@@ -20,7 +20,7 @@ from django.urls import reverse
 from accounts.models import Enrollment
 from catalog.mine import by_semester
 from catalog.models import Course
-from desk.forms import course_choices
+from desk.forms import BugForm, ContentForm, IdeaForm, course_choices
 from desk.models import CourseSetting, Educator, EducatorApplication, Request
 from desk.switches import Switches
 
@@ -122,10 +122,115 @@ class AskTests(DeskTestCase):
     def test_the_form_knows_the_course_and_the_page_it_was_opened_from(self):
         page = self.client.get(ASK, {"course": "rl", "kind": "bug", "from": "/courses/rl/cards/"})
         form = page.context["form"]
+        self.assertIsInstance(form, BugForm)
         self.assertEqual(form.initial["series"], "rl")
-        self.assertEqual(form.initial["kind"], "bug")
-        self.assertContains(page, 'value="/courses/rl/cards/"')
-        self.assertContains(page, 'value="bug" checked')
+        self.assertContains(page, 'name="page" value="/courses/rl/cards/"')
+        self.assertContains(page, 'name="kind" value="bug"')
+        self.assertContains(page, "The page you came from is sent along")
+        # The three kinds are links, and each carries along where the person came from.
+        kinds = {item["value"]: item for item in page.context["kinds"]}
+        self.assertEqual([k for k, item in kinds.items() if item["current"]], ["bug"])
+        self.assertEqual(
+            kinds["content"]["url"], "/ask/?kind=content&course=rl&from=%2Fcourses%2Frl%2Fcards%2F"
+        )
+        self.assertContains(page, 'aria-current="page"')
+
+    def test_a_fault_seen_on_a_course_page_is_about_that_course_without_being_told(self):
+        page = self.client.get(ASK, {"kind": "bug", "from": "/courses/rl/cards/mdp/"})
+        self.assertEqual(page.context["form"].initial["series"], "rl")
+        # A page of a course that is not open, or no course page at all, names none.
+        for path in ("/courses/nlp/", "/settings/", ""):
+            page = self.client.get(ASK, {"kind": "bug", "from": path})
+            self.assertEqual(page.context["form"].initial["series"], "", msg=path)
+
+    def test_each_kind_asks_its_own_questions(self):
+        """Content needs a course and what is missing; a fault needs where, what, and what
+        instead; an idea needs what and what for, and is about no course."""
+        asked = {
+            "content": (
+                ContentForm,
+                ["Which course?", "What is missing?", "Which lecture or topic?"],
+            ),
+            "bug": (BugForm, ["Where did you see it?", "What is wrong?", "say or do instead?"]),
+            "idea": (IdeaForm, ["What should the site be able to do?", "help you with?"]),
+        }
+        for kind, (form, questions) in asked.items():
+            page = self.client.get(ASK, {"kind": kind})
+            self.assertIsInstance(page.context["form"], form)
+            for question in questions:
+                self.assertContains(page, question)
+            for other, (_, theirs) in asked.items():
+                if other != kind:
+                    self.assertNotContains(page, theirs[-1])
+        self.assertNotContains(self.client.get(ASK, {"kind": "idea"}), 'name="series"')
+        # No kind, or one that does not exist, is a request for content.
+        for kind in ("", "nonsense"):
+            self.assertIsInstance(self.client.get(ASK, {"kind": kind}).context["form"], ContentForm)
+
+    def test_the_answers_are_stored_as_one_text_that_says_which_is_which(self):
+        self.client.post(
+            ASK,
+            {
+                "kind": "content",
+                "series": "rl",
+                "wants": ["notes", "cards"],
+                "message": "Lecture 5, policy gradients.",
+            },
+        )
+        self.client.post(
+            ASK,
+            {
+                "kind": "bug",
+                "series": "rl",
+                "where": "Card 4 of the deck on MDPs",
+                "message": "The discount is written as larger than 1.",
+                "expected": "Smaller than 1, as in the lecture.",
+            },
+        )
+        self.client.post(
+            ASK,
+            {
+                "kind": "idea",
+                "series": "rl",
+                "message": "Print a deck.",
+                "why": "To study on paper.",
+            },
+        )
+        idea, bug, content = Request.objects.all()  # newest first
+        self.assertEqual(
+            (content.kind, content.series, content.message),
+            ("content", "rl", "Missing: lecture notes, flashcards\n\nLecture 5, policy gradients."),
+        )
+        self.assertEqual(
+            (bug.kind, bug.series, bug.message),
+            (
+                "bug",
+                "rl",
+                "Where: Card 4 of the deck on MDPs\n\nThe discount is written as larger than 1."
+                "\n\nShould be: Smaller than 1, as in the lecture.",
+            ),
+        )
+        # An idea is about the site: a course sent along with it is not taken.
+        self.assertEqual(
+            (idea.kind, idea.series, idea.message),
+            ("idea", "", "Print a deck.\n\nWhy: To study on paper."),
+        )
+        # What was left empty leaves no trace.
+        self.client.post(ASK, {"kind": "bug", "message": "The timer stops."})
+        self.assertEqual(Request.objects.first().message, "The timer stops.")
+
+    def test_only_what_the_form_offers_is_taken(self):
+        answer = self.client.post(
+            ASK, {"kind": "content", "series": "rl", "wants": ["money"], "message": "Please."}
+        )
+        self.assertEqual(answer.status_code, 200)
+        self.assertFalse(Request.objects.exists())
+        # The kind is the form's own, whatever else is posted beside it.
+        self.client.post(
+            ASK, {"kind": "idea", "message": "An idea.", "status": "done", "answer": "x"}
+        )
+        sent = Request.objects.get()
+        self.assertEqual((sent.kind, sent.status, sent.answer), ("idea", "new", ""))
 
     def test_only_open_courses_can_be_asked_about(self):
         offered = [

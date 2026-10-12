@@ -14,7 +14,14 @@ from django.utils import timezone
 from accounts.models import Enrollment, Profile
 from catalog import news
 from desk import kit, mail, notices
-from desk.models import Educator, EducatorApplication, KitAnnouncement, Notification, Request
+from desk.models import (
+    Announcement,
+    Educator,
+    EducatorApplication,
+    KitAnnouncement,
+    Notification,
+    Request,
+)
 
 from .test_desk import DeskTestCase
 
@@ -346,7 +353,7 @@ class BellTests(EducatorCase):
         self.assertEqual(owners.title, "New request: content (Reinforcement Learning)")
         self.assertIn("/admin/desk/request/", owners.url)
         educators = Notification.objects.get(user=self.bob)
-        self.assertIn("Asked about Reinforcement Learning", educators.title)
+        self.assertEqual(educators.title, "Content asked for in Reinforcement Learning")
         self.assertEqual(educators.url, "/educators/courses/rl/#asked")
         for note in (owners, educators):
             self.assertNotIn("Ada", note.title + note.body)
@@ -355,6 +362,29 @@ class BellTests(EducatorCase):
         # An idea for the site is the owner's alone.
         self.client.post("/ask/", {"kind": "idea", "series": "rl", "message": "Purple."})
         self.assertEqual(Notification.objects.filter(user=self.bob).count(), 1)
+
+    def test_whoever_writes_a_course_hears_of_every_request_about_it(self):
+        """Content that is missing and a fault that was found both reach the people who
+        write the course, under their bell, with the way to the course's page. A request
+        about another course does not, and nobody is told of what they sent themselves."""
+        Educator.objects.create(user=self.bob, series="rl")
+        Educator.objects.create(user=self.ada, series="rl")
+        Notification.objects.all().delete()
+        self.client.post("/ask/", {"kind": "bug", "series": "rl", "message": "Card 4 is wrong."})
+        self.client.post("/ask/", {"kind": "content", "series": "aai", "message": "More."})
+        (note,) = Notification.objects.filter(user=self.bob)
+        self.assertEqual(note.title, "Something reported wrong in Reinforcement Learning")
+        self.assertEqual(note.url, "/educators/courses/rl/#asked")
+        self.assertNotIn("Card 4", note.title + note.body)
+        # Ada writes the course too, but she is the one who sent it.
+        self.assertFalse(Notification.objects.filter(user=self.ada).exists())
+        # It shows under his bell, as one that is new.
+        bobs = self.client_class()
+        bobs.force_login(self.bob)
+        page = self.bell(bobs)
+        self.assertContains(page, 'x-data="bell(1)"')
+        self.assertContains(page, "Something reported wrong in Reinforcement Learning")
+        self.assertContains(page, 'href="/educators/courses/rl/#asked"')
 
     def test_an_educator_marking_a_request_done_tells_the_person_too(self):
         Educator.objects.create(user=self.bob, series="rl")
@@ -384,3 +414,119 @@ class BellTests(EducatorCase):
         self.assertEqual(shown["rows"][0].title, "Note 14")
         self.assertContains(self.bell(), "9+")
         self.assertEqual(notices.tell([self.ada, self.ada, None], "Once"), 1)
+
+
+class AnnouncementTests(EducatorCase):
+    """What the owner writes under Announcements in the admin goes under people's bells."""
+
+    ADD = reverse("admin:desk_announcement_add")
+
+    def announce(self, **fields):
+        self.client.force_login(self.admin)
+        form = {
+            "title": "The site is away on Friday evening",
+            "body": "From 20:00, for about an hour.",
+            "url": "",
+            "audience": "everyone",
+        }
+        return self.client.post(self.ADD, {**form, **fields})
+
+    def test_it_goes_under_the_bell_of_everyone_who_can_sign_in(self):
+        gone = self.bob.__class__.objects.create_user("gone", is_active=False)
+        answer = self.announce(url="/whats-new/")
+        self.assertEqual(answer.status_code, 302)
+        said = Announcement.objects.get()
+        self.assertEqual(said.recipients, 3)  # Ada, Bob and the owner
+        self.assertFalse(Notification.objects.filter(user=gone).exists())
+        for person in (self.ada, self.bob, self.admin):
+            (note,) = Notification.objects.filter(user=person)
+            self.assertEqual(
+                (note.title, note.body, note.url, note.announcement),
+                (said.title, "From 20:00, for about an hour.", "/whats-new/", said),
+            )
+        self.client.force_login(self.ada)
+        page = self.client.get("/settings/")
+        self.assertContains(page, 'x-data="bell(1)"')
+        self.assertContains(page, "The site is away on Friday evening")
+        self.assertContains(page, 'href="/whats-new/"')
+        self.assertContains(self.client.get("/notifications/"), "From 20:00, for about an hour.")
+
+    def test_one_for_educators_reaches_only_them(self):
+        Educator.objects.create(user=self.bob, series="rl")
+        self.announce(audience="educators", title="Lecture 6 slides are out")
+        self.assertEqual(Announcement.objects.get().recipients, 1)
+        self.assertEqual([note.user for note in Notification.objects.all()], [self.bob])
+
+    def test_changing_it_corrects_every_copy_and_reading_it_stays_read(self):
+        self.announce()
+        said = Announcement.objects.get()
+        notices.mark_read(self.ada)
+        change = reverse("admin:desk_announcement_change", args=[said.pk])
+        # Who it is for cannot be changed afterwards: the copies are out already.
+        self.client.post(
+            change,
+            {
+                "title": "The site is away on Saturday evening",
+                "body": "",
+                "url": "",
+                "audience": "educators",
+            },
+        )
+        said.refresh_from_db()
+        self.assertEqual(
+            (said.title, said.audience), ("The site is away on Saturday evening", "everyone")
+        )
+        self.assertEqual(
+            set(Notification.objects.values_list("title", "body")),
+            {("The site is away on Saturday evening", "")},
+        )
+        self.assertEqual(Notification.objects.count(), 3)
+        self.assertIsNotNone(Notification.objects.get(user=self.ada).read_at)
+        self.assertIsNone(Notification.objects.get(user=self.bob).read_at)
+
+    def test_deleting_it_takes_it_back_from_every_bell(self):
+        self.announce()
+        other = notices.tell([self.ada], "Your request is done")
+        said = Announcement.objects.get()
+        delete = reverse("admin:desk_announcement_delete", args=[said.pk])
+        self.client.post(delete, {"post": "yes"})
+        self.assertFalse(Announcement.objects.exists())
+        # Only its copies went: what else was under a bell is still there.
+        self.assertEqual(other, 1)
+        self.assertEqual([n.title for n in Notification.objects.all()], ["Your request is done"])
+
+    def test_a_link_is_a_page_of_the_site_or_an_https_address_and_nothing_else(self):
+        for bad in (
+            "javascript:alert(1)",
+            "//elsewhere.example/x",
+            "http://plain.example/",
+            "data:text/html,x",
+            "courses/rl/",
+            "/courses/rl/ onclick=x",
+        ):
+            answer = self.announce(url=bad)
+            self.assertEqual(answer.status_code, 200, msg=bad)  # the form again, with the error
+            self.assertContains(answer, "Write a page of this site")
+        self.assertFalse(Announcement.objects.exists())
+        self.assertFalse(Notification.objects.exists())
+        for good in ("/courses/rl/", "https://example.org/a?b=c"):
+            self.assertEqual(self.announce(url=good).status_code, 302, msg=good)
+        self.assertEqual(Announcement.objects.count(), 2)
+
+    def test_what_is_written_reaches_the_page_as_text(self):
+        self.announce(title="<script>alert(1)</script>", body="<img src=x onerror=alert(2)>")
+        self.client.force_login(self.ada)
+        for path in ("/settings/", "/notifications/"):
+            page = self.client.get(path)
+            self.assertContains(page, "&lt;script&gt;alert(1)&lt;/script&gt;")
+            self.assertNotContains(page, "<script>alert(1)</script>")
+            self.assertNotContains(page, "<img src=x")
+
+    def test_only_the_owner_can_announce(self):
+        self.client.force_login(self.ada)
+        answer = self.client.post(
+            self.ADD, {"title": "Free pizza", "body": "", "url": "", "audience": "everyone"}
+        )
+        self.assertNotEqual(answer.status_code, 200)
+        self.assertFalse(Announcement.objects.exists())
+        self.assertFalse(Notification.objects.exists())
