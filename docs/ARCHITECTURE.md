@@ -433,9 +433,25 @@ answers for every course from two queries.
 `/ask/` and `/educators/apply/` are `ModelForm`s: the form is built from the model, the
 view adds what the form cannot know (who is asking, with `save(commit=False)`), and a
 successful POST redirects. The form only offers, and so only accepts, the courses this
-person can see. `/educators/` explains the role, lists the courses nobody writes, and for
-an educator shows their course, how to hand work in, and what was asked about it. They
-see the question and not who asked; they can mark it done with a line of answer.
+person can see.
+
+Educators has three pages, because one person may write several courses:
+
+- `/educators/` is the **dashboard** of someone who writes courses
+  (`desk/educators.html`): what is waiting, most pressing first (`_waiting`: a request to
+  answer, a copy the site has moved away from, a course still empty), a card per course,
+  and the kit's version. For someone who writes none, the same address explains the role
+  and lists the courses nobody writes (`desk/become.html`); `/educators/open/` is that
+  list for someone who writes one and may take another.
+- `/educators/courses/<series>/` is **one course** (`desk/course.html`): the form that
+  takes a hand-in, the course's history, the state of their copy, what was asked, and
+  the steps of a session. Its parts have ids (`#hand-in`, `#history`, `#files`,
+  `#asked`), so a notification leads straight to the part it is about. They see a
+  question and not who asked; they can mark it done with a line of answer.
+- `_desks` reads what both need, for all of a person's courses at once: one query for
+  the requests, one for the hand-ins. "Your copy" compares `Educator.synced_version`
+  with the version the site has now, which is the test a hand-in will meet; the page
+  says so before the work instead of after.
 
 **Telling the owner** ([desk/notify.py](../desk/notify.py)). When a request or an
 application is stored, a short message goes to the owner's notification bot. The view
@@ -463,7 +479,7 @@ the instructions for an AI assistant, the authoring docs and three tools, and no
 (see [DEPLOYMENT.md](DEPLOYMENT.md#course-files-and-the-educator-kit)).
 
 **A course as one zip** ([ingest/handin.py](../ingest/handin.py)) is how course files
-travel. The educators' page gives the course as a download (`desk.views.files`: a POST,
+travel. A course's page for its educators gives it as a download (`desk.views.files`: a POST,
 because it also notes which version that person now has), the kit packs it again in the
 same shape, and the site takes that file back. The module imports no Django, so the kit
 runs the very same code. It trusts nothing in a zip: a path that leaves the course
@@ -496,7 +512,7 @@ reason) changes nothing and is shown on the page with what to do about it.
 
 **Nothing is lost.** Each `HandIn` row keeps the whole course as it stood after that step
 (`archive`, a zip in the database, which is what backups contain), with the version
-before and after. The steps of a course are its history: on the educators' page each can
+before and after. The steps of a course are its history: on the course's page each can
 be downloaded and, to go back to it, handed in again. An educator can take back their
 own newest hand-in, and the owner any, in the admin (`handins.withdraw`): it and every
 later one for the course are withdrawn, since each was built on the one before, and the

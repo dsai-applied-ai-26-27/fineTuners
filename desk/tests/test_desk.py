@@ -26,6 +26,8 @@ from desk.switches import Switches
 
 User = get_user_model()
 ASK, APPLY, EDUCATORS = "/ask/", "/educators/apply/", "/educators/"
+# The page of one course for the people who write it, and the courses nobody writes yet.
+WORK, OPEN = "/educators/courses/rl/", "/educators/open/"
 NOTIFY = "desk.views.notify"
 OPEN_MIDDLEWARE = [name for name in settings.MIDDLEWARE if "LoginRequired" not in name]
 
@@ -243,7 +245,8 @@ class ApplyTests(DeskTestCase):
         self.assertContains(page, "Waiting for an answer")
         # Not an educator yet: applying gives nothing by itself.
         self.assertFalse(Educator.objects.exists())
-        self.assertNotContains(page, "You write this course")
+        self.assertNotContains(page, "The courses you write")
+        self.assertEqual(self.client.get("/educators/courses/rl/").status_code, 404)
 
     def test_what_is_typed_is_checked_and_tidied(self):
         bad = self.client.post(APPLY, self.application(phone="call me"))
@@ -297,27 +300,95 @@ class EducatorTests(DeskTestCase):
         Request.objects.create(user=self.bob, kind="idea", series="rl", message="Make it purple.")
         Request.objects.create(user=self.bob, kind="bug", series="aai", message="AAI typo.")
 
-    def test_an_educator_sees_their_course_and_how_to_hand_work_in(self):
-        page = self.client.get(EDUCATORS)
+    def test_an_educator_gets_a_dashboard_and_a_page_for_the_course(self):
+        """Educators in the menu is their dashboard: the course as a card that leads to
+        its own page. Everything about working on that course is on that page."""
+        board = self.client.get(EDUCATORS)
+        self.assertTemplateUsed(board, "desk/educators.html")
+        self.assertContains(board, "The courses you write")
+        self.assertContains(board, 'href="/educators/courses/rl/"')
+        self.assertContains(board, 'action="/educators/courses/rl/files.zip"')
+        self.assertContains(board, settings.EDUCATOR_KIT_URL)
+        # The form that takes work is on the course's page, not here.
+        self.assertNotContains(board, 'action="/educators/courses/rl/hand-in/"')
+
+        page = self.client.get(WORK)
         self.assertContains(page, "You write this course")
         self.assertContains(page, "uv run tools/unpack.py rl.zip")
         self.assertContains(page, "Update the CMS for this course: rl")
         self.assertContains(page, "uv run tools/pack.py rl")
         self.assertContains(page, settings.EDUCATOR_KIT_URL)
         self.assertContains(page, 'action="/educators/courses/rl/files.zip"')
+        self.assertContains(page, 'action="/educators/courses/rl/hand-in/"')
         # Their own course is no longer among those looking for someone.
-        self.assertEqual([c.slug for c in page.context["seeking"]], [])
+        self.assertEqual(board.context["seeking"], 0)
+        self.assertEqual(self.client.get(OPEN).context["seeking"], [])
         # Others see none of it.
         self.client.force_login(self.bob)
         other = self.client.get(EDUCATORS)
-        self.assertNotContains(other, "You write this course")
+        self.assertTemplateUsed(other, "desk/become.html")
+        self.assertNotContains(other, "The courses you write")
         self.assertNotContains(other, settings.EDUCATOR_KIT_URL)
+        self.assertEqual(self.client.get(WORK).status_code, 404)
+
+    def test_the_dashboard_says_what_is_waiting_most_pressing_first(self):
+        """With several courses, the first thing an educator needs is where to look: a
+        question someone is waiting on, then a copy the site has moved away from, then a
+        course that is still empty."""
+        Educator.objects.create(user=self.ada, series="aai", synced_version="an-old-one")
+        with tempfile.TemporaryDirectory() as scratch:
+            for slug in ("rl", "aai"):
+                (Path(scratch) / slug).mkdir()
+                (Path(scratch) / slug / "course.yaml").write_text(f"title: {slug}\n", "utf-8")
+            with override_settings(CONTENT_ROOTS=[Path(scratch)]):
+                board = self.client.get(EDUCATORS)
+                page = self.client.get("/educators/courses/aai/")
+        waiting = [(row["course"].slug, row["text"]) for row in board.context["waiting"]]
+        self.assertEqual(
+            waiting,
+            [
+                ("aai", "1 request to answer"),
+                ("rl", "1 request to answer"),
+                ("aai", "Your copy is not what the site has"),
+            ],
+        )
+        self.assertContains(board, 'href="/educators/courses/aai/#asked"')
+        self.assertContains(board, 'href="/educators/courses/aai/#files"')
+        # Two cards, in the order of the dashboard, each saying how its copy stands.
+        self.assertEqual([c.slug for c in board.context["desks"]], ["aai", "rl"])
+        self.assertContains(board, 'data-copy="differs"')
+        self.assertContains(board, 'data-copy="none"')
+        self.assertContains(page, "Not what the site has.")
+        # What was asked is read on the course's page, not on the dashboard.
+        self.assertNotContains(board, "Lecture 5 is missing.")
+
+    def test_nothing_waiting_is_said_too(self):
+        Request.objects.all().delete()
+        Course.objects.filter(slug="rl").update(content_hash="x")
+        with mock.patch("desk.views.has_content", return_value=True):
+            board = self.client.get(EDUCATORS)
+        self.assertEqual(board.context["waiting"], [])
+        self.assertContains(board, "Nothing is waiting")
+
+    def test_someone_who_writes_a_course_can_still_take_another(self):
+        board = self.client.get(EDUCATORS)
+        self.assertNotContains(board, "Write another course")  # nothing is left to take
+        course("cv", "Computer Vision", semester=6)
+        board = self.client.get(EDUCATORS)
+        self.assertContains(board, "1 course has nobody writing it yet")
+        self.assertContains(board, 'href="/educators/open/"')
+        page = self.client.get(OPEN)
+        self.assertTemplateUsed(page, "desk/become.html")
+        self.assertContains(page, "Write another course")
+        self.assertContains(page, "Computer Vision")
+        self.assertNotContains(page, "Reinforcement Learning")  # already theirs
 
     def test_an_educator_of_a_course_students_cannot_see_yet_still_has_it(self):
         Educator.objects.create(user=self.ada, series="nlp")
         page = self.client.get(EDUCATORS)
         self.assertContains(page, "Natural Language Processing")
         self.assertContains(page, 'action="/educators/courses/nlp/files.zip"')
+        self.assertContains(self.client.get("/educators/courses/nlp/"), "You write this course")
 
     def test_they_can_download_the_files_of_their_course_and_only_theirs(self):
         """The zip is built from the course's folder, so this needs one on disk."""
@@ -352,7 +423,7 @@ class EducatorTests(DeskTestCase):
                 )
 
     def test_they_see_what_was_asked_about_it_but_not_by_whom(self):
-        page = self.client.get(EDUCATORS)
+        page = self.client.get(WORK)
         self.assertContains(page, "Lecture 5 is missing.")
         self.assertNotContains(page, "Make it purple.")  # an idea for the site is the owner's
         self.assertNotContains(page, "AAI typo.")  # another course
@@ -364,10 +435,13 @@ class EducatorTests(DeskTestCase):
         self.assertEqual(self.client.post(done, {"answer": "No."}).status_code, 404)
         self.client.force_login(self.ada)
         self.assertEqual(self.client.get(done).status_code, 405)  # changing things needs a POST
-        self.assertRedirects(self.client.post(done, {"answer": "Added today."}), EDUCATORS)
+        answer = self.client.post(done, {"answer": "Added today."})
+        self.assertRedirects(answer, f"{WORK}#asked", fetch_redirect_response=False)
         self.ask.refresh_from_db()
         self.assertEqual((self.ask.status, self.ask.answer), ("done", "Added today."))
-        self.assertNotContains(self.client.get(EDUCATORS), "Lecture 5 is missing.")
+        page = self.client.get(WORK)
+        self.assertNotContains(page, "Lecture 5 is missing.")
+        self.assertContains(page, "Nothing is open.")
         # The person who asked reads the answer on their own page.
         self.client.force_login(self.bob)
         self.assertContains(self.client.get(ASK), "Added today.")
@@ -540,8 +614,11 @@ class DeskAdminTests(DeskTestCase):
 
         self.client.force_login(self.ada)
         page = self.client.get(EDUCATORS)
-        self.assertContains(page, "You write this course")
-        self.assertContains(page, "Accepted")
+        self.assertContains(page, "The courses you write")
+        self.assertContains(page, 'href="/educators/courses/rl/"')
+        # The application has become the course: it is not listed as one any more.
+        self.assertNotContains(page, "Your applications")
+        self.assertContains(self.client.get(WORK), "You write this course")
         self.assertNotContains(self.client.get("/courses/rl/"), "Become its educator")
 
     def test_taking_an_acceptance_back_takes_the_role_back(self):

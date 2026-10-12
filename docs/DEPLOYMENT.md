@@ -139,11 +139,11 @@ past papers are the lecturers' and are never committed anywhere.
 **How an educator's work reaches the site.** The site's guide (`/educators/guide/`) and
 the kit's README say it to them step by step. In short:
 
-1. They clone the kit, download their course's files on the Educators page, and unpack
+1. They clone the kit, download their course's files under Educators, and unpack
    them into the kit with `tools/unpack.py`, which commits that state in their copy.
    Their course is tracked by git on their computer only; pushing is switched off.
 2. Their assistant writes; they check; `tools/pack.py` makes one zip.
-3. They upload that zip on the Educators page. They may add, change and remove. The
+3. They upload that zip on their course's page. They may add, change and remove. The
    site takes it in if it is built on the version the site has and the full validation
    passes; one that removes or rewrites anything is first shown back to them and needs a
    tick. Then it is **live at once**. Otherwise it is refused with the reason and the
