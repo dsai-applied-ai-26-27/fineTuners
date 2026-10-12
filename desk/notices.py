@@ -41,12 +41,36 @@ def everyone():
     return list(get_user_model().objects.filter(is_active=True))
 
 
+def studying(series):
+    """The people who have this course on their dashboard (accounts.Enrollment)."""
+    # enrollments__series: the double underscore follows the relation from a user to
+    # their Enrollment rows, so this is one query with a JOIN.
+    return list(get_user_model().objects.filter(is_active=True, enrollments__series=series))
+
+
+def audience_of(announcement):
+    """The people an announcement is for.
+
+                        no course                 one course
+    students and        everyone who can          those who have it on their dashboard,
+    educators           sign in                   and those who write it
+    educators only      everyone who writes       those who write it
+                        a course
+    """
+    series = announcement.series
+    if announcement.audience == Announcement.Audience.EDUCATORS:
+        return educators_of(series) if series else all_educators()
+    return [*studying(series), *educators_of(series)] if series else everyone()
+
+
 def announce(announcement):
     """Put an announcement under the bell of everyone it is for. Returns how many."""
-    educators_only = announcement.audience == Announcement.Audience.EDUCATORS
-    users = all_educators() if educators_only else everyone()
     return tell(
-        users, announcement.title, announcement.body, announcement.url, announcement=announcement
+        audience_of(announcement),
+        announcement.title,
+        announcement.body,
+        announcement.url,
+        announcement=announcement,
     )
 
 

@@ -264,7 +264,7 @@ class Announcement(models.Model):
     """
 
     class Audience(models.TextChoices):
-        EVERYONE = "everyone", "Everyone who uses the site"
+        EVERYONE = "everyone", "Students and educators"
         EDUCATORS = "educators", "Educators only"
 
     title = models.CharField(
@@ -285,6 +285,9 @@ class Announcement(models.Model):
         "/courses/rl/, or a full address that starts with https://",
     )
     audience = models.CharField("for", max_length=10, choices=Audience, default=Audience.EVERYONE)
+    # The course whose people it is for, by its series, as text like everywhere in this
+    # app. Empty: it is not about one course, and goes to everyone the line above names.
+    series = models.SlugField("course", max_length=64, blank=True)
     created_at = models.DateTimeField("announced", auto_now_add=True)
     recipients = models.PositiveIntegerField("told", default=0)  # how many people
 

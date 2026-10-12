@@ -457,6 +457,56 @@ class AnnouncementTests(EducatorCase):
         self.assertEqual(Announcement.objects.get().recipients, 1)
         self.assertEqual([note.user for note in Notification.objects.all()], [self.bob])
 
+    def test_one_for_a_course_reaches_those_who_study_it_and_those_who_write_it(self):
+        """Ada has the course on her dashboard, Bob writes it. Carol studies another
+        course, the owner neither, and Dora's account is switched off."""
+        people = self.bob.__class__.objects
+        carol = people.create_user("carol")
+        dora = people.create_user("dora", is_active=False)
+        Enrollment.objects.create(user=carol, series="aai")
+        Enrollment.objects.create(user=dora, series="rl")
+        Educator.objects.create(user=self.bob, series="rl")
+        answer = self.announce(series="rl", title="Lecture 6 moved to Thursday")
+        self.assertEqual(answer.status_code, 302)
+        said = Announcement.objects.get()
+        self.assertEqual((said.series, said.recipients), ("rl", 2))
+        told = set(Notification.objects.values_list("user__username", flat=True))
+        self.assertEqual(told, {"ada", "bob"})
+        # In the list of announcements it is named by the course's title.
+        self.assertContains(
+            self.client.get(reverse("admin:desk_announcement_changelist")),
+            "RL · Reinforcement Learning",
+        )
+
+    def test_someone_who_studies_a_course_and_writes_it_is_told_once(self):
+        Educator.objects.create(user=self.ada, series="rl")  # she also has it on her dashboard
+        self.announce(series="rl")
+        self.assertEqual(Notification.objects.filter(user=self.ada).count(), 1)
+        self.assertEqual(Announcement.objects.get().recipients, 1)
+
+    def test_one_for_the_educators_of_a_course_reaches_only_them(self):
+        carol = self.bob.__class__.objects.create_user("carol")
+        Educator.objects.create(user=self.bob, series="rl")
+        Educator.objects.create(user=carol, series="nlp")  # a course students cannot see yet
+        self.announce(audience="educators", series="nlp", title="The first three lectures are in")
+        self.assertEqual([note.user for note in Notification.objects.all()], [carol])
+        # Ada studies RL: an announcement for those who write it is not for her.
+        Notification.objects.all().delete()
+        self.announce(audience="educators", series="rl")
+        self.assertEqual([note.user for note in Notification.objects.all()], [self.bob])
+
+    def test_only_a_course_there_is_can_be_chosen_and_not_changed_afterwards(self):
+        answer = self.announce(series="no-such-course")
+        self.assertEqual(answer.status_code, 200)  # the form again
+        self.assertFalse(Announcement.objects.exists())
+        self.announce(series="rl")
+        said = Announcement.objects.get()
+        change = reverse("admin:desk_announcement_change", args=[said.pk])
+        self.assertContains(self.client.get(change), "RL · Reinforcement Learning")
+        self.client.post(change, {"title": "Corrected", "body": "", "url": "", "series": "aai"})
+        said.refresh_from_db()
+        self.assertEqual((said.title, said.series), ("Corrected", "rl"))
+
     def test_changing_it_corrects_every_copy_and_reading_it_stays_read(self):
         self.announce()
         said = Announcement.objects.get()
