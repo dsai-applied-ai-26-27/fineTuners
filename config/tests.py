@@ -223,7 +223,15 @@ class LogPromiseTests(SimpleTestCase):
         page = (settings.BASE_DIR / "catalog/templates/catalog/privacy.html").read_text(
             encoding="utf-8"
         )
-        self.assertIn("It does not note who asked, from which address", page)
+        self.assertIn("It does not note who asked or what was searched for", page)
+
+    def test_the_proxy_keeps_the_request_out_of_what_it_writes_about_a_failure(self):
+        """Caddy puts the request into its line about a failed one: headers (the shared
+        secret, the visitor's address), the address line with its query. Found in the
+        server's own log on 2026-10-12. The proxy file has to leave each of them out."""
+        proxy = (settings.BASE_DIR / "deploy" / "Caddyfile").read_text(encoding="utf-8")
+        for field in ("headers", "uri", "remote_ip", "client_ip"):
+            self.assertRegex(proxy, rf"request>{field}\s+delete")
 
 
 class ProductionSettingsTests(SimpleTestCase):

@@ -5,6 +5,23 @@
 {
 	admin off
 	auto_https off
+
+	# When a request fails here (Django is restarting, say), Caddy writes a line about it
+	# and puts the whole request in that line. Its headers hold the shared secret and
+	# the visitor's address, and its address line holds what was searched for. None of
+	# that belongs in a log: what failed, when and why is kept, the request is not.
+	log {
+		format filter {
+			wrap json
+			fields {
+				request>headers delete
+				request>uri delete
+				request>remote_ip delete
+				request>remote_port delete
+				request>client_ip delete
+			}
+		}
+	}
 }
 
 :8080 {

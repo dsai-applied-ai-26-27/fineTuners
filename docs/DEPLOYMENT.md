@@ -378,6 +378,13 @@ values these reach the container through `compose.yaml`, so the files under `dep
 must be on the server first. Without a host nothing is sent and nothing fails. The
 privacy page says who is written to and about what; keep it true if that grows.
 
+With a mail server and `DSAI_CONTACT_EMAIL` both set, the site also writes to that
+address whenever its bot is told something: a request, an application, a hand-in. The
+message says the same as the bot's, and carries the same link to the item in the admin.
+With a Gmail mailbox the host is `smtp.gmail.com`, the user is the address, and the
+password is an *app password* made in that Google account (Security, 2-Step
+Verification, App passwords), never the account's own password.
+
 **Opening a course, and who writes it.** In the admin, under Courses: tick the course and
 choose an action. *Open to students* and *Close* decide whether students see it at all;
 a course whose file says `enabled: false` stays hidden until it is opened here. *Ask for
@@ -432,9 +439,10 @@ On a new server, start at [Setting it up from scratch](#setting-it-up-from-scrat
 - `/privacy/` says in plain words what is stored and how to remove it, and `/terms/`
   what the site is for, that its material can be wrong, and how to ask for something to
   be removed. Both are public, and Google's consent screen links to both.
-  `DSAI_CONTACT_EMAIL` in the server's `.env` puts an address for questions and removal
+  `DSAI_CONTACT_EMAIL` in the server's `.env` puts a link for questions and removal
   requests on them; without it the terms can only say "tell the person who runs the
-  site". Set it with `deploy setenv DSAI_CONTACT_EMAIL`, then `deploy restart`.
+  site". The address is where the link leads and is not written out on the page. Set it
+  with `deploy setenv DSAI_CONTACT_EMAIL`; a restart, or the next deploy, applies it.
 - About each person the site stores what Google hands over at sign-in (name, e-mail
   address, Google's id for the account), which courses they chose, their study
   progress, whether they have taken the tour, and what they sent themselves: requests,
@@ -453,8 +461,9 @@ On a new server, start at [Setting it up from scratch](#setting-it-up-from-scrat
   course, twenty a day per person.
 - Images from course content are served with a policy that lets them run nothing when
   opened on their own, and SVG files that carry a script are refused at the door.
-- The site sends e-mail only to educators, one message per person, and only if a mail
-  server is configured.
+- The site sends e-mail only to educators, one message per person, and to its own
+  contact address when something arrives (without who sent it or what it says). Both
+  only if a mail server is configured.
 - Asking, applying and the educators' page are rate limited like the rest, and one
   account can send ten requests a day.
 - A request larger than its page accepts is refused before it is read: 2.5 MB anywhere,
@@ -469,8 +478,15 @@ On a new server, start at [Setting it up from scratch](#setting-it-up-from-scrat
   in, and not what follows the `?` of an address, so no search term and no sign-in code.
   A failed e-mail is logged by its kind, never with the address. Docker keeps at most
   50 MB of it per service ([deploy/compose.yaml](../deploy/compose.yaml)). The privacy
-  page says exactly this, and a test holds the image's log format to it. The server's
-  main Caddy is not part of this project. The block `setup-cloudflare.sh` adds to it has
+  page says exactly this, and a test holds the image's log format to it.
+- Caddy writes a line about every request it could not pass on, and puts the request in
+  it: all headers (so the shared secret and the visitor's address) and the address line
+  with its query. That happens for a few seconds at every restart, and it was found in
+  this server's log. [deploy/Caddyfile](../deploy/Caddyfile) now leaves the request out
+  of those lines. The server's main Caddy writes the same kind of line when *our* proxy
+  is the one restarting; it is not part of this project, so the same `log` block has to
+  be put into its global options by hand. Until then the privacy page names that case.
+- The main Caddy's block for this site (`setup-cloudflare.sh` adds it) has
   no `log` line, and Caddy writes no access log without one; if you add one, that log
   has the visitor's address and the secret header in it, and the privacy page is wrong.
 - Debug mode cannot come on by omission: it is off wherever `DJANGO_ALLOWED_HOSTS` is

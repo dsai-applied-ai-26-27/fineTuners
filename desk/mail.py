@@ -1,6 +1,7 @@
-"""E-mail to educators.
+"""E-mail to educators, and to the site's own address.
 
     mail.send([user, ...], "Subject", "Plain text.")
+    mail.send_owner("New request: content (Reinforcement Learning)", "Open the admin.", url)
 
 The site writes to people in one situation so far: about the role they asked for. An
 application was accepted, a hand-in was taken off the site, the kit has a new version.
@@ -21,6 +22,7 @@ from django.core.mail import EmailMessage, mailers
 logger = logging.getLogger(__name__)
 
 SIGNATURE = "\n\nDSAI Vault\n{site}\nYou get this message because you are an educator there."
+OWNER_SIGNATURE = "\n\nDSAI Vault\n{site}\nSent to the site's own address: something arrived."
 
 
 def configured():
@@ -41,6 +43,21 @@ def send(users, subject, body):
         return 0
     _dispatch(messages)
     return len(messages)
+
+
+def send_owner(subject, body, url=""):
+    """One message to the site's contact address (settings.CONTACT_EMAIL): what the
+    owner's bot is told (desk/notify.py), by e-mail as well. Returns how many were queued.
+
+    The bot's rule holds here too: that something arrived and where to read it, never who
+    sent it or what they wrote. The link leads to the admin, which asks who is there.
+    """
+    if not settings.CONTACT_EMAIL or not configured():
+        return 0
+    text = body.rstrip() + (f"\n\n{url}" if url else "")
+    text += OWNER_SIGNATURE.format(site=settings.SITE_URL)
+    _dispatch([EmailMessage(subject=subject, body=text, to=[settings.CONTACT_EMAIL])])
+    return 1
 
 
 def _dispatch(messages):

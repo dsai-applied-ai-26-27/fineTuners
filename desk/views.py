@@ -18,7 +18,7 @@ from catalog.nav import course_data, has_content
 from catalog.welcome import educator_state
 from ingest import handin, live
 
-from . import handins, kit, notices
+from . import handins, kit, mail, notices
 from .forms import EducatorApplicationForm, RequestForm
 from .models import Educator, EducatorApplication, HandIn, Request
 from .notify import notify
@@ -52,6 +52,16 @@ def _titles(request):
 def _admin_url(request, obj):
     name = f"admin:{obj._meta.app_label}_{obj._meta.model_name}_change"
     return request.build_absolute_uri(reverse(name, args=[obj.pk]))
+
+
+def _tell_owner(title, message, *, url, level, key):
+    """The owner's bot, and where mail is set up the site's own address: that something
+    arrived, and the link to it in the admin. Never who sent it or what it says.
+
+    Call it from transaction.on_commit: after the row is safely stored, never before.
+    """
+    notify(title, message, level=level, url=url, dedupe_key=key)
+    mail.send_owner(title, message, url)
 
 
 @signed_in
@@ -93,12 +103,12 @@ def ask(request):
                 )
             # After the row is safely stored, and never before: see desk/notify.py.
             transaction.on_commit(
-                lambda: notify(
+                lambda: _tell_owner(
                     title,
                     "Sent with Ask or report. Open the admin to read it.",
                     level="warning" if sent.kind == Request.Kind.BUG else "info",
                     url=url,
-                    dedupe_key=f"dsai-request-{sent.pk}",
+                    key=f"dsai-request-{sent.pk}",
                 )
             )
             return redirect(f"{reverse('desk:ask')}?sent=1")
@@ -159,12 +169,12 @@ def apply(request):
                 url=reverse("admin:desk_educatorapplication_change", args=[offer.pk]),
             )
             transaction.on_commit(
-                lambda: notify(
+                lambda: _tell_owner(
                     f"Educator application: {course.title}",
                     "Someone offers to write this course. Open the admin to read it.",
                     level="success",
                     url=url,
-                    dedupe_key=f"dsai-educator-{offer.pk}",
+                    key=f"dsai-educator-{offer.pk}",
                 )
             )
             return redirect(f"{reverse('desk:educators')}?applied=1")
@@ -312,13 +322,13 @@ def hand_in(request, series):
 
     url = _admin_url(request, record)
     transaction.on_commit(
-        lambda: notify(
+        lambda: _tell_owner(
             f"Hand-in on the site: {course.title}",
             f"{record.summary}. It is live. Open the admin to see it or to take it back.",
             # One that removed something is worth a look sooner.
             level="warning" if record.removes else "success",
             url=url,
-            dedupe_key=f"dsai-handin-{record.pk}",
+            key=f"dsai-handin-{record.pk}",
         )
     )
     return redirect(f"{reverse('desk:educators')}?handed={record.pk}#course-{course.slug}")

@@ -259,6 +259,39 @@ class MailTests(EducatorCase):
         self.assertNotIn("example.test", "\n".join(log.output))
         self.assertIsNone(log.records[0].exc_info)
 
+    @override_settings(CONTACT_EMAIL="site@example.test")
+    def test_what_arrives_is_also_mailed_to_the_sites_own_address(self):
+        """The same news the owner's bot gets: what kind of thing, for which course, and
+        the link to it in the admin. Not who sent it, and not what it says."""
+        self.client.force_login(self.ada)
+        with INLINE, mock.patch("desk.views.notify"), self.captureOnCommitCallbacks(execute=True):
+            self.client.post(
+                "/ask/", {"kind": "bug", "series": "rl", "message": "Card 4 has the sign wrong."}
+            )
+        sent = Request.objects.get()
+        (message,) = outbox.outbox
+        self.assertEqual(message.to, ["site@example.test"])
+        self.assertIn("Reinforcement Learning", message.subject)
+        self.assertIn(f"/admin/desk/request/{sent.pk}/change/", message.body)
+        for private in ("Ada", "ada@example.test", "Card 4", "sign wrong"):
+            self.assertNotIn(private, message.subject + message.body)
+
+    def test_without_a_contact_address_nobody_is_mailed_about_it(self):
+        self.client.force_login(self.ada)
+        with INLINE, mock.patch("desk.views.notify"), self.captureOnCommitCallbacks(execute=True):
+            self.client.post("/ask/", {"kind": "idea", "series": "", "message": "Dark mode."})
+        self.assertEqual(Request.objects.count(), 1)
+        self.assertEqual(outbox.outbox, [])
+
+    @override_settings(
+        CONTACT_EMAIL="site@example.test",
+        MAILERS={"default": {"BACKEND": "django.core.mail.backends.dummy.EmailBackend"}},
+    )
+    def test_nor_without_a_mail_server(self):
+        with mock.patch("desk.mail._dispatch") as dispatch:
+            self.assertEqual(mail.send_owner("New request", "Open the admin."), 0)
+        dispatch.assert_not_called()
+
 
 class BellTests(EducatorCase):
     """The bell at the top of every page: what the site has to tell a person."""
