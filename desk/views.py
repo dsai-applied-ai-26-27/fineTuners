@@ -9,6 +9,7 @@ from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.http import urlencode
 from django.views.decorators.http import require_POST
 
 from catalog import editions
@@ -19,7 +20,7 @@ from catalog.welcome import educator_state
 from ingest import handin, live
 
 from . import handins, kit, mail, notices
-from .forms import EducatorApplicationForm, RequestForm
+from .forms import REQUEST_FORMS, EducatorApplicationForm
 from .models import Educator, EducatorApplication, HandIn, Request
 from .notify import notify
 from .switches import switches
@@ -64,17 +65,38 @@ def _tell_owner(title, message, *, url, level, key):
     mail.send_owner(title, message, url)
 
 
+def _course_of(path, courses):
+    """The course a page belongs to, read from its address (/courses/rl/cards/…)."""
+    parts = path.strip("/").split("/")
+    slug = parts[1] if len(parts) > 1 and parts[0] == "courses" else ""
+    return next((course for course in courses if course.slug == slug), None)
+
+
 @signed_in
 def ask(request):
-    """Ask for content, report a fault, or suggest something. One form for all three."""
+    """Ask for content, report a fault, or suggest something.
+
+    Three forms, one per kind (desk/forms.py), because the three need different things
+    asked. The page shows one at a time: `?kind=` says which, and a form posts its own
+    kind back, so the same view checks it with the same class that drew it.
+    """
     courses = catalogue(request)
     by_series = _titles(request)
+    wanted = request.POST.get("kind") or request.GET.get("kind", "")
+    kind = wanted if wanted in REQUEST_FORMS else Request.Kind.CONTENT
+    form_class = REQUEST_FORMS[kind][0]
+    # Where they came from, and the course that was on their screen: kept when they
+    # switch to another kind, and used to fill in what the form can already know.
+    came_from = (request.POST.get("page") or request.GET.get("from", ""))[:300]
+    named = request.POST.get("series") or request.GET.get("course", "")
+    about = next((c for c in courses if named in (c.slug, c.series)), None)
+    about = about or _course_of(came_from, courses)
     today = Request.objects.filter(
         user=request.user, created_at__gte=timezone.now() - timedelta(days=1)
     ).count()
 
     if request.method == "POST":
-        form = RequestForm(request.POST, courses=courses)
+        form = form_class(request.POST, courses=courses)
         if today >= DAILY_REQUESTS:
             form.add_error(None, "You have sent a lot today. Come back tomorrow.")
         elif form.is_valid():
@@ -113,25 +135,38 @@ def ask(request):
             )
             return redirect(f"{reverse('desk:ask')}?sent=1")
     else:
-        slug = request.GET.get("course", "")
-        about = next((c for c in courses if c.slug == slug or c.series == slug), None)
-        kind = request.GET.get("kind", "")
-        form = RequestForm(
+        form = form_class(
             courses=courses,
-            initial={
-                "kind": kind if kind in Request.Kind.values else Request.Kind.CONTENT,
-                "series": about.series if about else "",
-                "page": request.GET.get("from", "")[:300],
-            },
+            initial={"series": about.series if about else "", "page": came_from},
         )
 
+    keep = {"course": about.series if about else "", "from": came_from}
+    keep = {name: value for name, value in keep.items() if value}
+    kinds = [
+        {
+            "value": value,
+            "label": value.label,
+            "hint": hint,
+            # urlencode() builds the part after the "?", escaping whatever needs it.
+            "url": f"{reverse('desk:ask')}?{urlencode({'kind': value, **keep})}",
+            "current": value == kind,
+        }
+        for value, (_, hint) in REQUEST_FORMS.items()
+    ]
     mine = list(Request.objects.filter(user=request.user)[:10])
     for item in mine:
         item.course = by_series.get(item.series)
     return render(
         request,
         "desk/ask.html",
-        {"form": form, "mine": mine, "sent": "sent" in request.GET, "active": "ask"},
+        {
+            "form": form,
+            "kind": kind,
+            "kinds": kinds,
+            "mine": mine,
+            "sent": "sent" in request.GET,
+            "active": "ask",
+        },
     )
 
 

@@ -435,6 +435,16 @@ view adds what the form cannot know (who is asking, with `save(commit=False)`), 
 successful POST redirects. The form only offers, and so only accepts, the courses this
 person can see.
 
+Ask or report is three forms, one per kind of thing (`REQUEST_FORMS`), because the three
+need different things asked: content needs a course and what is missing; a fault needs
+where, what, and what should be there instead; an idea needs what and what for, and no
+course. They share a base class and each adds its own questions. Those questions are form
+fields only: `compose()` writes the answers into the one `message` the model keeps, under
+a word that says which is which ("Where:", "Should be:"), so a new question is never a
+new column. The page shows one form at a time; the three kinds at its top are links to
+`?kind=…`, which carry along the page the person came from and its course. A fault seen
+on a course's page is about that course without the person saying so (`_course_of`).
+
 Educators has three pages, because one person may write several courses:
 
 - `/educators/` is the **dashboard** of someone who writes courses
