@@ -18,7 +18,9 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from accounts.models import Enrollment
+from catalog.mine import by_semester
 from catalog.models import Course
+from desk.forms import course_choices
 from desk.models import CourseSetting, Educator, EducatorApplication, Request
 from desk.switches import Switches
 
@@ -60,6 +62,58 @@ class DeskTestCase(TestCase):
             "note": "I had a 10 in it.",
         }
         return {**form, **changes}
+
+
+class CourseDropdownTests(DeskTestCase):
+    """Where a course is picked from a dropdown, the courses stand under their semester."""
+
+    def setUp(self):
+        super().setUp()
+        self.late = course("zz", "Zoology of Models", semester=6, order=2)
+        self.early = course("mai1", "Mathematics for AI I", semester=1)
+        self.loose = course("misc", "Reading Group")  # names no semester
+
+    def test_semesters_in_order_and_what_names_none_last(self):
+        groups = by_semester([self.late, self.loose, self.rl, self.early, self.aai])
+        self.assertEqual(
+            [(label, [c.slug for c in members]) for label, members in groups],
+            [
+                ("Semester I", ["mai1"]),
+                ("Semester V", ["aai", "rl"]),
+                ("Semester VI", ["zz"]),
+                ("Other courses", ["misc"]),
+            ],
+        )
+
+    def test_the_forms_draw_a_heading_per_semester(self):
+        page = self.client.get(ASK)
+        for heading in ("Semester I", "Semester V", "Semester VI", "Other courses"):
+            self.assertContains(page, f'<optgroup label="{heading}">')
+        text = page.text
+        self.assertLess(text.index('label="Semester I"'), text.index('label="Semester V"'))
+        self.assertLess(text.index('label="Semester VI"'), text.index('label="Other courses"'))
+        # A course that is not open is in no group.
+        self.assertNotContains(page, "Natural Language Processing")
+
+    def test_a_course_under_a_heading_can_be_chosen(self):
+        """Django looks for the value inside the groups when it checks a form."""
+        answer = self.client.post(
+            ASK, {"kind": "content", "series": "zz", "message": "Lecture 2 is missing."}
+        )
+        self.assertEqual(answer.status_code, 302)
+        self.assertEqual(Request.objects.get().series, "zz")
+
+    def test_one_semester_alone_gets_no_heading(self):
+        self.assertEqual(
+            course_choices([self.rl, self.aai], "Any"),
+            [("", "Any"), ("aai", "AAI · Applied AI"), ("rl", "RL · Reinforcement Learning")],
+        )
+
+    def test_the_search_page_groups_them_too(self):
+        page = self.client.get("/search/")
+        self.assertContains(page, '<optgroup label="Semester I">')
+        self.assertContains(page, '<optgroup label="Other courses">')
+        self.assertNotContains(page, "Natural Language Processing")
 
 
 class AskTests(DeskTestCase):
@@ -201,14 +255,17 @@ class ApplyTests(DeskTestCase):
     def test_the_form_asks_for_nothing_it_has_no_use_for(self):
         """It used to take a GitHub user name, to give access to a repository that is now
         public. The privacy page lists what the form stores, so the two must agree: the
-        field is gone from the page, and one sent anyway is not kept."""
+        field is gone from the page, a request that still sends one is taken without it,
+        and the table has no column left to keep one in."""
         self.assertNotContains(self.client.get(APPLY, {"course": "rl"}), "GitHub")
         self.client.post(APPLY, self.application(github="ada-l"))
-        self.assertEqual(EducatorApplication.objects.get().github, "")
+        self.assertEqual(EducatorApplication.objects.get().name, "Ada Lovelace")
+        stored = {field.name for field in EducatorApplication._meta.get_fields()}
+        self.assertNotIn("github", stored)
         self.client.logout()
         privacy = self.client.get("/privacy/")
         self.assertContains(privacy, "your name, phone number, year of study and note")
-        self.assertNotContains(privacy, "given access to the course files")
+        self.assertNotContains(privacy, "GitHub")
 
     def test_applying_again_for_the_same_course_updates_the_application(self):
         self.client.post(APPLY, self.application())

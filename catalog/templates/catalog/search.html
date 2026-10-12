@@ -17,7 +17,12 @@
     </label>
     <select class="select" name="course" aria-label="Course" @change="$el.form.submit()">
       <option value="">All courses</option>
-      {% for item in courses %}<option value="{{ item.slug }}"{% if item.slug == course_slug %} selected{% endif %}>{{ item.code }} · {{ item.title }}</option>{% endfor %}
+      {# An <optgroup> is a heading inside a dropdown: shown, but not something to pick. #}
+      {% for label, items in course_groups %}
+      <optgroup label="{{ label }}">
+        {% for item in items %}<option value="{{ item.slug }}"{% if item.slug == course_slug %} selected{% endif %}>{{ item.code }} · {{ item.title }}</option>{% endfor %}
+      </optgroup>
+      {% endfor %}
     </select>
     <button class="btn btn--filled" type="submit">Search</button>
   </form>

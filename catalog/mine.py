@@ -15,11 +15,28 @@ Where the site runs open, with nobody signed in, there is nothing to choose and 
 course counts as theirs.
 """
 
+from itertools import groupby
+
 from accounts.models import Enrollment
 from desk.switches import switches
 
 from . import editions
 from .models import Course
+
+
+def by_semester(courses):
+    """Courses under the semester each belongs to: [("Semester I", [course, ...]), ...].
+
+    Semesters in order, with the courses that name none last, under "Other courses".
+    Inside a semester the order of the dashboard. For a dropdown or a list with headings.
+    """
+
+    def place(course):
+        return (course.semester or 99, course.order, course.title)
+
+    # groupby() only joins neighbours, which is why the list is sorted first.
+    grouped = groupby(sorted(courses, key=place), key=lambda c: c.semester_label)
+    return [(label or "Other courses", list(members)) for label, members in grouped]
 
 
 def catalogue(request):

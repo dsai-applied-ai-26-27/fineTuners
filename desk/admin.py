@@ -116,12 +116,12 @@ class RequestAdmin(CourseColumn, admin.ModelAdmin):
 class EducatorApplicationAdmin(CourseColumn, admin.ModelAdmin):
     list_display = ["created_at", "name", "course", "year", "tools", "phone", "status"]
     list_filter = ["status", "year", "tools", "series"]
-    search_fields = ["name", "phone", "github", "user__email"]
+    search_fields = ["name", "phone", "user__email"]
     list_select_related = ["user"]
     actions = ["accept", "decline"]
 
     fieldsets = [
-        (None, {"fields": ["course", "name", "year", "phone", "contact", "github_profile"]}),
+        (None, {"fields": ["course", "name", "year", "phone", "contact"]}),
         ("How they would write it", {"fields": ["tools", "note"]}),
         (
             "Your answer",
@@ -139,7 +139,6 @@ class EducatorApplicationAdmin(CourseColumn, admin.ModelAdmin):
         "year",
         "phone",
         "contact",
-        "github_profile",
         "tools",
         "note",
         "created_at",
@@ -152,15 +151,6 @@ class EducatorApplicationAdmin(CourseColumn, admin.ModelAdmin):
     @admin.display(description="Account")
     def contact(self, row):
         return f"{row.user.get_full_name() or row.user.username} · {row.user.email or 'no e-mail'}"
-
-    @admin.display(description="GitHub")
-    def github_profile(self, row):
-        if not row.github:
-            return "Not asked for any more"
-        # format_html escapes the name; the form only lets through what GitHub allows.
-        return format_html(
-            '<a href="https://github.com/{0}" rel="noopener noreferrer">{0}</a>', row.github
-        )
 
     def save_model(self, request, obj, form, change):
         # The one thing the form changes is the status, and a change of status is a

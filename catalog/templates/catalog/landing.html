@@ -72,12 +72,13 @@
         <p class="cover__small">Any Google account works. The site keeps your name, your e-mail address, your study progress and what you send it yourself. You can delete your account, and all of that with it, in Settings. By signing in you agree to the <a class="link" href="{% url 'catalog:terms' %}">terms of use</a>. <a class="link" href="{% url 'catalog:privacy' %}">Privacy</a></p>
       </div>
 
-      {% comment %} The one picture on the page, and it is a real one: the days are the schedule the
-         flashcards follow. Drawn by tools/make_figure.py. {% endcomment %}
+      {% comment %} The one picture on the page, and nothing in it is made up: the dots are
+         Ebbinghaus's measurements of 1885, the dashed lines the schedule the flashcards
+         follow. Drawn by tools/make_figure.py, which names the source. {% endcomment %}
       <figure class="plate">
-        <p class="plate__title">Recall of one flashcard over a month</p>
+        <p class="plate__title">How fast a memory fades, and when a card comes back</p>
         {% include "components/recall_figure.html" %}
-        <figcaption>A card you grade solid comes back after 1, 3, 7, 14 and then 30 days. Each review falls just before the card would fade, and makes it last longer. A card you miss comes straight back. The curves show the idea; they are not measured data.</figcaption>
+        <figcaption>The dots are measurements. In 1885 Hermann Ebbinghaus learned lists of syllables by heart and recorded how much of that work each list still saved him when he learned it again later. Most was gone within a day; after that the loss is slow. One person and one kind of material, but <a class="link" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC4492928/" rel="noopener noreferrer">the experiment was repeated in 2015</a> with a similar result. So a card you grade solid comes back after 1, 3, 7, 14 and then 30 days: soon while a memory fades fast, rarely once it holds. A card you miss comes straight back.</figcaption>
       </figure>
     </div>
   </section>

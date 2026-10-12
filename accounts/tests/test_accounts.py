@@ -1,5 +1,6 @@
 """Who gets in, and how. No course content is needed, so the database starts empty."""
 
+import importlib.util
 import re
 from io import StringIO
 
@@ -74,6 +75,28 @@ class LandingTests(TestCase):
         for wait in days:
             self.assertContains(response, f"<b>{wait}")
         self.assertContains(response, " and then ".join([", ".join(days[:-1]), days[-1]]))
+
+    def test_the_figure_shows_what_was_measured_and_nothing_else(self):
+        """The dots are Ebbinghaus's table of 1885, copied here a second time so that a
+        slip in the script cannot pass unnoticed. And the file on the page is what the
+        script draws: nobody has touched it by hand."""
+        published = [58.2, 44.2, 35.8, 33.7, 27.8, 25.4, 21.1]
+        spec = importlib.util.spec_from_file_location(
+            "make_figure", settings.BASE_DIR / "tools" / "make_figure.py"
+        )
+        script = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(script)
+        self.assertEqual([saved for _, saved, _ in script.MEASURED], published)
+        drawn = (settings.BASE_DIR / "templates/components/recall_figure.html").read_text(
+            encoding="utf-8"
+        )
+        self.assertEqual(drawn, script.build())
+        response = self.client.get("/")
+        # One dot per measurement, and the one in the key under the chart.
+        self.assertContains(response, 'class="recall__dot"', count=len(published) + 1)
+        self.assertContains(response, "58% after 20 minutes")
+        self.assertContains(response, "21% after 31 days")
+        self.assertNotContains(response, "not measured data")
 
     def test_pages_carry_a_content_security_policy(self):
         response = self.client.get("/")
