@@ -135,7 +135,7 @@
     top: -4rem;
     z-index: 100;
     padding: var(--s2) var(--s4);
-    border-radius: var(--r-full);
+    border-radius: var(--r-control);
     background: var(--primary);
     color: var(--on-primary);
     &:focus {
@@ -232,7 +232,7 @@
     gap: var(--s3);
     min-height: 2.75rem;
     padding: 0 var(--s4);
-    border-radius: var(--r-full);
+    border-radius: var(--r-control);
     color: var(--on-surface-variant);
     font-weight: 500;
     transition:

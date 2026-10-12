@@ -1,22 +1,28 @@
-"""Draw the figure on the landing page: how well a flashcard is recalled over a month.
+"""Draw the figure on the landing page: how fast a memory fades, and when a card comes back.
 
-Two curves. One card is graded solid and then reviewed whenever the site says it is due;
-the other is never looked at again. The review days are not invented: they follow
-INTERVALS in static/js/store/progress.js, the schedule the site really uses. The shape of
-the curves is the textbook forgetting curve, recall = exp(-days / strength), where every
-review multiplies the strength. It illustrates the idea and is not measured data, which
-the caption on the page says.
+Nothing in it is invented.
+
+The dots are measurements. Hermann Ebbinghaus learned lists of nonsense syllables until he
+could recite them, waited, and learned them again. What he recorded is the saving: how
+much less work the second time took, as a share of the first. 100% would be "still knew
+it", 0% "as if never seen". The seven values are the table in chapter VII of his book
+"Über das Gedächtnis" (1885), "Retention and obliviscence as a function of the time";
+MEASURED below is that table. The experiment was repeated by Murre and Dros (PLOS ONE,
+2015) with a similar result.
+
+The dashed lines are the days on which this site asks for a card again after it was graded
+solid: INTERVALS in static/js/store/progress.js, the schedule the site really uses. A test
+(accounts/tests/test_accounts.py) fails when the two stop agreeing.
 
 Writes templates/components/recall_figure.html. Re-run after changing anything here:
 
     uv run python tools/make_figure.py
 
 The lines are an SVG stretched to whatever size the page gives it (no fixed aspect ratio),
-so every label is HTML placed by percentage on top of it: text stays the size the page
-sets instead of shrinking with the drawing on a phone.
+so every dot, label and number is HTML placed by percentage on top of it: text keeps the
+size the page sets, and a dot stays round, instead of both stretching with the drawing.
 """
 
-from math import exp, log
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -24,17 +30,26 @@ OUT = ROOT / "templates" / "components" / "recall_figure.html"
 
 INTERVALS = [1, 3, 7, 14, 30]  # days until a card graded solid 1, 2, 3... times is due
 SPAN = 32  # days shown
-DUE_AT = 0.72  # recall left at the moment a card comes due (how deep each tooth dips)
-STEP = 0.25  # days between the points of a curve
 
+# (how long after learning, in days; what was saved when relearning, in percent; how the
+# delay is said). Ebbinghaus 1885, chapter VII. His third delay was 8.8 hours.
+MEASURED = [
+    (20 / 60 / 24, 58.2, "20 minutes"),
+    (1 / 24, 44.2, "1 hour"),
+    (8.8 / 24, 35.8, "9 hours"),
+    (1, 33.7, "1 day"),
+    (2, 27.8, "2 days"),
+    (6, 25.4, "6 days"),
+    (31, 21.1, "31 days"),
+]
 
-def strength(interval):
-    """How slowly a memory fades, chosen so that recall has dropped to DUE_AT after `interval`."""
-    return interval / -log(DUE_AT)
+# The measurements written out beside their dot, and on which side of it. The rest are
+# dots only: on the first day they sit too close together to carry words.
+LABELLED = {"20 minutes": "right", "1 day": "up", "6 days": "down", "31 days": "left"}
 
 
 def reviews():
-    """The days a card is reviewed, from the first solid grade on day 0."""
+    """The days a card is asked for again, counted from the first solid grade on day 0."""
     day, days = 0, []
     for interval in INTERVALS:
         day += interval
@@ -42,56 +57,42 @@ def reviews():
     return days
 
 
-def reviewed(day):
-    """Recall on `day` for the card that is reviewed on schedule."""
-    last, lasting = 0, strength(INTERVALS[0])
-    for review, interval in zip(reviews(), INTERVALS[1:] + INTERVALS[-1:], strict=True):
-        if day < review:
-            break
-        last, lasting = review, strength(interval)
-    return exp(-(day - last) / lasting)
-
-
-def forgotten(day):
-    """Recall on `day` for the card that is never reviewed."""
-    return exp(-day / strength(INTERVALS[0]))
-
-
 def number(value):
     return f"{value:.2f}".rstrip("0").rstrip(".")
 
 
-def point(day, recall):
+def point(day, saved):
     # x in days, y in percent from the top: the drawing's own units (see viewBox).
-    return f"{number(day)},{number(100 - 100 * recall)}"
-
-
-def days():
-    return [i * STEP for i in range(int(SPAN / STEP) + 1)]
-
-
-def path_reviewed():
-    points, due = [], set(reviews())
-    for day in days():
-        if day in due:
-            # Just before the review, then straight up: the review itself.
-            points.append(point(day, DUE_AT))
-        points.append(point(day, reviewed(day)))
-    return "M" + " L".join(points)
-
-
-def path_forgotten():
-    return "M" + " L".join(point(day, forgotten(day)) for day in days())
-
-
-def path_between():
-    """The area between the two curves: what reviewing keeps."""
-    back = " L".join(point(day, forgotten(day)) for day in reversed(days()))
-    return f"{path_reviewed()} L{back} Z"
+    return f"{number(day)},{number(100 - saved)}"
 
 
 def percent(value, of=SPAN):
     return f"{number(100 * value / of)}%"
+
+
+def place(day, saved):
+    return f"left: {percent(day)}; top: {number(100 - saved)}%"
+
+
+def path_measured():
+    """From the moment of learning (everything still there) through each measurement."""
+    points = [point(0, 100), *(point(day, saved) for day, saved, _ in MEASURED)]
+    return "M" + " L".join(points)
+
+
+def path_reviews():
+    return " ".join(f"M{day},0 V100" for day in reviews() if day < SPAN)
+
+
+def spoken():
+    """The whole figure in one sentence, for someone who cannot see it."""
+    values = ", ".join(f"{round(saved)}% after {delay}" for _, saved, delay in MEASURED)
+    days = [str(day) for day in reviews() if day < SPAN]
+    return (
+        "Chart of how fast a learned list was forgotten, measured by Hermann Ebbinghaus "
+        f"in 1885: {values}. Dashed lines mark days {', '.join(days[:-1])} and {days[-1]}, "
+        "when this site asks for a flashcard again."
+    )
 
 
 def build():
@@ -109,18 +110,20 @@ def build():
             f'{percent(end - start)}"{open_ended}><b>{interval}{unit}</b></span>'
         )
     dots = [
-        f'      <i class="recall__dot" style="left: {percent(day)}"></i>'
-        for day in reviews()
-        if day < SPAN
+        f'    <i class="recall__dot" style="{place(day, saved)}"></i>' for day, saved, _ in MEASURED
+    ]
+    labels = [
+        f'    <span class="recall__value" data-side="{LABELLED[delay]}" '
+        f'style="{place(day, saved)}">{delay} <b>{round(saved)}%</b></span>'
+        for day, saved, delay in MEASURED
+        if delay in LABELLED
     ]
     ticks = [
         f'    <span style="left: {percent(day)}">{day}</span>' for day in range(0, SPAN + 1, 10)
     ]
     lines = [
         "{# Generated by tools/make_figure.py. Do not edit: change the script and re-run it. #}",
-        '<div class="recall" role="img" aria-label="Chart: a card that is reviewed after 1, 3, 7 '
-        "and 14 days is still recalled almost fully after a month, while a card that is never "
-        'reviewed is forgotten within two weeks.">',
+        f'<div class="recall" role="img" aria-label="{spoken()}">',
         '  <div class="recall__waits" aria-hidden="true">',
         *waits,
         "  </div>",
@@ -130,18 +133,21 @@ def build():
         f'    <svg viewBox="0 0 {SPAN} 100" preserveAspectRatio="none">',
         f'      <path class="recall__grid" d="M0,0 H{SPAN} M0,50 H{SPAN}"/>',
         f'      <path class="recall__base" d="M0,100 H{SPAN}"/>',
-        f'      <path class="recall__kept" d="{path_between()}"/>',
-        f'      <path class="recall__lost" d="{path_forgotten()}"/>',
-        f'      <path class="recall__line" d="{path_reviewed()}"/>',
+        f'      <path class="recall__due" d="{path_reviews()}"/>',
+        f'      <path class="recall__line" d="{path_measured()}"/>',
         "    </svg>",
+        '    <i class="recall__dot recall__dot--start" style="left: 0%; top: 0%"></i>',
         *dots,
-        '    <span class="recall__label recall__label--kept">reviewed when due</span>',
-        '    <span class="recall__label recall__label--lost">never reviewed</span>',
+        *labels,
         "  </div>",
         '  <div class="recall__days" aria-hidden="true">',
         *ticks,
         "    <em>days</em>",
         "  </div>",
+        '  <p class="recall__key" aria-hidden="true">',
+        '    <span><i class="recall__dot"></i>what was still there, measured</span>',
+        '    <span><i class="recall__dash"></i>the site asks for the card again</span>',
+        "  </p>",
         "</div>",
     ]
     return "\n".join(lines) + "\n"
@@ -150,5 +156,5 @@ def build():
 if __name__ == "__main__":
     OUT.write_text(build(), encoding="utf-8", newline="\n")
     print(f"wrote {OUT.relative_to(ROOT)}")
-    print("  reviews on days", [day for day in reviews() if day < SPAN])
-    print(f"  never reviewed: {forgotten(7):.0%} left after a week, {forgotten(14):.1%} after two")
+    print("  the site asks again on days", [day for day in reviews() if day < SPAN])
+    print("  measured:", ", ".join(f"{delay} {saved}%" for _, saved, delay in MEASURED))

@@ -74,10 +74,6 @@ class EducatorApplication(models.Model):
     name = models.CharField(max_length=120)
     phone = models.CharField(max_length=40)
     year = models.CharField(max_length=10, choices=Year)
-    # No longer asked for: the educator kit is public and the course files come from
-    # the site, so nobody needs to be given access on GitHub. The column stays for the
-    # applications that already have one, until the owner decides to drop it.
-    github = models.CharField(max_length=40, blank=True)
     tools = models.CharField(max_length=10, choices=Tools, default=Tools.UNSURE)
     note = models.TextField(max_length=1000, blank=True)
     status = models.CharField(max_length=10, choices=Status, default=Status.PENDING)

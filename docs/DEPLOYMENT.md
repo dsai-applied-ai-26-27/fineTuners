@@ -468,9 +468,11 @@ On a new server, start at [Setting it up from scratch](#setting-it-up-from-scrat
   kind of browser) and Django's warnings. Not the visitor's address, not who was signed
   in, and not what follows the `?` of an address, so no search term and no sign-in code.
   A failed e-mail is logged by its kind, never with the address. Docker keeps at most
-  50 MB of it per service ([deploy/compose.yaml](../deploy/compose.yaml)). The server's
-  main Caddy is not part of this project: if it writes an access log of its own, that
-  log has the visitor's address and the secret header in it, and is yours to check.
+  50 MB of it per service ([deploy/compose.yaml](../deploy/compose.yaml)). The privacy
+  page says exactly this, and a test holds the image's log format to it. The server's
+  main Caddy is not part of this project. The block `setup-cloudflare.sh` adds to it has
+  no `log` line, and Caddy writes no access log without one; if you add one, that log
+  has the visitor's address and the secret header in it, and the privacy page is wrong.
 - Debug mode cannot come on by omission: it is off wherever `DJANGO_ALLOWED_HOSTS` is
   set, unless `DJANGO_DEBUG=1` says otherwise.
 - The containers run as an unprivileged user without Linux capabilities, on a read-only

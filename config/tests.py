@@ -204,6 +204,28 @@ class BodyLimitTests(TestCase):
         self.assertTrue(self.HAND_IN.startswith("/educators/courses/"))
 
 
+class LogPromiseTests(SimpleTestCase):
+    """The privacy page says what the server notes about a request. The line gunicorn
+    writes is set in the Dockerfile; this holds the one to the other."""
+
+    def test_the_log_line_holds_what_the_privacy_page_says_and_no_more(self):
+        dockerfile = (settings.BASE_DIR / "Dockerfile").read_text(encoding="utf-8")
+        line = re.search(r'"--access-logformat", "(.+)"\]', dockerfile).group(1)
+        fields = set(re.findall(r"%\((.+?)\)", line))
+        # time, method, path without the query, status, size, duration, browser
+        self.assertEqual(fields, {"t", "m", "U", "s", "b", "M", "a"})
+        # Named apart, because each would break a sentence of the page: the address
+        # (h), the whole request line and the query (r, q), the page come from (f), the
+        # signed-in name (u), and any header ({...}i), which is where a cookie is.
+        for told in ("h", "r", "q", "f", "u"):
+            self.assertNotIn(told, fields)
+        self.assertFalse([name for name in fields if name.startswith("{")])
+        page = (settings.BASE_DIR / "catalog/templates/catalog/privacy.html").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("It does not note who asked, from which address", page)
+
+
 class ProductionSettingsTests(SimpleTestCase):
     DEBUG = "from django.conf import settings; print('DEBUG IS', settings.DEBUG)"
 

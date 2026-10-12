@@ -10,13 +10,27 @@ import re
 
 from django import forms
 
+from catalog.mine import by_semester
+
 from .models import EducatorApplication, Request
 
 PHONE = re.compile(r"^\+?[0-9][0-9 ()/.-]{5,24}$")
 
 
 def course_choices(courses, empty):
-    return [("", empty), *[(c.series, f"{c.code} · {c.title}") for c in courses]]
+    """The options of a course dropdown, under one heading per semester.
+
+    A choice is (value, label). Where the second item is a list, Django reads it as a
+    group: (heading, [choices]). A <select> draws that as an <optgroup>, a heading that
+    cannot be picked itself, and validation looks inside the groups by itself.
+    """
+    groups = [
+        (label, [(c.series, f"{c.code} · {c.title}") for c in members])
+        for label, members in by_semester(courses)
+    ]
+    if len(groups) == 1:  # one heading over everything says nothing
+        return [("", empty), *groups[0][1]]
+    return [("", empty), *groups]
 
 
 class RequestForm(forms.ModelForm):

@@ -39,7 +39,7 @@
     gap: var(--s2);
     min-height: 3rem;
     padding: 0 var(--s5);
-    border-radius: var(--r-full);
+    border-radius: var(--r-m);
     background: var(--shaky-container);
     color: var(--on-shaky-container);
     font-size: var(--text-s);
@@ -113,7 +113,7 @@
     gap: var(--s3);
     min-height: 3rem;
     padding: 0 var(--s5) 0 var(--s4);
-    border-radius: var(--r-full);
+    border-radius: var(--r-m);
     background: var(--surface-raised);
     color: var(--on-surface);
     font-size: var(--text-m);

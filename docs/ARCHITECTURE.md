@@ -192,14 +192,16 @@ do not edit its outputs.
 [static/css/landing.css](../static/css/landing.css)) is laid out like the cover of a set
 of notes: one statement in the reading typeface, the way in, one figure, and a ruled
 list. It loads no JavaScript and is given no course data, so it costs no database
-query. Its figure is a real chart, not decoration:
-[tools/make_figure.py](../tools/make_figure.py) draws how a flashcard is recalled when
-it is reviewed on the site's own schedule (`INTERVALS` in
-[static/js/store/progress.js](../static/js/store/progress.js)) and writes
+query. Its figure is a real chart, and nothing in it is made up:
+[tools/make_figure.py](../tools/make_figure.py) draws Ebbinghaus's measurements of
+forgetting (1885; the table is in the script, with its source) and, as dashed lines,
+the days on which the site asks for a card again (`INTERVALS` in
+[static/js/store/progress.js](../static/js/store/progress.js)). It writes
 [templates/components/recall_figure.html](../templates/components/recall_figure.html).
-The lines are an SVG stretched to fit; every label is HTML placed over it by
+The lines are an SVG stretched to fit; every dot and label is HTML placed over it by
 percentage, so text stays readable on a phone. If the schedule changes, change the
-copy in the script and re-run it; a test compares the two.
+copy in the script and re-run it; tests compare the two, and the file with what the
+script draws. A picture on this site shows something real or is left out.
 
 **The dashboard** ([catalog/templates/catalog/home.html](../catalog/templates/catalog/home.html))
 follows the same layout: a headline in the reading typeface, then what to do (Next up)
@@ -282,7 +284,10 @@ A pastel take on Material 3.
   kept for things that float.
 - **Type:** Google Sans Flex for the interface, Literata for reading, JetBrains Mono for
   code.
-- **Shape:** radii from `--r-xs` to `--r-xl`; pills for buttons and navigation.
+- **Shape:** radii from `--r-xs` to `--r-xl`. What is pressed or typed into (buttons,
+  fields, dropdowns, navigation items) is a rounded rectangle, `--r-control`; no pills.
+  `--r-full` is for what is round by nature: dots, switches, progress bars. A dropdown
+  draws its own arrow, set in from the edge as far as its text is on the other side.
 - **Rules:** no decorative gradients, no blur or glass, no emoji as icons, no colour outside
   the tokens.
 - Icons are Material Symbols in one sprite; add a name to `ICONS` in

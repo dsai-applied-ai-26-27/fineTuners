@@ -8,7 +8,7 @@ from django.shortcuts import redirect, render
 
 from desk.switches import switches
 
-from ..mine import catalogue, chosen, mine
+from ..mine import by_semester, catalogue, chosen, mine
 from ..models import Card, Course, Document, Formula, Hook, Question, Term
 from ..nav import course_data, has_content
 from ..welcome import educator_state, welcome
@@ -183,7 +183,8 @@ def search(request):
             "course_slug": course_slug,
             "page": page,
             "total": len(rows),
-            "courses": [c for c in courses if c.slug not in closed],
+            # For the dropdown: the courses under a heading per semester.
+            "course_groups": by_semester([c for c in courses if c.slug not in closed]),
             "active": "search",
         },
     )

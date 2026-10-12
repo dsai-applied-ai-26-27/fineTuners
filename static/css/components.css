@@ -77,7 +77,7 @@
     gap: var(--s2);
     min-height: 2.5rem;
     padding: 0 var(--s5);
-    border-radius: var(--r-full);
+    border-radius: var(--r-control);
     font-weight: 600;
     font-size: var(--text-m);
     white-space: nowrap;
@@ -127,11 +127,13 @@
   .btn--small {
     min-height: 2rem;
     padding: 0 var(--s4);
+    border-radius: var(--r-s);
     font-size: var(--text-s);
   }
   .btn--large {
     min-height: 3.25rem;
     padding: 0 var(--s6);
+    border-radius: var(--r-m);
     font-size: var(--text-l);
   }
   .icon-btn {
@@ -523,7 +525,7 @@
     width: clamp(9rem, 22vw, 17rem);
     height: 2.5rem;
     padding: 0 var(--s4);
-    border-radius: var(--r-full);
+    border-radius: var(--r-control);
     background: var(--surface-high);
     color: var(--on-surface-variant);
     transition:
@@ -551,7 +553,7 @@
     gap: var(--s2);
     height: 2.5rem;
     padding: 0 var(--s3) 0 var(--s2);
-    border-radius: var(--r-full);
+    border-radius: var(--r-control);
     background: var(--surface-high);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
@@ -582,7 +584,7 @@
     gap: var(--s2);
     height: 2.5rem;
     padding: 0 var(--s3) 0 var(--s1);
-    border-radius: var(--r-full);
+    border-radius: var(--r-control);
     font-size: var(--text-s);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
@@ -631,12 +633,13 @@
   .segmented {
     display: inline-flex;
     padding: 3px;
-    border-radius: var(--r-full);
+    border-radius: var(--r-control);
     background: var(--surface-high);
     & button {
       min-height: 2rem;
       padding: 0 var(--s4);
-      border-radius: var(--r-full);
+      /* Inside a track, a corner is the track's less the gap between them. */
+      border-radius: calc(var(--r-control) - 3px);
       font-size: var(--text-s);
       font-weight: 600;
       color: var(--on-surface-variant);
@@ -824,16 +827,20 @@
   }
 
   /* The chart (templates/components/recall_figure.html, written by tools/make_figure.py).
-     A grid of three rows: how long each wait is, the plot, the days. The lines are an SVG
-     stretched over the plot; every word and number is HTML placed over it by percentage,
-     so text keeps its size on a narrow screen. */
+     A grid of four rows: how long each wait is, the plot, the days, the key. The lines
+     are an SVG stretched over the plot; every dot, word and number is HTML placed over it
+     by percentage, so text keeps its size on a narrow screen. */
   .recall {
+    /* The colour the chart stands on. Dots and labels are edged with it; whoever puts
+       the chart on another surface says so here. */
+    --recall-bg: var(--surface-raised);
     display: grid;
     grid-template-columns: 2.25rem minmax(0, 1fr);
     grid-template-areas:
       ". waits"
       "scale plot"
-      ". days";
+      ". days"
+      ". key";
     column-gap: var(--s3);
     font-size: var(--text-xs);
     font-variant-numeric: tabular-nums;
@@ -909,14 +916,11 @@
   .recall__base {
     stroke: var(--outline);
   }
-  /* Between the two curves: what reviewing keeps. A wash of the line's own colour. */
-  .recall__plot .recall__kept {
-    fill: color-mix(in oklch, var(--primary) 11%, transparent);
-  }
-  .recall__lost {
-    stroke: var(--on-surface-faint);
-    stroke-width: 1.5;
-    stroke-dasharray: 5 4;
+  /* The days the site asks for a card again: a dashed line down the plot, under the end
+     of each bracket above it. */
+  .recall__due {
+    stroke: var(--outline);
+    stroke-dasharray: 3 4;
   }
   .recall__line {
     stroke: var(--primary);
@@ -924,32 +928,76 @@
     stroke-linejoin: round;
     stroke-linecap: round;
   }
-  /* One ring per review, on the 100% line: the moment the card is seen again. */
+  /* One dot per measurement. HTML and not a circle in the drawing, which is stretched
+     and would make it an oval. The rim in the plate's colour lifts it off the line. */
   .recall__dot {
     position: absolute;
-    top: 0;
-    width: 0.5625rem;
-    height: 0.5625rem;
-    margin: -0.28125rem 0 0 -0.28125rem;
+    width: 0.5rem;
+    height: 0.5rem;
+    margin: -0.25rem 0 0 -0.25rem;
     border-radius: 50%;
-    background: var(--surface-raised);
+    background: var(--primary);
+    box-shadow: 0 0 0 2px var(--recall-bg);
+  }
+  /* The moment of learning. Nothing was measured there, so it is a ring, not a dot. */
+  .recall__dot--start {
+    background: var(--recall-bg);
     box-shadow: inset 0 0 0 2px var(--primary);
   }
-  .recall__label {
+  /* A measurement written out beside its dot. It carries the plate's colour behind it,
+     so that a dashed line it happens to cross does not run through the words. */
+  .recall__value {
     position: absolute;
+    padding: 0 0.25rem;
+    border-radius: var(--r-xs);
+    background: var(--recall-bg);
     font-size: var(--text-s);
-    font-weight: 600;
+    line-height: 1.35;
     white-space: nowrap;
+    color: var(--on-surface-variant);
+    & b {
+      font-weight: 600;
+      color: var(--on-surface);
+    }
+    &[data-side="right"] {
+      translate: 0.5rem -50%;
+    }
+    &[data-side="up"] {
+      translate: 0.25rem calc(-100% - 0.375rem);
+    }
+    &[data-side="down"] {
+      translate: -50% 0.5rem;
+    }
+    &[data-side="left"] {
+      translate: calc(-100% + 0.25rem) calc(-100% - 0.5rem);
+    }
   }
-  .recall__label--kept {
-    top: 36%;
-    left: 42%;
-    color: var(--primary);
+  /* What the two marks mean, under the chart. */
+  .recall__key {
+    grid-area: key;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s1) var(--s5);
+    margin-top: var(--s3);
+    font-size: var(--text-s);
+    color: var(--on-surface-variant);
+    & span {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--s2);
+    }
+    & .recall__dot {
+      position: static;
+      flex: none;
+      margin: 0;
+      box-shadow: none;
+    }
   }
-  .recall__label--lost {
-    top: 71%;
-    left: 21%;
-    font-weight: 500;
+  .recall__dash {
+    flex: none;
+    width: 0.5rem;
+    height: 0.875rem;
+    background: linear-gradient(var(--outline) 60%, transparent 0) center / 1px 0.3125rem repeat-y;
   }
   .recall__days {
     grid-area: days;
@@ -1033,14 +1081,12 @@
     background: var(--surface-low);
     box-shadow: inset 0 0 0 1px var(--outline-variant);
     & .recall {
+      /* The tinted figure is what the chart stands on here. */
+      --recall-bg: var(--surface-low);
       width: 100%;
     }
     & .recall__plot {
       aspect-ratio: 2 / 1;
-    }
-    /* On the tinted figure the rings need the figure's own colour inside them. */
-    & .recall__dot {
-      background: var(--surface-low);
     }
   }
   .tour__card {
@@ -1078,7 +1124,7 @@
     gap: var(--s2);
     min-height: 2rem;
     padding: 0 var(--s4);
-    border-radius: var(--r-full);
+    border-radius: var(--r-s);
     background: var(--primary);
     color: var(--on-primary);
     font-size: var(--text-s);
@@ -1101,11 +1147,11 @@
   .tour__seg {
     display: inline-flex;
     padding: 3px;
-    border-radius: var(--r-full);
+    border-radius: var(--r-control);
     background: var(--surface-high);
     & span {
       padding: 0.3125rem var(--s4);
-      border-radius: var(--r-full);
+      border-radius: calc(var(--r-control) - 3px);
       font-size: var(--text-s);
       font-weight: 600;
       color: var(--on-surface-variant);

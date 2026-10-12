@@ -112,6 +112,10 @@
     --r-l: 20px;
     --r-xl: 28px;
     --r-full: 999px;
+    /* What you press or type into: buttons, fields, dropdowns, the items of the
+       navigation. A rounded rectangle, not a pill. --r-full is left for what is round
+       by nature: dots, switches, progress bars, the count on the bell. */
+    --r-control: 12px;
 
     /* Depth comes from tone first; shadows are kept for things that float. */
     --shadow-1: 0 1px 2px oklch(0% 0 0 / 0.05), 0 1px 3px oklch(0% 0 0 / 0.07);
