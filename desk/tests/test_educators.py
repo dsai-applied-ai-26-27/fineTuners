@@ -2,6 +2,7 @@
 a new version of the kit, and the e-mail that goes with those."""
 
 from datetime import date
+from smtplib import SMTPRecipientsRefused
 from unittest import mock
 
 from django.conf import settings
@@ -243,6 +244,20 @@ class MailTests(EducatorCase):
         ):
             mailers.default.send_messages.side_effect = OSError("no route")
             self.assertEqual(mail.deliver([object()]), 0)
+
+    def test_and_that_line_names_nobody(self):
+        """A mail server says which address it turned away. The log keeps the kind of
+        failure, not the server's sentence."""
+        refused = SMTPRecipientsRefused({"ada@example.test": (550, b"No such user")})
+        with (
+            mock.patch("desk.mail.mailers") as mailers,
+            self.assertLogs("desk.mail", "WARNING") as log,
+        ):
+            mailers.default.send_messages.side_effect = refused
+            mail.deliver([object()])
+        self.assertIn("SMTPRecipientsRefused", log.output[0])
+        self.assertNotIn("example.test", "\n".join(log.output))
+        self.assertIsNone(log.records[0].exc_info)
 
 
 class BellTests(EducatorCase):

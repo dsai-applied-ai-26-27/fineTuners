@@ -129,8 +129,7 @@ class EducatorApplicationAdmin(CourseColumn, admin.ModelAdmin):
                 "fields": ["status", "created_at", "decided_at"],
                 "description": "Accepting makes this person the educator of the course: "
                 "its page stops asking for one, and their Educators page shows them how "
-                "to get the educator kit and the files of their course. If the kit's "
-                "repository is private, inviting them to it on GitHub is a separate step.",
+                "to get the educator kit and the files of their course.",
             },
         ),
     ]
@@ -157,7 +156,7 @@ class EducatorApplicationAdmin(CourseColumn, admin.ModelAdmin):
     @admin.display(description="GitHub")
     def github_profile(self, row):
         if not row.github:
-            return "Not given"
+            return "Not asked for any more"
         # format_html escapes the name; the form only lets through what GitHub allows.
         return format_html(
             '<a href="https://github.com/{0}" rel="noopener noreferrer">{0}</a>', row.github

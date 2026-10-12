@@ -56,7 +56,6 @@ class DeskTestCase(TestCase):
             "name": "Ada Lovelace",
             "phone": "+387 61 123 456",
             "year": "2",
-            "github": "ada-l",
             "tools": "paid",
             "note": "I had a 10 in it.",
         }
@@ -177,13 +176,13 @@ class ApplyTests(DeskTestCase):
         self.assertRedirects(answer, f"{EDUCATORS}?applied=1")
         offer = EducatorApplication.objects.get()
         self.assertEqual(
-            (offer.user, offer.series, offer.phone, offer.year, offer.github, offer.status),
-            (self.ada, "rl", "+387 61 123 456", "2", "ada-l", "pending"),
+            (offer.user, offer.series, offer.phone, offer.year, offer.status),
+            (self.ada, "rl", "+387 61 123 456", "2", "pending"),
         )
         notify.assert_called_once()
         told = " ".join([*notify.call_args.args, *map(str, notify.call_args.kwargs.values())])
         self.assertIn("Reinforcement Learning", told)
-        for private in ("Ada", "387", "ada-l", "I had a 10"):
+        for private in ("Ada", "387", "I had a 10"):
             self.assertNotIn(private, told)
         page = self.client.get(f"{EDUCATORS}?applied=1")
         self.assertContains(page, "Application sent")
@@ -195,17 +194,21 @@ class ApplyTests(DeskTestCase):
     def test_what_is_typed_is_checked_and_tidied(self):
         bad = self.client.post(APPLY, self.application(phone="call me"))
         self.assertContains(bad, "Write the number with digits")
-        self.assertContains(
-            self.client.post(APPLY, self.application(github="not a name!")),
-            "does not look like a GitHub user name",
-        )
         self.assertFalse(EducatorApplication.objects.exists())
-        # A pasted profile address is reduced to the name.
-        self.client.post(
-            APPLY, self.application(github="https://github.com/ada-l/", phone="061  123 456")
-        )
-        offer = EducatorApplication.objects.get()
-        self.assertEqual((offer.github, offer.phone), ("ada-l", "061 123 456"))
+        self.client.post(APPLY, self.application(phone="061  123 456"))
+        self.assertEqual(EducatorApplication.objects.get().phone, "061 123 456")
+
+    def test_the_form_asks_for_nothing_it_has_no_use_for(self):
+        """It used to take a GitHub user name, to give access to a repository that is now
+        public. The privacy page lists what the form stores, so the two must agree: the
+        field is gone from the page, and one sent anyway is not kept."""
+        self.assertNotContains(self.client.get(APPLY, {"course": "rl"}), "GitHub")
+        self.client.post(APPLY, self.application(github="ada-l"))
+        self.assertEqual(EducatorApplication.objects.get().github, "")
+        self.client.logout()
+        privacy = self.client.get("/privacy/")
+        self.assertContains(privacy, "your name, phone number, year of study and note")
+        self.assertNotContains(privacy, "given access to the course files")
 
     def test_applying_again_for_the_same_course_updates_the_application(self):
         self.client.post(APPLY, self.application())

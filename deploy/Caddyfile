@@ -12,6 +12,8 @@
 
 	# Public for now, but not something search engines should list.
 	header X-Robots-Tag "noindex, nofollow"
+	# The site uses none of these, so no page of it, and nothing a page embeds, may.
+	header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
 
 	# `route` runs what is inside it in the order written. That matters: the secret must be
 	# checked before anything is served.
@@ -37,6 +39,13 @@
 			header Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; sandbox"
 			header X-Content-Type-Options nosniff
 			file_server
+		}
+
+		# The largest thing anyone sends is an educator's course as a zip, 25 MB. Django
+		# has its own, finer limits (config/bodylimit.py); this one stops anything
+		# bigger here, before it travels further.
+		request_body {
+			max_size 30MB
 		}
 
 		reverse_proxy web:8000 {

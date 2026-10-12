@@ -586,7 +586,7 @@ tests that need no database.
 
 There is one [config/settings.py](../config/settings.py). It reads environment variables,
 and with none set you get local development. The server sets `DJANGO_DEBUG=0` and its own
-values; the block at the end of the file, `if not DEBUG:`, is everything that then changes.
+values (naming its hosts in `DJANGO_ALLOWED_HOSTS` turns debug mode off by itself); the block at the end of the file, `if not DEBUG:`, is everything that then changes.
 [DEPLOYMENT.md](DEPLOYMENT.md) covers the server; the Django side of it is this:
 
 - **WSGI.** `runserver` is a development convenience. In production
@@ -616,10 +616,21 @@ values; the block at the end of the file, `if not DEBUG:`, is everything that th
   signed out, one address) may make to it; the call after that gets `429` with
   `Retry-After`. It covers saving progress, search and starting a sign-in. The
   browser treats a refused save like being offline and sends it with the next one.
+- **Request size.** [config/bodylimit.py](../config/bodylimit.py), a second small
+  middleware. Django's `DATA_UPLOAD_MAX_MEMORY_SIZE` limits a form's fields but not the
+  files sent with it, and the CSRF check reads the whole form, files included, before
+  the login check has asked who is there. So a request that declares more than that
+  setting is answered `413` before anything reads it, except on the paths in
+  `BODY_LIMITS` for a signed-in person: the page where an educator hands in a course.
+  It answers in `__call__`, because the CSRF check is a `process_view` hook and those
+  run after every middleware has let the request through.
+- **Debug mode** is on only where `DJANGO_ALLOWED_HOSTS` is empty, or where
+  `DJANGO_DEBUG=1` asks for it. A server has to name its hosts, so one where
+  `DJANGO_DEBUG=0` was forgotten still runs with debug off.
 - **`check --deploy`** is Django's own review of exactly these settings. A test
   ([config/tests.py](../config/tests.py)) and CI keep it clean.
 - **Tests** always run with development settings, because `config/settings.py` is read
-  with no variables set. The two tests that need the production side start a second
+  with no variables set. The tests that need the production side start a second
   Python process with the server's variables.
 
 ## Not built yet, and where it would go

@@ -48,6 +48,23 @@ class LandingTests(TestCase):
         self.assertContains(response, "Data&nbsp;Science and&nbsp;AI curriculum")
         self.assertNotContains(response, "Reinforcement Learning")
 
+    @override_settings(SITE_URL="https://vault.test")
+    def test_a_pasted_link_gets_a_preview_with_the_sites_own_name_and_logo(self):
+        """A chat fetches the address and reads these tags. It follows no relative path,
+        so the picture is given with the whole address of the site."""
+        response = self.client.get("/")
+        self.assertContains(response, '<meta property="og:title" content="DSAI Vault">')
+        self.assertContains(response, '<meta property="og:url" content="https://vault.test/">')
+        image = re.search(r'og:image" content="([^"]+)"', response.text).group(1)
+        self.assertRegex(image, r"^https://vault\.test/static/brand/logo-512(\.\w+)?\.png$")
+
+    def test_the_landing_page_does_not_promise_less_than_the_privacy_page_lists(self):
+        """It used to say the site keeps a name, an address and progress "and nothing
+        else", which stopped being true when requests and applications arrived."""
+        response = self.client.get("/")
+        self.assertNotContains(response, "and nothing else")
+        self.assertContains(response, "what you send it yourself")
+
     def test_the_figure_on_the_landing_page_shows_the_real_review_schedule(self):
         """The chart is drawn by tools/make_figure.py from a copy of the schedule the
         flashcards follow. If the schedule changes, the figure has to be drawn again."""

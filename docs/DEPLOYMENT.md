@@ -262,15 +262,19 @@ the certificate for the origin name. Its file has one block for us, which forwar
 **`proxy`** — [deploy/Caddyfile](../deploy/Caddyfile). Answers 404 to anything without the
 right secret header, so the site cannot be read around Cloudflare. Serves `/media/` from
 the volume. Sets the `Host` header to the public name and `X-Forwarded-Proto: https`
-before passing a request to Django, and asks search engines not to index anything.
+before passing a request to Django, and asks search engines not to index anything. It
+turns away a request larger than 30 MB, and tells browsers the site uses neither camera,
+microphone, location, payments nor USB.
 
 **`web`** — [Dockerfile](../Dockerfile). gunicorn with two workers, as an unprivileged
-user, on a read-only file system; `/data` is the only writable place. Static files are
+user, on a read-only file system; `/data` is the only writable place. Its line per
+request leaves out the query string and the referring page. Static files are
 served by WhiteNoise from inside the process, under hashed names
 ([config/storage.py](../config/storage.py)), so browsers keep them forever.
 
 **Settings** — one [config/settings.py](../config/settings.py) for laptop and server. With
-`DJANGO_DEBUG=0` it refuses to start without `DJANGO_SECRET_KEY`, trusts the proxy's
+`DJANGO_DEBUG=0` (which is also what it assumes once `DJANGO_ALLOWED_HOSTS` is set) it
+refuses to start without `DJANGO_SECRET_KEY`, trusts the proxy's
 `X-Forwarded-Proto`, marks cookies secure, sends HSTS, and logs errors to the console.
 `manage.py check --deploy` is clean and CI keeps it that way.
 
@@ -453,8 +457,22 @@ On a new server, start at [Setting it up from scratch](#setting-it-up-from-scrat
   server is configured.
 - Asking, applying and the educators' page are rate limited like the rest, and one
   account can send ten requests a day.
+- A request larger than its page accepts is refused before it is read: 2.5 MB anywhere,
+  26 MB where a signed-in person hands in a course
+  ([config/bodylimit.py](../config/bodylimit.py)), and 30 MB at the proxy whatever the
+  page. Without that, any visitor could have the server write an upload of any size to
+  its temporary folder, which is memory.
 - No secret is in the repository, in an image, or in a log. `.env` on the server is
   readable by its owner only.
+- What the containers log is one line per request (time, page, answer, size, duration,
+  kind of browser) and Django's warnings. Not the visitor's address, not who was signed
+  in, and not what follows the `?` of an address, so no search term and no sign-in code.
+  A failed e-mail is logged by its kind, never with the address. Docker keeps at most
+  50 MB of it per service ([deploy/compose.yaml](../deploy/compose.yaml)). The server's
+  main Caddy is not part of this project: if it writes an access log of its own, that
+  log has the visitor's address and the secret header in it, and is yours to check.
+- Debug mode cannot come on by omission: it is off wherever `DJANGO_ALLOWED_HOSTS` is
+  set, unless `DJANGO_DEBUG=1` says otherwise.
 - The containers run as an unprivileged user without Linux capabilities, on a read-only
   file system, and are not published on any port of the server.
 - Every page carries a Content Security Policy: scripts, styles, fonts and images load

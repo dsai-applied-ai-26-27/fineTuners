@@ -8,11 +8,21 @@
 
 name: dsai-vault
 
+# Docker keeps what a container prints (gunicorn's line per request, Django's warnings) in
+# a file that by default grows for ever. Kept to five files of ten megabytes per service,
+# the oldest dropped: weeks of a study site's traffic, and a disk that cannot fill.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
   # Django, served by gunicorn. Reachable only by the proxy below.
   web:
     image: dsai-vault:live
     restart: unless-stopped
+    logging: *logging
     environment:
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?missing in .env}
       DJANGO_ALLOWED_HOSTS: ${PUBLIC_HOST:?missing in .env}
@@ -54,6 +64,7 @@ services:
   proxy:
     image: caddy:2-alpine
     restart: unless-stopped
+    logging: *logging
     environment:
       ORIGIN_SECRET: ${ORIGIN_SECRET:?missing in .env}
       PUBLIC_HOST: ${PUBLIC_HOST}

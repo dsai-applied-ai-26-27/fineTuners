@@ -61,7 +61,13 @@ class Command(BaseCommand):
         return sum(1 for report in reports if report.errors)
 
     def watch(self, only, check):
-        from watchfiles import watch
+        # A development dependency (pyproject.toml), absent from the production image.
+        try:
+            from watchfiles import watch
+        except ImportError as error:
+            raise CommandError(
+                "--watch needs the development packages: run `uv sync` on your computer."
+            ) from error
 
         roots = [str(root) for root in settings.CONTENT_ROOTS if root.is_dir()]
         self.stdout.write(f"Watching {', '.join(roots)} - Ctrl+C to stop.")
