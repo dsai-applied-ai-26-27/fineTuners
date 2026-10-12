@@ -69,9 +69,14 @@ EXPOSE 8000
 # processes. Two workers with four threads each is plenty for a study site.
 # The container's own files are read-only when it runs, so gunicorn keeps its scratch file
 # in memory (/dev/shm) and does not create its control socket.
+# One line per request goes to the container's log: when, which page, the answer, its
+# size, how long it took and the kind of browser. Not gunicorn's usual line, which adds
+# what follows the "?" of an address and the page the visitor came from: that is where a
+# search term sits, and the one-time code Google sends back at sign-in.
 CMD ["gunicorn", "config.wsgi:application", \
      "--bind", "0.0.0.0:8000", \
      "--workers", "2", "--threads", "4", \
      "--worker-tmp-dir", "/dev/shm", \
      "--no-control-socket", \
-     "--access-logfile", "-", "--error-logfile", "-"]
+     "--access-logfile", "-", "--error-logfile", "-", \
+     "--access-logformat", "%(t)s \"%(m)s %(U)s\" %(s)s %(b)s %(M)sms \"%(a)s\""]

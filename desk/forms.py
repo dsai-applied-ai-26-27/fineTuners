@@ -13,7 +13,6 @@ from django import forms
 from .models import EducatorApplication, Request
 
 PHONE = re.compile(r"^\+?[0-9][0-9 ()/.-]{5,24}$")
-GITHUB = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$")
 
 
 def course_choices(courses, empty):
@@ -49,16 +48,15 @@ class RequestForm(forms.ModelForm):
 class EducatorApplicationForm(forms.ModelForm):
     class Meta:
         model = EducatorApplication
-        fields = ["series", "name", "phone", "year", "github", "tools", "note"]
+        # Not every column of the model: a form takes only the fields it names, so
+        # whatever else a request carries is ignored.
+        fields = ["series", "name", "phone", "year", "tools", "note"]
         # What a field looks like in HTML is its widget. The attributes are hints to the
         # browser: which keyboard a phone shows, what it may fill in by itself.
         widgets = {
             "name": forms.TextInput(attrs={"autocomplete": "name"}),
             "phone": forms.TextInput(
                 attrs={"type": "tel", "autocomplete": "tel", "placeholder": "+387 61 123 456"}
-            ),
-            "github": forms.TextInput(
-                attrs={"autocomplete": "off", "autocapitalize": "none", "spellcheck": "false"}
             ),
             "note": forms.Textarea(attrs={"rows": 4, "maxlength": 1000}),
         }
@@ -78,10 +76,3 @@ class EducatorApplicationForm(forms.ModelForm):
                 "Write the number with digits, for example +387 61 123 456."
             )
         return phone
-
-    def clean_github(self):
-        # People paste "@name" or the address of their profile; keep the name.
-        name = self.cleaned_data["github"].strip().rstrip("/").rsplit("/", 1)[-1].lstrip("@")
-        if name and not GITHUB.match(name):
-            raise forms.ValidationError("That does not look like a GitHub user name.")
-        return name

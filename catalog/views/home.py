@@ -28,6 +28,8 @@ def landing(request):
             "next": request.GET.get("next", ""),
             "google": settings.GOOGLE_SIGN_IN,
             "dev_login": settings.DEBUG,
+            # For the preview a chat makes of the address, which needs complete URLs.
+            "site_url": settings.SITE_URL,
         },
     )
 

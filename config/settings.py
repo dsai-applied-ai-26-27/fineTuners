@@ -35,7 +35,12 @@ def env_list(name):
 # (see deploy/env.example). https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env_flag("DJANGO_DEBUG", True)
+# On by default only where no host names are configured, which is a developer's machine.
+# A site that answers to a public name has to set DJANGO_ALLOWED_HOSTS (Django turns away
+# every other host), and from then on debug mode must be asked for by name. A server where
+# DJANGO_DEBUG=0 was forgotten therefore still starts with debug off, instead of showing
+# tracebacks and the development sign-in to the internet.
+DEBUG = env_flag("DJANGO_DEBUG", default=not os.environ.get("DJANGO_ALLOWED_HOSTS"))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # Sessions and CSRF tokens are signed with it. The fallback below is in the repository, so
@@ -102,6 +107,9 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     # Sets request.user from the session cookie.
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    # Answers 413 to a request larger than its page accepts, before anything reads it
+    # (BODY_LIMITS).
+    "config.bodylimit.BodyLimitMiddleware",
     # Answers 429 to an account or address that calls a costly page in a loop (RATE_LIMITS).
     "config.ratelimit.RateLimitMiddleware",
     # Then, for an anonymous visitor, sends every view that did not opt out to LOGIN_URL.
@@ -334,6 +342,17 @@ if env_flag("DSAI_SHOW_EXAMPLE", DEBUG):
 # Lets a lecture page link to the original PDF under courses/<slug>/source/.
 # Off by default outside DEBUG: those files are usually someone else's copyright.
 SERVE_SOURCE_FILES = env_flag("DSAI_SERVE_SOURCE", DEBUG)
+
+
+# Request size
+# (start of the path, bytes a signed-in person may send there). Everywhere else, and for
+# a visitor everywhere, the ceiling is DATA_UPLOAD_MAX_MEMORY_SIZE: Django's own limit for
+# a form, 2.5 MB unless set, which this site never comes near. See config/bodylimit.py.
+
+BODY_LIMITS = [
+    # A hand-in: the zip of a course (desk.handins.MAX_UPLOAD, 25 MB) and the form around it.
+    ("/educators/courses/", 26 * 1024 * 1024),
+]
 
 
 # Rate limits

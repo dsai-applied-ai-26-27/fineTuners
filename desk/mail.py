@@ -52,6 +52,10 @@ def deliver(messages):
         # One connection for all of them. `mailers.default` is the mail server named in
         # settings.MAILERS, as `connection` is the database named in DATABASES.
         return mailers.default.send_messages(messages) or 0
-    except Exception:  # noqa: BLE001 (any failure of a mail server must stay in here)
-        logger.warning("Mail: %s message(s) could not be sent", len(messages), exc_info=True)
+    except Exception as error:  # noqa: BLE001 (a mail server's failure must stay in here)
+        # The kind of failure only. A mail server's own message often quotes the address
+        # it turned away, and the log is no place for people's addresses.
+        logger.warning(
+            "Mail: %s message(s) could not be sent (%s)", len(messages), type(error).__name__
+        )
         return 0

@@ -224,12 +224,14 @@ class SyncViewTests(TestCase):
         self.assertEqual(bad.status_code, 400)
 
     def test_an_oversized_request_is_refused_before_it_is_read(self):
-        # Django's own limit on a request body (DATA_UPLOAD_MAX_MEMORY_SIZE, 2.5 MB).
+        # Django's own limit on a request body (DATA_UPLOAD_MAX_MEMORY_SIZE, 2.5 MB),
+        # applied by config/bodylimit.py before the view is reached. The browser treats
+        # the answer like any failed save: it keeps the changes and tries again later.
         self.client.force_login(self.user)
         response = self.post(
             self.client, {"records": {"mlpr/x": {"s": 3, "t": 1, "pad": "x" * 3_000_000}}}
         )
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 413)
         self.assertFalse(Record.objects.exists())
 
     def test_a_post_without_the_csrf_token_is_refused(self):
