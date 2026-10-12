@@ -1,0 +1,30 @@
+{% load ui %}
+{% comment %} Why a hand-in was not taken in (`refused`, a desk.handins.Refused), and what to do
+   about it. Nothing changed on the site. `course` is the course it was for. {% endcomment %}
+<div class="refused" role="alert">
+  {% if refused.kind == "conflict" %}
+  <p class="refused__head">{% icon "warning" %}Not taken in: the course changed on the site after you took your copy.</p>
+  <p>Someone added to it, or the owner published a change. Your zip does not have those lines, so taking it in would remove them. Put your work on top of the latest version, in the kit's folder:</p>
+  <pre class="brief__prompt">git stash
+# download the course files again (the button above)
+uv run tools/unpack.py {{ course.slug }}.zip
+git stash pop
+uv run tools/pack.py {{ course.slug }}</pre>
+  <p><code>git stash</code> sets your work aside, <code>unpack.py</code> brings in the site's version, and <code>git stash pop</code> puts your work back on top. If git marks a conflict in a file, both versions are in it between <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code> and <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code>: keep both sets of lines, delete the markers, or ask your assistant to. Then hand in the new zip.</p>
+  {% elif refused.kind == "removal" %}
+  <p class="refused__head">{% icon "warning" %}Not taken in: it removes or rewrites what is already there.</p>
+  <p>A hand-in may only add. Put the lines below back as they were (<code>git diff</code> shows what you changed, <code>git checkout -- &lt;file&gt;</code> restores a file), then pack and hand in again. If something on the site is wrong and has to change, say so with <a class="link" href="{% url 'desk:ask' %}?course={{ course.slug }}&amp;kind=bug">Ask or report</a>. If you did not touch these lines, the course changed on the site: download the course files again and put your work on top (<a class="link" href="{% url 'desk:guide' %}#moved">how</a>).</p>
+  {% elif refused.kind == "invalid" %}
+  <p class="refused__head">{% icon "error" %}Not taken in: the site's check found errors.</p>
+  <p>These are things <code>tools/check.py</code> cannot see: links between files, the text itself, the maths. Give this report to your assistant, fix, pack and hand in again.</p>
+  {% elif refused.kind == "nothing" %}
+  <p class="refused__head">{% icon "info" %}Nothing to take in.</p>
+  {% elif refused.kind == "busy" %}
+  <p class="refused__head">{% icon "info" %}Not now.</p>
+  {% else %}
+  <p class="refused__head">{% icon "error" %}Not taken in: this is not the zip of this course.</p>
+  <p>Hand in the file that <code>uv run tools/pack.py {{ course.slug }}</code> wrote into the kit's <code>out/</code> folder.</p>
+  {% endif %}
+  {% if refused.lines %}<pre class="refused__report">{% for line in refused.lines %}{{ line }}
+{% endfor %}</pre>{% endif %}
+</div>

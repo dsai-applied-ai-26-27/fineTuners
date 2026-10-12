@@ -52,7 +52,8 @@ Why it has this shape:
 | Course files (`course.yaml`, `content/`) | your computer, `courses/`; a copy on the server in `~/dsai-vault/courses/` | not in this repository: in [their own](#course-files-and-the-educator-kit) |
 | Source material (`source/`: slides, past papers) | your computer only | no |
 | Database: course content | the server, Docker volume `dsai-vault_data` | no, it is rebuilt from the course files |
-| Database: accounts, study progress, requests, educators, the switches for a course | the same file | no, and nothing rebuilds it: it is backed up |
+| Database: accounts, study progress, requests, educators, hand-ins, the switches for a course | the same file | no, and nothing rebuilds it: it is backed up |
+| Courses as handed in, unpacked | the same volume, under `handins/` | no, rebuilt from the hand-ins in the database |
 | Images used by content | the same volume, under `media/` | no, copied by `sync_content` |
 | Secrets | the server's `~/dsai-vault/.env`; GitHub Actions secrets; Cloudflare Pages secrets | never |
 | A working copy of each person's progress | that person's browser | — |
@@ -128,55 +129,63 @@ Three repositories, each with one job:
 |---|---|---|
 | this one | the application | you, through pull requests |
 | the content repository (`courses/` on your computer is its checkout; private) | every course's `course.yaml` and `content/`, grouped in `semester-N/` folders | you alone |
-| the educator kit (`educator-kit/` here is its checkout) | instructions for an AI assistant, the authoring docs, a checker and a packer. **No course content** | you alone; educators only read it |
+| the educator kit (`educator-kit/` here is its checkout; **public**) | instructions for an AI assistant, the authoring docs, three tools. **No course** | you alone; educators clone it and pull |
 
 Courses are grouped in `semester-N/` folders for people's sake. A course's address is
 still its own folder's name, `publish` sends it as `<slug>/`, and the server keeps the
 courses side by side as before. `source/` is ignored in the content repository: slides and
 past papers are the lecturers' and are never committed anywhere.
 
-**How an educator's work reaches the site.**
+**How an educator's work reaches the site.** The site's guide (`/educators/guide/`) and
+the kit's README say it to them step by step. In short:
 
-1. They clone the kit once and run `git pull` in it before each session. That is how new
-   instructions and format changes reach them.
-2. On the site, their Educators page has **Download the course files**: a zip of their
-   course's `course.yaml` and `content/` as the site has them
-   (`desk.views.files`). They unpack it into the kit's `courses/` folder, which the kit's
-   `.gitignore` ignores entirely, so nothing they write is ever committed or pushed.
-3. They add the lecture material to the course's `source/`, tell their assistant
-   `Update the CMS for this course: <course>`, and check what it wrote.
-4. `tools/pack.py <course>` in the kit checks the course and writes one zip. They send you
-   that file.
-5. You take it in:
-   ```
-   uv run python manage.py import_course rl-20261012-1830.zip
-   ```
-   The zip is treated as untrusted ([ingest/handin.py](../ingest/handin.py)). It must be
-   plainly one existing course, with nothing but `course.yaml` and `content/` in it; its
-   `course.yaml` may differ from yours only in topics and description; it is unpacked to
-   a temporary folder and run through the full validation; and the course folder must have
-   no uncommitted changes. Only then are the course's files replaced. `--check` validates
-   and changes nothing.
-6. Read the diff in `courses/`, run `sync_content <course>`, commit there, and `publish`.
+1. They clone the kit, download their course's files on the Educators page, and unpack
+   them into the kit with `tools/unpack.py`, which commits that state in their copy.
+   Their course is tracked by git on their computer only; pushing is switched off.
+2. Their assistant writes; they check; `tools/pack.py` makes one zip.
+3. They upload that zip on the Educators page. The site takes it in if it only adds
+   (new files, new lines), if it is built on the version the site has, and if the full
+   validation passes. Then it is **live at once**. Otherwise it is refused with the
+   reason and the steps to take, and nothing changes.
+4. You are notified (the bot), and the course's timeline on their page gains a line.
 
-Nothing an educator does reaches the site by itself. Two steps are yours alone:
-`import_course` and `publish`.
+**What you do about a hand-in.** Nothing, for it to be live. Two things remain yours:
 
-**Keeping the kit up to date.** The kit is generated from this repository: its texts are
-in [ingest/educator_kit/](../ingest/educator_kit/), its docs are `docs/`, and its tools
-run copies of the importer's own Django-free modules. After changing the authoring docs,
-a schema, or the importer:
+- *Taking it into your course files.* The site shows the course as handed in, from a
+  folder of its own; your files do not have the additions until you fetch them. In the
+  admin, under Hand-ins, download the newest one for the course (each holds the whole
+  course as it stood) and run
+  ```
+  uv run python manage.py import_course rl-handin-12.zip
+  ```
+  It validates the zip and merges it file by file, never removing anything of yours.
+  Read the diff, `sync_content rl`, commit in `courses/`, and `publish`. Once the
+  published files hold everything a hand-in added, the site marks it merged and drops its
+  own copy. If you publish without doing this, nothing is lost: the site keeps showing
+  the hand-in, and the publish report says which courses lack hand-ins.
+- *Taking it off the site.* Hand-ins in the admin, tick it, **Take off the site**. It and
+  every later hand-in for that course are withdrawn and the course is loaded again as it
+  was. The educator is e-mailed. Their own copy still has the work, so tell them what
+  was wrong before they hand in again.
 
-```
-uv run python manage.py export_authoring educator-kit
-```
+A hand-in cannot remove or rewrite a line. When something that is live has to change,
+you change it in your files and publish; educators then get the new version with their
+next download, and a hand-in built on the old one is refused until they do.
 
-then commit and push in `educator-kit/`. Educators get it with their next `git pull`.
+**The kit.** It is generated from this repository: its texts are in
+[ingest/educator_kit/](../ingest/educator_kit/), its docs are `docs/`, its tools run
+copies of the importer's own Django-free modules, and its versions are listed in
+[desk/kit.py](../desk/kit.py). To release a change:
 
-An educator needs to be able to read the kit and nothing else on GitHub. While the kit's
-repository is private that means inviting each of them as a collaborator, and on a free
-personal account a collaborator can also push. The kit contains nothing secret, so making
-that repository public removes both the invitations and the risk; that choice is yours.
+1. Edit the sources, and add a version at the top of `desk/kit.py`. Merge.
+2. `uv run python manage.py export_authoring educator-kit`, then commit and push in
+   `educator-kit/`.
+3. In the admin, Kit announcements, add the version. Educators see a notice on their
+   page and are e-mailed to run `git pull`. Do this last: it tells people to pull.
+
+The kit's repository is public, so an educator needs no invitation and nobody but you
+can push to it. It contains no course and nothing secret; check that this stays true
+before each push (`git status`, `git diff` in `educator-kit/`).
 
 ## Shipping code
 
@@ -335,6 +344,24 @@ two values everything still works: requests are stored and shown in the admin, n
 told, and the log says so once at start-up. A message never contains a name, a phone
 number or what was written.
 
+**E-mail to educators.** The site writes to educators about their role: an accepted
+application, a new version of the kit, a hand-in taken off the site
+([desk/mail.py](../desk/mail.py)). It needs a mail server: any provider's SMTP details.
+Set each value with `deploy setenv`, then restart:
+
+```
+ssh <server> dsai-vault/bin/deploy setenv DSAI_EMAIL_HOST
+ssh <server> dsai-vault/bin/deploy setenv DSAI_EMAIL_USER
+ssh <server> dsai-vault/bin/deploy setenv DSAI_EMAIL_PASSWORD
+ssh <server> dsai-vault/bin/deploy setenv DSAI_EMAIL_FROM
+ssh <server> dsai-vault/bin/deploy restart
+```
+
+The port is 587 with STARTTLS unless `DSAI_EMAIL_PORT` says otherwise. Like the bot's
+values these reach the container through `compose.yaml`, so the files under `deploy/`
+must be on the server first. Without a host nothing is sent and nothing fails. The
+privacy page says who is written to and about what; keep it true if that grows.
+
 **Opening a course, and who writes it.** In the admin, under Courses: tick the course and
 choose an action. *Open to students* and *Close* decide whether students see it at all;
 a course whose file says `enabled: false` stays hidden until it is opened here. *Ask for
@@ -402,6 +429,15 @@ On a new server, start at [Setting it up from scratch](#setting-it-up-from-scrat
   notification sent to the owner's bot carries none of it.
 - A course the owner has not opened answers 404 to everyone but staff, and is left out
   of every list and of search.
+- An educator can add to their own course and to nothing else. What they upload is one
+  zip, checked before anything is written: paths, kinds of file, sizes, that it removes
+  nothing, and the full validation. It is unpacked only under the data volume, never
+  into the published course files. One hand-in at a time per course, twenty a day per
+  person.
+- Images from course content are served with a policy that lets them run nothing when
+  opened on their own, and SVG files that carry a script are refused at the door.
+- The site sends e-mail only to educators, one message per person, and only if a mail
+  server is configured.
 - Asking, applying and the educators' page are rate limited like the rest, and one
   account can send ten requests a day.
 - No secret is in the repository, in an image, or in a log. `.env` on the server is

@@ -15,17 +15,20 @@ from catalog import editions
 from catalog.mine import catalogue
 from catalog.models import Course
 from catalog.nav import course_data, has_content
-from ingest import handin
-from ingest.discover import find_course
+from catalog.welcome import educator_state
+from ingest import handin, live
 
+from . import handins, kit
 from .forms import EducatorApplicationForm, RequestForm
-from .models import Educator, EducatorApplication, Request
+from .models import Educator, EducatorApplication, HandIn, Request
 from .notify import notify
 from .switches import switches
 
 # The most one person may send in a day. Far above honest use; it keeps one account from
 # filling the owner's list (and phone).
 DAILY_REQUESTS = 10
+# And the most hand-ins. Each one is checked in full and kept.
+DAILY_HANDINS = 20
 
 
 def signed_in(view):
@@ -160,16 +163,32 @@ def apply(request):
     )
 
 
-@signed_in
-def educators(request):
-    """The educators' page: what the role is, the courses you write and what was asked
-    about them, your applications, and the courses still looking for someone."""
+def _written_by(series):
+    """The current year of each of these courses, open to students or not."""
+    return editions.latest(list(Course.objects.filter(series__in=series)))
+
+
+def _may_write(user, series):
+    return user.is_staff or Educator.objects.filter(user=user, series=series).exists()
+
+
+def _educators_page(request, *, refused=None):
+    """The educators' page: what the role is, the courses you write (how to add to them,
+    the form that takes a hand-in, what was added so far, what was asked), your
+    applications, and the courses still looking for someone.
+
+    `refused` is (series, Refused) when a hand-in has just been turned down: the page is
+    shown again with the reason beside that course.
+    """
     by_series = _titles(request)
     writing = []
     series = list(Educator.objects.filter(user=request.user).values_list("series", flat=True))
     asked = Request.objects.filter(series__in=series, status=Request.Status.NEW).exclude(
         kind=Request.Kind.IDEA
     )
+    # defer(): the zip of each hand-in stays in the database; a list needs its summary.
+    steps = HandIn.objects.filter(series__in=series).defer("archive").select_related("user")
+    handed = request.GET.get("handed", "")
     # Their courses are read directly, not from the catalogue: an educator may be
     # writing a course that students cannot see yet.
     for course in _written_by(series):
@@ -177,11 +196,15 @@ def educators(request):
         course.counts = course_data(course)["counts"]
         course.ready = has_content(course)
         course.asked = [item for item in asked if item.series == name]
+        course.timeline = [step for step in steps if step.series == name][:30]
+        course.handed = next((s for s in course.timeline if str(s.pk) == handed), None)
+        course.refused = refused[1] if refused and refused[0] == name else None
         writing.append(course)
 
     offers = list(EducatorApplication.objects.filter(user=request.user))
     for offer in offers:
         offer.course = by_series.get(offer.series)
+    state = educator_state(request.user)
     return render(
         request,
         "desk/educators.html",
@@ -190,32 +213,53 @@ def educators(request):
             "offers": [offer for offer in offers if offer.course],
             "seeking": [c for c in _seeking(request) if c.series not in series],
             "kit": settings.EDUCATOR_KIT_URL,
+            "kit_version": kit.VERSIONS[0] if kit.VERSIONS else None,
+            # Versions of the kit this person has not been told about yet.
+            "kit_news": kit.news_for(state["kit_seen"]) if series else [],
             "applied": "applied" in request.GET,
+            "welcome": {"educator": bool(series), "educator_tour": state["offer"]},
             "active": "educators",
         },
     )
 
 
-def _written_by(series):
-    """The current year of each of these courses, open to students or not."""
-    return editions.latest(list(Course.objects.filter(series__in=series)))
+@signed_in
+def educators(request):
+    return _educators_page(request)
 
 
 @signed_in
+def guide(request):
+    """Writing a course, start to finish: the same steps as the kit's README, on the site,
+    with the address of the kit. Anyone signed in may read it: it is also what someone
+    thinking of applying wants to know."""
+    return render(
+        request,
+        "desk/guide.html",
+        {
+            "kit": settings.EDUCATOR_KIT_URL,
+            "kit_version": kit.VERSIONS[0] if kit.VERSIONS else None,
+            "welcome": {"educator": educator_state(request.user)["educator"]},
+            "active": "educators",
+        },
+    )
+
+
+@signed_in
+@require_POST
 def files(request, series):
     """The files of a course as one zip (course.yaml and content/), for the person who
     writes it: what they unpack into their copy of the educator kit.
 
-    It is what the site has, so it is never more than what the site already shows them,
-    and raw material is not part of it: there is none on the server.
+    It is what the site shows at this moment, hand-ins included, so it is never more than
+    they can already see, and raw material is not part of it: there is none on the
+    server. A POST, because it also records which version this person now has.
     """
-    allowed = (
-        request.user.is_staff or Educator.objects.filter(user=request.user, series=series).exists()
-    )
-    current = _written_by([series]) if allowed else []
-    folder = find_course(current[0].slug, settings.CONTENT_ROOTS) if current else None
+    current = _written_by([series]) if _may_write(request.user, series) else []
+    folder = live.folder(current[0].slug) if current else None
     if folder is None:
         raise Http404
+    handins.remember(request.user, series, handin.content_version(folder))
     response = HttpResponse(handin.pack(folder), content_type="application/zip")
     # "attachment" makes the browser save the file instead of trying to show it.
     response["Content-Disposition"] = f'attachment; filename="{folder.name}.zip"'
@@ -224,13 +268,57 @@ def files(request, series):
 
 @signed_in
 @require_POST
+def hand_in(request, series):
+    """Take in the zip an educator uploads for their course (desk/handins.py). Accepted,
+    it is on the site before the next page loads; refused, the page says exactly why."""
+    current = _written_by([series]) if _may_write(request.user, series) else []
+    if not current:
+        raise Http404
+    course = current[0]
+    upload = request.FILES.get("zip")
+    try:
+        if upload is None:
+            raise handins.Refused("bad", ["No file arrived. Choose the zip that pack.py made."])
+        today = HandIn.objects.filter(
+            user=request.user, created_at__gte=timezone.now() - timedelta(days=1)
+        ).count()
+        if today >= DAILY_HANDINS:
+            raise handins.Refused("busy", ["That is a lot of hand-ins for one day. Try tomorrow."])
+        record = handins.take(request.user, course, upload)
+    except handins.Refused as refusal:
+        return _educators_page(request, refused=(series, refusal))
+
+    url = _admin_url(request, record)
+    transaction.on_commit(
+        lambda: notify(
+            f"Hand-in on the site: {course.title}",
+            f"{record.summary}. It is live. Open the admin to see it or to take it back.",
+            level="success",
+            url=url,
+            dedupe_key=f"dsai-handin-{record.pk}",
+        )
+    )
+    return redirect(f"{reverse('desk:educators')}?handed={record.pk}#course-{course.slug}")
+
+
+@signed_in
+def handin_zip(request, pk):
+    """For the owner: one hand-in as the zip that `manage.py import_course` takes."""
+    if not request.user.is_staff:
+        raise Http404
+    record = get_object_or_404(HandIn, pk=pk)
+    response = HttpResponse(bytes(record.archive), content_type="application/zip")
+    name = f"{record.slug}-handin-{record.pk}.zip"
+    response["Content-Disposition"] = f'attachment; filename="{name}"'
+    return response
+
+
+@signed_in
+@require_POST
 def resolve(request, pk):
     """An educator marks a request about their course as done, with a line of answer."""
     item = get_object_or_404(Request, pk=pk)
-    allowed = request.user.is_staff or (
-        item.series and Educator.objects.filter(user=request.user, series=item.series).exists()
-    )
-    if not allowed:
+    if not (item.series and _may_write(request.user, item.series)):
         raise Http404
     item.status = Request.Status.DONE
     item.answer = request.POST.get("answer", "").strip()[:1000]

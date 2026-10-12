@@ -11,7 +11,7 @@ from desk.switches import switches
 from ..mine import catalogue, chosen, mine
 from ..models import Card, Course, Document, Formula, Hook, Question, Term
 from ..nav import course_data, has_content
-from ..welcome import welcome
+from ..welcome import educator_state, welcome
 
 
 def landing(request):
@@ -200,6 +200,8 @@ def settings_page(request):
         {
             "courses": courses,
             "manifests": [course_data(c)["manifest"] for c in courses],
+            # An educator finds their second tour here, beside the first.
+            "educator": educator_state(request.user)["educator"],
             "active": "settings",
         },
     )

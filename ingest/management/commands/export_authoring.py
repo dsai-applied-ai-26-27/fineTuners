@@ -13,7 +13,8 @@ content and to check it without this application:
                                                     the rest of that folder is ignored
     docs/                                           the authoring guide, the field reference,
                                                     the schemas and the example course
-    tools/check.py  tools/pack.py                   the checker, and the packer for hand-ins
+    tools/unpack.py  tools/check.py  tools/pack.py  the three tools an educator runs
+    VERSION  CHANGELOG.md                           which version it is (desk/kit.py)
     tools/rules/                                    the part of the importer they run: the
                                                     modules of ingest/ that need no Django
 
@@ -28,6 +29,8 @@ from pathlib import Path
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
+
+from desk import kit
 
 KIT = Path(__file__).resolve().parents[2] / "educator_kit"
 INGEST = KIT.parent
@@ -46,6 +49,7 @@ FILES = {
     "gitattributes": ".gitattributes",
     "courses/README.md": "courses/README.md",
     "skills/update-cms/SKILL.md": ".claude/skills/update-cms/SKILL.md",
+    "tools/unpack.py": "tools/unpack.py",
     "tools/check.py": "tools/check.py",
     "tools/pack.py": "tools/pack.py",
 }
@@ -104,6 +108,9 @@ class Command(BaseCommand):
         for name in GUIDE:
             copy(DOCS / name, target / "docs" / name)
         (target / "docs" / "README.md").write_text(NOTE, encoding="utf-8", newline="\n")
+        # Which version this is and what changed: the list is kept in desk/kit.py.
+        (target / "VERSION").write_text(f"{kit.LATEST}\n", encoding="utf-8", newline="\n")
+        (target / "CHANGELOG.md").write_text(kit.changelog(), encoding="utf-8", newline="\n")
 
         rules = target / "tools" / "rules"
         if rules.is_dir():

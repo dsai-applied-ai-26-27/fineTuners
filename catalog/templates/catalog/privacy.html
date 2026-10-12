@@ -14,7 +14,7 @@
   <ul>
     <li><strong>From Google, when you sign in:</strong> your name, your e-mail address and Google's identifier for your account. Nothing else is requested: no contacts, no files, no calendar, and never your password.</li>
     <li><strong>Your study progress:</strong> which courses you put on your dashboard, how you graded each flashcard and question, how you rated each lecture, your mock exam scores, and how many cards and focus minutes you did per day.</li>
-    <li><strong>What you send yourself:</strong> a request made with Ask or report (what you wrote, and which course and page it was about), and, if you apply to become an educator, what you put in that form: your name, phone number, year of study, GitHub user name and note.</li>
+    <li><strong>What you send yourself:</strong> a request made with Ask or report (what you wrote, and which course and page it was about), and, if you apply to become an educator, what you put in that form: your name, phone number, year of study, GitHub user name and note. If you become an educator: what you hand in for your course, and when.</li>
     <li><strong>What you have been shown:</strong> whether you have taken the tour, and which notes about changes to the site you have seen, so that neither is put in front of you twice.</li>
     <li><strong>A session cookie,</strong> which keeps you signed in for up to 60 days, and a second cookie that protects forms against forgery.</li>
     <li><strong>In your own browser:</strong> a working copy of your progress, so the site also works offline, and your theme and timer settings.</li>
@@ -24,13 +24,15 @@
   <p>Your progress is used to show you your own progress on every device you sign in on, and for nothing else.</p>
   <p>A request is read by the person who runs the site. If it is about a course, the student who writes that course reads it too: they see what you wrote, not who wrote it. An educator application, with its phone number, is read only by the person who runs the site, who uses it to contact you about it. If you are accepted, your GitHub account is given access to the course files, where the other educators can see it.</p>
   <p>When a request or an application arrives, the person who runs the site gets a notification on their phone. It says that something arrived and for which course. It does not contain your name, your number or what you wrote.</p>
+  <p>What an educator hands in becomes part of the course and is shown to everyone who uses the site. Who handed it in is shown to the other educators of that course and to the person who runs the site, not to students.</p>
+  <p><strong>E-mail.</strong> The site may write to the address your Google account signed in with, about your account or about the site itself. At present it writes only to educators, about the role they asked for: that an application was accepted, that a new version of the educator kit is out, that something they handed in was taken off the site. It never carries advertising. Messages go out through a mail provider, which handles your address only to deliver them.</p>
   <p>There are no advertisements and no analytics, and nothing is sold or passed to anyone else.</p>
 
   <h2>Where it is</h2>
   <p>On the site's own server. Requests reach it through Cloudflare, which as the network provider sees the address your request comes from. Copies of the database are kept for about two weeks so that a failure does not lose everyone's progress.</p>
 
   <h2>Removing it</h2>
-  <p>Open Settings and choose <strong>Delete my account</strong>. Your account and everything saved to it, your requests and applications included, are removed from the server at once, and from the remaining backup copies as they are replaced over the following two weeks. Clearing progress for one course, or all of it, is on the same page.</p>
+  <p>Open Settings and choose <strong>Delete my account</strong>. Your account and everything saved to it, your requests and applications included, are removed from the server at once, and from the remaining backup copies as they are replaced over the following two weeks. Clearing progress for one course, or all of it, is on the same page. What you added to a course as an educator stays part of that course, without your name.</p>
 
   <p>What you may expect of the site, and it of you, is in the <a href="{% url 'catalog:terms' %}">terms of use</a>.</p>
 {% endblock %}

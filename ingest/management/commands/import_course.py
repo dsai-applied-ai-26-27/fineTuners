@@ -1,27 +1,33 @@
-"""Take in the course files an educator handed in.
+"""Bring what educators added on the site into your own course files.
 
-    manage.py import_course rl-20261012-1830.zip
+    manage.py import_course rl-handin-12.zip
 
-The zip was made on someone else's computer by the educator kit (`tools/pack.py`). This
-command treats it as untrusted, and changes nothing unless every check passes:
+Educators hand their work in on the site, where it is checked and goes live at once
+(desk/handins.py). Your course files do not know about it until you take it in here. The
+zip is one hand-in, downloaded from the admin (Hand-ins), and holds the whole course as it
+stood after it. It is treated as untrusted all the same:
 
 1. It must be plainly one course that exists here: course.yaml and content/, nothing else
    (ingest/handin.py).
-2. Its course.yaml may differ from yours only in topics and description. Title, code,
-   year, whether the course is open, and the rest stay yours.
-3. It is unpacked to a temporary folder and run through the site's own validation, the
-   full one: links between files and maths included.
-4. The course folder must have no uncommitted changes, so that what was handed in is a
+2. Its course.yaml may differ from yours only in topics and description.
+3. It is unpacked to a temporary folder and run through the full validation.
+4. The course folder must have no uncommitted changes, so that what is taken in is a
    diff of its own that you can read and undo.
 
-Then the course's content/ is replaced with what was handed in. Nothing is loaded into the
-database and nothing is published: look at the diff, run sync_content, commit, publish.
+Then the two are put together file by file, and nothing of yours is ever removed:
+
+    a file you do not have            is added
+    a file that only gained lines     is replaced by the longer version
+    a file where yours has more       is left alone (you are ahead)
+    a file both of you changed        stops everything (--theirs takes the hand-in's)
+
+Nothing is loaded into the database and nothing is published: read the diff, run
+sync_content, commit, publish. Once the published files hold everything a hand-in added,
+the site lets go of its own copy by itself.
 """
 
-import shutil
 import subprocess
 import tempfile
-import zipfile
 from pathlib import Path
 
 from django.conf import settings
@@ -48,10 +54,10 @@ def uncommitted(folder):
 
 
 class Command(BaseCommand):
-    help = "Validate a course zip handed in by an educator and put it into the course folder."
+    help = "Validate a course zip from an educator and merge it into the course folder."
 
     def add_arguments(self, parser):
-        parser.add_argument("zip", help="The file made by the kit's tools/pack.py.")
+        parser.add_argument("zip", help="A hand-in downloaded from the admin, or a kit's zip.")
         parser.add_argument(
             "--check", action="store_true", help="Validate only; change nothing here."
         )
@@ -60,6 +66,11 @@ class Command(BaseCommand):
             action="store_true",
             help="Go ahead although the course folder has uncommitted changes.",
         )
+        parser.add_argument(
+            "--theirs",
+            action="store_true",
+            help="Where you and the hand-in both changed a file, take the hand-in's.",
+        )
 
     def handle(self, *args, **options):
         safe_streams()
@@ -67,29 +78,26 @@ class Command(BaseCommand):
         if not source.is_file():
             raise CommandError(f"{source} is not a file.")
         try:
-            with zipfile.ZipFile(source) as archive:
-                slug, members = handin.inspect(archive)
-                files = {name: handin.read(archive, info) for name, info in members.items()}
-        except zipfile.BadZipFile as error:
-            raise CommandError(f"{source.name} is not a zip file.") from error
+            slug, files = handin.unzip(source)
         except handin.HandInError as error:
             raise CommandError(f"Refused: {error}. Nothing was changed.") from error
 
         target = find_courses([settings.COURSES_DIR]).get(slug)
         if target is None:
             raise CommandError(
-                f"There is no course `{slug}` here. A hand-in can change a course, not "
+                f"There is no course `{slug}` here. A hand-in can add to a course, not "
                 "create one: make it with startcourse first."
             )
-        yours = (target / "course.yaml").read_text(encoding="utf-8")
-        theirs = files["course.yaml"].decode("utf-8", errors="replace")
-        changed = handin.protected_changes(yours, theirs)
+        mine = handin.files_of(target)
+        changed = handin.protected_changes(
+            mine["course.yaml"].decode("utf-8"),
+            files["course.yaml"].decode("utf-8", errors="replace"),
+        )
         if changed:
             raise CommandError(
                 "Refused: course.yaml changes what is not the educator's to change.\n  "
                 + "\n  ".join(changed)
-                + "\nNothing was changed. Ask them to restore those lines, or apply the "
-                "rest by hand."
+                + "\nNothing was changed."
             )
 
         with tempfile.TemporaryDirectory(prefix="dsai-handin-") as scratch:
@@ -99,49 +107,63 @@ class Command(BaseCommand):
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_bytes(data)
             report = sync_course(staged, check_only=True)
-            if report.errors:
-                self.stdout.write(self.style.ERROR(report.format()))
-                raise CommandError(
-                    "The hand-in is not valid (above). Nothing was changed. Send that "
-                    "report back to the educator."
-                )
-            for issue in report.warnings:
-                self.stdout.write(self.style.WARNING(issue.format()))
+        if report.errors:
+            self.stdout.write(self.style.ERROR(report.format()))
+            raise CommandError("The hand-in is not valid (above). Nothing was changed.")
+        for issue in report.warnings:
+            self.stdout.write(self.style.WARNING(issue.format()))
 
-            before = {name: path.read_bytes() for path, name in handin.course_files(target)}
-            added = sorted(set(files) - set(before))
-            removed = sorted(set(before) - set(files))
-            edited = sorted(
-                name for name in set(files) & set(before) if files[name] != before[name]
+        added, longer, ahead, both = [], [], [], []
+        for name, data in sorted(files.items()):
+            if name not in mine:
+                added.append(name)
+            elif data == mine[name]:
+                continue
+            elif name == "course.yaml":
+                # Its description may be reworded, so lines say little here. What counts
+                # is the topics: whoever has all of the other's has the newer file.
+                theirs = set(handin.topic_ids(data.decode("utf-8", errors="replace")))
+                yours = set(handin.topic_ids(mine[name].decode("utf-8")))
+                (longer if yours <= theirs else ahead if theirs <= yours else both).append(name)
+            elif handin.extends(mine[name], data, name):
+                longer.append(name)
+            elif handin.extends(data, mine[name], name):
+                ahead.append(name)
+            else:
+                both.append(name)
+        summary = f"{len(added)} new, {len(longer)} longer"
+        if ahead:
+            summary += f", {len(ahead)} left alone (yours has more)"
+        if both and not options["theirs"]:
+            raise CommandError(
+                "You and the hand-in both changed:\n  "
+                + "\n  ".join(both)
+                + "\nNothing was changed. Put the two together by hand, or pass --theirs "
+                "to take the hand-in's version of these files (git keeps yours)."
             )
-            summary = f"{len(added)} new, {len(edited)} changed, {len(removed)} removed"
-            if options["check"]:
-                self.stdout.write(f"{slug}: valid. {summary}. Nothing was changed (--check).")
-                return
-            if not (added or edited or removed):
-                self.stdout.write(f"{slug}: nothing differs from what is here.")
-                return
+        if options["check"]:
+            self.stdout.write(f"{slug}: valid. {summary}. Nothing was changed (--check).")
+            return
+        take = [*added, *longer, *both]
+        if not take:
+            self.stdout.write(f"{slug}: your files already hold everything in it.")
+            return
+        dirty = uncommitted(target)
+        if dirty and not options["force"]:
+            raise CommandError(
+                f"{target} has uncommitted changes ({len(dirty)} files). Commit them "
+                "first, so that what is taken in can be read and undone on its own, or "
+                "pass --force."
+            )
+        for name in take:
+            (target / name).parent.mkdir(parents=True, exist_ok=True)
+            (target / name).write_bytes(files[name])
 
-            dirty = uncommitted(target)
-            if dirty and not options["force"]:
-                raise CommandError(
-                    f"{target} has uncommitted changes ({len(dirty)} files). Commit them "
-                    "first, so that this hand-in can be read and undone on its own, or "
-                    "pass --force."
-                )
-            # File by file, and only the kinds of file that travel: anything else that
-            # sits in the course folder (raw material, notes) is not touched.
-            for name in removed:
-                (target / name).unlink()
-            for name in [*added, *edited]:
-                (target / name).parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(staged / name, target / name)
-
+        if both:
+            summary += f", {len(both)} replaced by the hand-in's version"
         self.stdout.write(self.style.SUCCESS(f"{slug}: taken in. {summary}."))
-        for name in removed:
-            self.stdout.write(f"  removed  {name}")
         self.stdout.write(
             "Next: read the diff in the courses folder, then\n"
             f"  manage.py sync_content {slug}\n"
-            "commit there, and publish when you are ready."
+            "commit there, and publish. The site then drops its own copy of the hand-in."
         )

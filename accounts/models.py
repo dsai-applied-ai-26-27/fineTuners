@@ -74,6 +74,10 @@ class Profile(models.Model):
     tour_update = models.PositiveIntegerField(default=0)
     # The latest update the "What's new" dialog has shown them.
     news_seen = models.PositiveIntegerField(default=0)
+    # For someone who writes a course: when they were shown how that works, and the
+    # newest version of the educator kit they have been told about (desk/kit.py).
+    educator_tour_seen_at = models.DateTimeField(null=True, blank=True)
+    kit_seen = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return f"{self.user}: toured {self.tour_seen_at or 'never'}, news {self.news_seen}"

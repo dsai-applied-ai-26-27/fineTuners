@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% load ui %}
+
+{% block title %}Writing a course · DSAI Vault{% endblock %}
+{% block crumbs %}<a href="{% url 'catalog:home' %}">Courses</a>{% icon "next" %}<a href="{% url 'desk:educators' %}">Educators</a>{% icon "next" %}<span>The guide</span>{% endblock %}
+{% block inner_class %}page__inner--narrow{% endblock %}
+
+{% block content %}
+{% comment %} The same steps as the README of the educator kit (ingest/educator_kit/README.md), told
+   from the site's side. When one changes, change the other. `rl` stands for a course. {% endcomment %}
+<header class="dash-head">
+  <div>
+    <h1>Writing a course</h1>
+    <p class="dash-head__lead">From the first clone to your work being on the site. In the examples the course is <code>rl</code>; use your own course's short name, the one in its address.</p>
+  </div>
+</header>
+
+<div class="desk guide">
+  <div class="plate brief">
+    <h2>What you work with</h2>
+    <p><strong>The educator kit</strong> is a public repository: <a class="link" href="{{ kit }}">{{ kit }}</a>{% if kit_version %} (version {{ kit_version.number }}, {{ kit_version.date|date:"j F Y" }}){% endif %}. It holds the instructions your AI assistant follows, the format of every content file, and three small tools. It holds no course.</p>
+    <p><strong>Your course</strong> comes from this site. You download its files, put them into your copy of the kit, add to them, and hand the result back here. Git keeps track of your course on your computer only; nothing you write is ever pushed to the kit's repository.</p>
+    <p><strong>You need</strong> <a class="link" href="https://git-scm.com/downloads" rel="noopener">git</a>, <a class="link" href="https://docs.astral.sh/uv/" rel="noopener">uv</a> (it runs the tools and fetches what they need), and an AI assistant that can read and write files on your computer.</p>
+  </div>
+
+  <div class="plate brief">
+    <h2>Once: set up</h2>
+    <ol>
+      <li><strong>Clone the kit</strong> and switch pushing off, so that your course can never end up in a public place by accident:
+        <pre class="brief__prompt">git clone {{ kit }}.git
+cd dsai-educator-kit
+git remote set-url --push origin no-pushing</pre>
+      </li>
+      <li><strong>Download your course.</strong> On <a class="link" href="{% url 'desk:educators' %}">Educators</a>, under your course, press <strong>Download the course files</strong>. You get <code>rl.zip</code>: the course exactly as the site has it.</li>
+      <li><strong>Unpack it into the kit.</strong>
+        <pre class="brief__prompt">uv run tools/unpack.py ~/Downloads/rl.zip</pre>
+        The course is now in <code>courses/rl/</code>, and that state is committed in your copy. That commit is your starting point: from here on, <code>git diff</code> shows exactly what you have added.</li>
+      <li><strong>Add the material.</strong> Put the lecture slides, labs, homework and past papers into <code>courses/rl/source/</code> (<code>lectures/</code>, <code>labs/</code>, <code>homework/</code>, <code>exams/</code>). Git ignores that folder and the tools never pack it. It belongs to the lecturers and stays on your computer.</li>
+    </ol>
+  </div>
+
+  <div class="plate brief">
+    <h2>Every time: write, check, hand in</h2>
+    <ol>
+      <li><strong>Update the kit.</strong> <code>git pull</code> brings the latest instructions and format. It never changes your course. You are told on the Educators page, and by e-mail, when there is a new version.</li>
+      <li><strong>Let your assistant write.</strong> Open the kit's folder in it and say:
+        <pre class="brief__prompt">Update the CMS for this course: rl</pre>
+        It reads <code>AGENTS.md</code>, learns the format from <code>docs/</code>, finds what in <code>source/</code> is not written up yet, writes it and checks its own work. For one piece at a time: <code>Update the CMS for this course: rl. Only lecture 3.</code> In Claude Code the same thing is <code>/update-cms rl</code>.</li>
+      <li><strong>Check what it wrote.</strong> This part is yours, and it is why the role exists. Read the notes against the slides; work a few cards and one solution by hand. <code>git diff</code> shows every line that is new.</li>
+      <li><strong>Pack it.</strong>
+        <pre class="brief__prompt">uv run tools/pack.py rl</pre>
+        It checks the course and writes one file, <code>out/rl-&lt;date&gt;-&lt;time&gt;.zip</code>: your <code>course.yaml</code> and <code>content/</code>, nothing from <code>source/</code>.</li>
+      <li><strong>Hand it in.</strong> On Educators, under your course, choose that zip and press <strong>Hand in</strong>. The site checks it in full. If it passes it is live at once and appears in the list of what was added.</li>
+      <li><strong>Record it.</strong> Your copy and the site now agree, so make that your new starting point:
+        <pre class="brief__prompt">git add -A courses/rl
+git commit -m "rl: handed in"</pre>
+      </li>
+    </ol>
+  </div>
+
+  <div class="plate brief">
+    <h2>What a hand-in may do</h2>
+    <p><strong>Add.</strong> New files, and new lines anywhere in the files that are already there: a new lecture, more cards in a deck, another topic in <code>course.yaml</code>.</p>
+    <p><strong>Not remove, and not rewrite.</strong> Every line the course has on the site must still be in your zip, in the same order. Students' progress is stored under the ids and file names that are live, and nobody's work should disappear because of a slip. If something that is live is wrong, report it with <a class="link" href="{% url 'desk:ask' %}?kind=bug">Ask or report</a> and it is changed for you.</p>
+    <p><strong>Not touch what is the owner's.</strong> In <code>course.yaml</code> the topics and the description are yours. Title, code, year and whether the course is open are not.</p>
+  </div>
+
+  <div class="plate brief" id="moved">
+    <h2>If the site says the course has changed</h2>
+    <p>Another educator of your course handed something in, or the owner published a change, after you took your copy. Your zip lacks those lines, so it is refused: taking it in would remove them. Put your work on top of the latest version:</p>
+    <pre class="brief__prompt">git stash                              # set your work aside
+# download the course files again, on Educators
+uv run tools/unpack.py ~/Downloads/rl.zip   # bring in the site's version
+git stash pop                          # put your work back on top
+uv run tools/pack.py rl                # check and pack again</pre>
+    <p>Usually git fits the two together by itself. Where both changed the same place it marks the file: both versions are in it between <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code> and <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code>. Keep both sets of lines and delete the markers, or tell your assistant: <code>Resolve the merge conflicts in courses/rl, keeping every line of both sides.</code> Then hand in the new zip.</p>
+  </div>
+
+  <div class="plate brief">
+    <h2>What never leaves your computer</h2>
+    <p>Anything under <code>source/</code>, and scans, photos or copies of slides and papers anywhere. Write your own summary; draw your own figure. Do not push your copy of the kit anywhere public, and do not fork the kit publicly with your course in it.</p>
+    <p>The whole of this is also in the kit's <code>README.md</code>, and as a short walk-through: {% if welcome.educator %}<button class="link" type="button" @click="$dispatch('educator-tour')">show the educator tour</button>.{% else %}educators find it in Settings.{% endif %}</p>
+  </div>
+</div>
+{% endblock %}

@@ -31,7 +31,8 @@ Five Django **apps** of our own, listed in `INSTALLED_APPS` in
 - **`accounts`** is the little that is ours around signing in. The sign-in itself is
   django-allauth's.
 - **`desk`** owns what people send to whoever runs the site (requests, applications to
-  write a course), who writes which course, and the owner's switches for a course.
+  write a course), who writes which course, what they hand in for it, and the owner's
+  switches for a course.
 
 The split between files and database is the main design decision: content is written as
 files (so an AI can author it and a human can read a diff), but served from a database (so
@@ -452,19 +453,72 @@ whether students see each course and who writes it; the join by series is done w
 of it, and narrowing it per table and per course is work that would have to be right
 every time. More to the point, the course tables are a cache. A row added there is gone
 at the next sync, because content only ever arrives as files. So an educator works on
-files, on their own computer, in a copy of the **educator kit**: a repository with the
-instructions for an AI assistant, the authoring docs and a checker, and no course content
+files, on their own computer, in a copy of the **educator kit**: a public repository with
+the instructions for an AI assistant, the authoring docs and three tools, and no course
 (see [DEPLOYMENT.md](DEPLOYMENT.md#course-files-and-the-educator-kit)).
 
 **A course as one zip** ([ingest/handin.py](../ingest/handin.py)) is how course files
-travel in both directions. The educators' page offers the course's files as a download
-(`desk.views.files`: only to its educator and to staff, built from the course's folder,
-so never more than the site already shows them). The kit packs the course again into the
-same shape, and `manage.py import_course` takes that file in. It trusts nothing in it:
-paths that leave the course folder, links, kinds of file a course is not made of, images
-that carry a script and anything oversized are refused; `course.yaml` may differ only in
-topics and description; and the full validation runs on a temporary copy before a single
-file here changes. The module imports no Django, so the kit runs the very same code.
+travel. The educators' page gives the course as a download (`desk.views.files`: a POST,
+because it also notes which version that person now has), the kit packs it again in the
+same shape, and the site takes that file back. The module imports no Django, so the kit
+runs the very same code. It trusts nothing in a zip: a path that leaves the course
+folder, a link, a kind of file a course is not made of, an image carrying a script and
+anything oversized are refused.
+
+**A hand-in may only add** (`handin.compare`). Every file the course has must still be
+there, and every line of every text file, in the same order: the old lines must be a
+subsequence of the new ones. New files and new lines anywhere are what a hand-in is. The
+same test catches a course that has moved on since someone took their copy: their copy
+lacks what was added meanwhile, which looks exactly like a removal. `Educator.synced_version`
+remembers the version each person last had, only to tell them which of the two it was.
+
+**Taking one in** ([desk/handins.py](../desk/handins.py), `take`). The view
+(`desk.views.hand_in`) receives the file in `request.FILES`; the form says
+`enctype="multipart/form-data"`, which is what lets a browser send a file. Under a lock
+per course (a file made with `O_EXCL`, which works across the server's worker processes),
+the zip is compared with what the site shows, unpacked into a folder of its own, and
+given to `sync_course`, which validates everything and writes to the database only if
+nothing is wrong. So one call is both the check and the going live. A refusal
+(`Refused`, with a kind and the lines of the reason) changes nothing and is shown on the
+page with what to do about it.
+
+**Where the site reads a course from** ([ingest/live.py](../ingest/live.py)). The owner's
+course files are a folder the application cannot write to, replaced as a whole by
+`publish`. A hand-in therefore never touches them. `live.folders()` gives the folder to
+read each course from: the owner's, unless there are hand-ins on the site that the
+owner's files do not hold yet, in which case it is the newest hand-in, unpacked under
+`settings.HANDINS_DIR`. `ingest` does not know about hand-ins; `desk` registers
+`handins.overlay` with it when Django starts (`DeskConfig.ready`). A real sync also
+settles: once the published files hold everything a hand-in added (`handin.holds`), it
+is marked merged and its folder removed. If the owner publishes without them, the site
+keeps showing the hand-in and the sync report says so. The unpacked folder is a working
+copy; each `HandIn` row keeps the whole course as a zip (`archive`), the folder is
+rebuilt from it, and that is what backups contain.
+
+**The timeline** on the educators' page is the `HandIn` rows of a course, newest first:
+what was added, when, by whom (to fellow educators), and whether it is on the site,
+merged into the published files, or was taken off. The owner takes one off in the admin
+(`handins.withdraw`): it and every later one for the course are withdrawn, since each
+was built on the one before, and the course is loaded again as it was.
+
+**Kit versions and telling educators** ([desk/kit.py](../desk/kit.py)). The versions of
+the kit are a list in code, written into the kit as `VERSION` and `CHANGELOG.md`. A
+version is announced by adding a row under Kit announcements in the admin. That is a
+step of its own because the site learns the number at deploy, which can be before the
+kit's repository has it. An announcement puts a notice on each educator's page until
+they dismiss it (`Profile.kit_seen`) and e-mails them.
+
+**E-mail** ([desk/mail.py](../desk/mail.py)) goes to educators only, about their role.
+`settings.MAILERS` names where mail goes, as `DATABASES` names where data goes: a real
+server once `DSAI_EMAIL_HOST` is set, the terminal in development, nowhere otherwise.
+One message per person, sent from a thread, and a failure is a log line.
+
+**The educator tour** ([desk/templates/desk/educator_tour.html](../desk/templates/desk/educator_tour.html))
+is a second dialog on the parts of the first (`tour(offer, 'educator')` in
+[tour.js](../static/js/components/tour.js)). It is offered once, the first time someone
+arrives after being given the role (`welcome()["educator_tour"]`), before any news, and
+stays in Settings beside the first tour. [desk/templates/desk/guide.html](../desk/templates/desk/guide.html)
+is the long form: the kit's README told from the site's side.
 
 ## Tests
 
@@ -485,8 +539,12 @@ file here changes. The module imports no Django, so the kit runs the very same c
   account takes its progress with it.
 
 - The educator kit is exported to a temporary folder and its tools are run as separate
-  Python processes, the way an educator runs them; hand-ins made to be refused (a path
-  that climbs out, a changed course code, invalid content) must change nothing.
+  Python processes, the way an educator runs them, in a real git repository: unpack,
+  stash, unpack the newer version, pop.
+- [desk/tests/test_handins.py](../desk/tests/test_handins.py): the rule that a hand-in
+  only adds; additions going live; a removed line, a stale copy, invalid content and a
+  changed course code each refused with nothing changed; a publish with and without the
+  hand-in; taking one off the site.
 - [desk/tests/](../desk/tests/): asking, applying, the educator's page, the switches
   and a closed course, the admin actions, and that a notification never carries what a
   person wrote. The bot is never contacted: the one function that opens a connection is

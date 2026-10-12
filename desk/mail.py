@@ -1,0 +1,57 @@
+"""E-mail to educators.
+
+    mail.send([user, ...], "Subject", "Plain text.")
+
+The site writes to people in one situation so far: about the role they asked for. An
+application was accepted, a hand-in was taken off the site, the kit has a new version.
+The address is the one their Google account signed in with.
+
+Like the owner's notifications (desk/notify.py), a message never holds up or breaks what
+caused it: it is sent from a separate thread and a failure ends in a log line. Without a
+mail server configured (DSAI_EMAIL_HOST) nothing is sent; locally the messages are printed
+to the terminal instead (settings.MAILERS).
+"""
+
+import logging
+import threading
+
+from django.conf import settings
+from django.core.mail import EmailMessage, mailers
+
+logger = logging.getLogger(__name__)
+
+SIGNATURE = "\n\nDSAI Vault\n{site}\nYou get this message because you are an educator there."
+
+
+def configured():
+    backend = settings.MAILERS["default"]["BACKEND"]
+    return backend != "django.core.mail.backends.dummy.EmailBackend"
+
+
+def send(users, subject, body):
+    """Queue one message per person. Returns how many were queued."""
+    text = body.rstrip() + SIGNATURE.format(site=settings.SITE_URL)
+    messages = [
+        # One message each, never one message to all: nobody sees another's address.
+        EmailMessage(subject=subject, body=text, to=[user.email])
+        for user in users
+        if user.email and user.is_active
+    ]
+    if not messages or not configured():
+        return 0
+    _dispatch(messages)
+    return len(messages)
+
+
+def _dispatch(messages):
+    threading.Thread(target=deliver, args=(messages,), daemon=True).start()
+
+
+def deliver(messages):
+    try:
+        # One connection for all of them. `mailers.default` is the mail server named in
+        # settings.MAILERS, as `connection` is the database named in DATABASES.
+        return mailers.default.send_messages(messages) or 0
+    except Exception:  # noqa: BLE001 (any failure of a mail server must stay in here)
+        logger.warning("Mail: %s message(s) could not be sent", len(messages), exc_info=True)
+        return 0

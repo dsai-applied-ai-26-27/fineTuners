@@ -14,10 +14,10 @@ from django.utils import timezone
 
 from catalog.models import Course
 
-from . import mathcheck, store
+from . import live, mathcheck, store
 from .assets import Assets
 from .build import Builder
-from .discover import clashes, content_hash, discover, find_courses
+from .discover import clashes, content_hash, discover
 from .load import load_bundle
 from .markdown import Renderer
 from .refs import Resolver
@@ -76,7 +76,11 @@ def sync_course(course_dir, *, check_only=False, force=False):
 
 def sync_all(*, only=None, check_only=False, force=False):
     """Sync every course under settings.CONTENT_ROOTS (or just the slugs in `only`)."""
-    courses = find_courses(settings.CONTENT_ROOTS)
+    # Where each course is read from. For a course educators have added to since the
+    # last publish that is the course as handed in (ingest/live.py); a real sync also
+    # lets go of hand-ins that the published files now contain.
+    notes = {}
+    courses = live.folders(settle=not check_only, notes=notes)
     reports = []
     twice = clashes(settings.CONTENT_ROOTS)
     for slug, folders in twice.items():
@@ -104,7 +108,10 @@ def sync_all(*, only=None, check_only=False, force=False):
     for slug, path in courses.items():
         if only and slug not in only:
             continue
-        reports.append(sync_course(path, check_only=check_only, force=force))
+        report = sync_course(path, check_only=check_only, force=force)
+        if slug in notes:
+            report.notes.append(notes[slug])
+        reports.append(report)
 
     if not only and not check_only:
         for course in Course.objects.exclude(slug__in=[*courses, *twice]):

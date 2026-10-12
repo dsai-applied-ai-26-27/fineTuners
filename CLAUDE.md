@@ -18,8 +18,9 @@ is saved to their account.
 - `courses/` is a git repository of its own (the content repository, see
   [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#course-files-and-the-educator-kit)). Commit there
   only when asked, and never anything under a `source/` folder.
-- What an educator hands in is a zip, taken in with `manage.py import_course <zip>`. Never
-  unpack one by hand: the command is what checks it.
+- Educators hand their work in on the site, where it goes live at once. To bring a
+  hand-in into the course files, download it from the admin (Hand-ins) and run
+  `manage.py import_course <zip>`. Never unpack one by hand: the command is what checks it.
 - Do not touch Python, templates, CSS or JavaScript. If the site cannot show something,
   report it; do not change code to make it fit.
 - Finish with `uv run python manage.py sync_content <course>` printing no errors.
@@ -93,9 +94,9 @@ static/      CSS, JavaScript (no build step), vendored libraries, fonts, icons
 docs/        AUTHORING.md, ARCHITECTURE.md, DEPLOYMENT.md, content-types/, schemas/, example-course/
 courses/     course folders, grouped as semester-N/<course>/. Not in this repository:
              a private git repository of its own, the owner's (source/ is in neither)
-educator-kit/ the checkout of the educator kit's repository: instructions for an AI
-             assistant, docs and tools for educators, no course content. Not in this
-             repository either; it is generated from ingest/educator_kit/ and docs/
+educator-kit/ the checkout of the educator kit's repository, which is PUBLIC: instructions
+             for an AI assistant, docs and tools for educators, no course. Not in this
+             repository; generated from ingest/educator_kit/, docs/ and desk/kit.py
 tools/       vendor_assets.py (fetch front-end libraries), make_icons.py (the logo, in
              every size, into static/brand/), make_figure.py (the chart on the landing
              page), katex_check.cjs
@@ -129,6 +130,16 @@ To sign in locally press "Development sign-in" on the landing page.
 - What a person sent is theirs. A notification to the owner's bot says that something
   arrived and never who sent it or what it says; an educator sees a request about their
   course without the sender. Keep both that way: the privacy page promises it.
+- The site reads a course from `ingest.live.folder(slug)`, not straight from
+  `courses/`: for a course educators have added to, that is the course as handed in
+  (`desk/handins.py`). A hand-in can only add; never loosen `ingest.handin.compare`, and
+  never write into the owner's course files from the application.
+- The educator kit's repository is public. Nothing may go into `ingest/educator_kit/` or
+  be exported to `educator-kit/` that is not fit for anyone to read: no course content,
+  no address of the server, no secret. Push there only when the owner asks.
+- A new version of the kit is an entry at the top of `desk/kit.py`; the owner announces
+  it in the admin after pushing the kit. The site e-mails educators only, about their
+  role (`desk/mail.py`); the privacy page lists what it writes about.
 - News for users is a list in `catalog/news.py`. A change people should know about gets an
   entry at the top with the next number; the tour is edited in place, never versioned.
 - Every view needs a signed-in person unless it is marked `@login_not_required`. A new page

@@ -14,6 +14,7 @@ from django.core.management.base import CommandError
 from django.test import SimpleTestCase
 
 from catalog.models import Course
+from desk import kit
 from ingest import handin
 from ingest.fields import render_markdown
 from ingest.management.commands.export_schemas import FIELDS, TARGET, render
@@ -220,8 +221,11 @@ class EducatorKitTests(CourseTestCase):
             "docs/content-types/fields.md",
             "docs/schemas/course.schema.json",
             "docs/example-course/example/course.yaml",
+            "tools/unpack.py",
             "tools/check.py",
             "tools/pack.py",
+            "VERSION",
+            "CHANGELOG.md",
             "tools/rules/__init__.py",
             "tools/rules/handin.py",
             "tools/rules/schemas.py",
@@ -232,20 +236,32 @@ class EducatorKitTests(CourseTestCase):
         run("export_authoring", str(fresh))
         self.assertEqual([p.name for p in (fresh / "courses").iterdir()], ["README.md"])
 
-    def test_everything_an_educator_writes_is_ignored_by_git(self):
+    def test_git_tracks_the_course_but_never_the_raw_material(self):
         rules = (self.kit / ".gitignore").read_text(encoding="utf-8").split()
-        self.assertIn("/courses/*", rules)
-        self.assertIn("!/courses/README.md", rules)
+        self.assertIn("/courses/*/source/", rules)
         self.assertIn("/out/", rules)
+        self.assertNotIn("/courses/*", rules)  # the course itself is tracked, locally
+        self.assertEqual(
+            (self.kit / "VERSION").read_text(encoding="utf-8").strip(), str(kit.LATEST)
+        )
+        self.assertIn(
+            kit.VERSIONS[0].title, (self.kit / "CHANGELOG.md").read_text(encoding="utf-8")
+        )
 
     def test_the_readme_says_how_the_kit_is_used(self):
         readme = (self.kit / "README.md").read_text(encoding="utf-8")
         for said in (
-            "holds no course content",
+            "holds no course",
+            "git clone https://github.com/vrosi21/dsai-educator-kit.git",
+            "git remote set-url --push origin no-pushing",
             "git pull",
             "Download the course files",
+            "uv run tools/unpack.py",
             "Update the CMS for this course: rl",
             "uv run tools/pack.py rl",
+            "Hand in",
+            "Not remove, and not rewrite",
+            "git stash pop",
             "source/",
         ):
             self.assertIn(said, readme)
@@ -336,6 +352,58 @@ class EducatorKitTests(CourseTestCase):
         self.assertIn("example/content/lectures/assets/residuals.svg", names)
         self.assertEqual([n for n in names if "source" in n or n.endswith(".txt")], [])
 
+    def git(self, *args):
+        done = subprocess.run(
+            ["git", "-C", str(self.kit), *args], capture_output=True, text=True, check=False
+        )
+        return done.stdout + done.stderr
+
+    def test_unpacking_commits_the_sites_version_and_protects_work_in_progress(self):
+        """The flow the site tells an educator to follow when the course has moved on:
+        stash, unpack the latest, pop."""
+        self.git("init", "-q", "-b", "main")
+        self.git("config", "user.email", "ada@example.test")
+        self.git("config", "user.name", "Ada")
+        self.git("config", "core.autocrlf", "false")
+        shutil.rmtree(self.course)  # start as a new educator does: with a clone and a download
+        self.git("add", "-A")
+        self.git("commit", "-q", "-m", "The kit, as cloned")
+        site = self.tmp / "site" / "example"
+        shutil.copytree(settings.EXAMPLE_COURSE_ROOT / "example", site)
+        first = self.tmp / "example.zip"
+        first.write_bytes(handin.pack(site))
+
+        status, text = self.tool("unpack.py", str(first))
+        self.assertEqual(status, 0, msg=text)
+        self.assertIn("Committed in your copy", text)
+        self.assertIn("the site's version", self.git("log", "--oneline"))
+        self.assertEqual(self.git("status", "--porcelain").strip(), "")
+        self.assertTrue((self.course / "source").is_dir())
+
+        # Their work, not committed; meanwhile the site gained a line of its own.
+        self.append("content/reference/cheatsheet.md", "\nMy new line.\n")
+        deck = site / "content/decks/least-squares.yaml"
+        deck.write_text(
+            deck.read_text("utf-8") + "  - id: lsq-site\n    q: New?\n    a: Yes.\n", "utf-8"
+        )
+        second = self.tmp / "example-2.zip"
+        second.write_bytes(handin.pack(site))
+
+        status, text = self.tool("unpack.py", str(second))
+        self.assertEqual(status, 1)
+        self.assertIn("work that is not committed", text)
+        self.assertIn("git stash", text)
+
+        self.git("stash")
+        status, text = self.tool("unpack.py", str(second))
+        self.assertEqual(status, 0, msg=text)
+        self.git("stash", "pop")
+        self.assertIn("lsq-site", self.read("content/decks/least-squares.yaml"))
+        self.assertIn("My new line.", self.read("content/reference/cheatsheet.md"))
+        # What is left uncommitted is exactly their own work: additions only.
+        self.assertEqual(self.git("diff", "--numstat").split()[:2], ["2", "0"])
+        self.assertEqual(self.checker("example")[0], 0)
+
     def test_exporting_again_replaces_its_own_files_and_never_a_course(self):
         (self.kit / "docs/AUTHORING.md").write_text("edited by hand", encoding="utf-8")
         (self.kit / "tools/rules/left-over.py").write_text("old", encoding="utf-8")
@@ -380,34 +448,50 @@ class HandInTests(CourseTestCase):
             run("import_course", *args)
         return str(raised.exception)
 
-    def test_what_they_wrote_arrives_and_nothing_else_changes(self):
+    def test_what_they_added_arrives_and_nothing_of_the_owners_goes(self):
         deck = self.theirs / "content/decks/least-squares.yaml"
         deck.write_text(
-            deck.read_text("utf-8").replace("Least squares", "Least squares, again", 1), "utf-8"
+            deck.read_text("utf-8") + "  - id: lsq-more\n    q: More?\n    a: Yes.\n", "utf-8"
         )
-        # A guide that is here and that the educator has dropped.
-        self.write("content/guides/old-note.md", "---\ntitle: An old note\n---\n\nGone soon.\n")
         new = self.theirs / "content/guides/a-second-look.md"
         new.write_text(
             "---\ntitle: A second look\ntopics: [lsq]\n---\n\nSomething more.\n", "utf-8"
         )
+        # The owner has a guide the educator's copy never had, and raw material.
+        self.write("content/guides/owners-note.md", "---\ntitle: The owner's note\n---\n\nMine.\n")
         (self.course / "source").mkdir()
-        (self.course / "source/L1.pdf").write_bytes(b"%PDF")  # the owner's own raw material
+        (self.course / "source/L1.pdf").write_bytes(b"%PDF")
 
         checked = run("import_course", self.packed(), "--check")
-        self.assertIn("1 new, 1 changed, 1 removed", checked)
+        self.assertIn("1 new, 1 longer", checked)
         self.assertIn("Nothing was changed", checked)
-        self.assertNotIn("again", self.read("content/decks/least-squares.yaml"))
+        self.assertNotIn("lsq-more", self.read("content/decks/least-squares.yaml"))
 
         text = run("import_course", self.packed())
-        self.assertIn("example: taken in. 1 new, 1 changed, 1 removed", text)
-        self.assertIn("removed  content/guides/old-note.md", text)
-        self.assertIn("again", self.read("content/decks/least-squares.yaml"))
+        self.assertIn("example: taken in. 1 new, 1 longer", text)
+        self.assertIn("lsq-more", self.read("content/decks/least-squares.yaml"))
         self.assertTrue((self.course / "content/guides/a-second-look.md").is_file())
-        self.assertFalse((self.course / "content/guides/old-note.md").exists())
+        self.assertTrue((self.course / "content/guides/owners-note.md").is_file())
         self.assertTrue((self.course / "source/L1.pdf").is_file())
         self.assertFalse(Course.objects.exists(), "taking in must not touch the database")
-        self.assertIn("nothing differs", run("import_course", self.packed()))
+        self.assertIn("already hold everything", run("import_course", self.packed()))
+
+    def test_a_file_both_changed_stops_everything_until_the_owner_decides(self):
+        deck = self.theirs / "content/decks/least-squares.yaml"
+        deck.write_text(
+            deck.read_text("utf-8").replace("Least squares", "Least squares, again", 1), "utf-8"
+        )
+        (self.theirs / "content/guides/new.md").write_text(
+            "---\ntitle: New\n---\n\nNew.\n", "utf-8"
+        )
+        message = self.refused(self.packed())
+        self.assertIn("both changed", message)
+        self.assertIn("content/decks/least-squares.yaml", message)
+        self.assertFalse((self.course / "content/guides/new.md").exists())
+        self.assertIn(
+            "replaced by the hand-in's version", run("import_course", self.packed(), "--theirs")
+        )
+        self.assertIn("again", self.read("content/decks/least-squares.yaml"))
 
     def test_topics_and_the_description_are_theirs_to_change(self):
         course = self.theirs / "course.yaml"

@@ -10,12 +10,14 @@ the Courses list (catalog/admin.py), beside the courses they are about.
 
 from django import forms
 from django.contrib import admin, messages
-from django.utils.html import format_html
+from django.urls import reverse
+from django.utils.html import format_html, format_html_join
 
 from catalog import editions
 from catalog.models import Course
 
-from .models import Educator, EducatorApplication, Request
+from . import handins, kit, mail
+from .models import Educator, EducatorApplication, HandIn, KitAnnouncement, Request
 
 
 def course_titles():
@@ -198,3 +200,116 @@ class EducatorAdmin(CourseColumn, admin.ModelAdmin):
     list_select_related = ["user"]
     # A search box instead of a drop-down of every account (uses the Users admin's search).
     autocomplete_fields = ["user"]
+
+
+@admin.register(HandIn)
+class HandInAdmin(CourseColumn, admin.ModelAdmin):
+    """What educators added, step by step. Each one went live when it was handed in. From
+    here it can be downloaded (to take into your own course files with import_course)
+    and, if it should not be on the site, taken off again."""
+
+    list_display = ["created_at", "course", "summary", "who", "status"]
+    list_filter = ["status", "series"]
+    search_fields = ["slug", "user__email", "user__first_name", "user__last_name"]
+    list_select_related = ["user"]
+    actions = ["take_off"]
+    fields = ["course", "who", "created_at", "status", "settled_at", "summary", "files", "zip"]
+    readonly_fields = fields
+
+    def get_queryset(self, request):
+        # The zip of every row would be read just to draw a list: leave it in the database.
+        return super().get_queryset(request).defer("archive")
+
+    def has_add_permission(self, request):
+        return False  # hand-ins are uploaded on the site, by the educator
+
+    def has_delete_permission(self, request, obj=None):
+        return False  # a row is part of a course's history; taking it off is an action
+
+    @admin.display(description="From", ordering="user__email")
+    def who(self, row):
+        if row.user is None:
+            return "Someone who has left"
+        return row.user.get_full_name() or row.user.email or row.user.username
+
+    @admin.display(description="Files")
+    def files(self, row):
+        new = [(name, "new") for name in row.new_files]
+        grown = [(name, f"+{lines} lines") for name, lines in row.grown.items()]
+        return format_html_join("", "<div><code>{}</code> {}</div>", new + grown) or "-"
+
+    @admin.display(description="The course after it")
+    def zip(self, row):
+        return format_html(
+            '<a href="{}">Download the zip</a> and take it in with '
+            "<code>manage.py import_course</code>, then publish.",
+            reverse("desk:handin_zip", args=[row.pk]),
+        )
+
+    @admin.action(description="Take off the site (and every later hand-in for the course)")
+    def take_off(self, request, queryset):
+        live = (
+            queryset.filter(status=HandIn.Status.LIVE).select_related("user").order_by("created_at")
+        )
+        if not live:
+            self.message_user(request, "None of these is on the site.", messages.WARNING)
+            return
+        for record in live:
+            record.refresh_from_db()
+            if record.status != HandIn.Status.LIVE:
+                continue  # went with an earlier one of the same course
+            report = handins.withdraw(record)
+            if record.user:
+                mail.send(
+                    [record.user],
+                    "A hand-in of yours was taken off DSAI Vault",
+                    f"Your hand-in for `{record.slug}` of {record.created_at:%d %B %Y} "
+                    f"({record.summary}) was taken off the site, together with any later "
+                    "one for that course. Before you hand in again, download the course "
+                    "files and put your work on top of them; you will be told what was "
+                    "wrong.",
+                )
+            level = messages.SUCCESS if report is None or report.ok else messages.ERROR
+            self.message_user(request, f"{record.slug}: taken off the site.", level)
+
+
+class KitAnnouncementForm(forms.ModelForm):
+    class Meta:
+        model = KitAnnouncement
+        fields = ["number"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        told = set(KitAnnouncement.objects.values_list("number", flat=True))
+        self.fields["number"] = forms.TypedChoiceField(
+            label="Version",
+            coerce=int,
+            choices=[
+                (version.number, f"{version.number}: {version.title}")
+                for version in kit.VERSIONS
+                if version.number not in told
+            ],
+            help_text="Announce a version only once the kit's repository has it: educators "
+            "are told to run git pull.",
+        )
+
+
+@admin.register(KitAnnouncement)
+class KitAnnouncementAdmin(admin.ModelAdmin):
+    """Adding a row here is the announcement: educators see a notice on their page and
+    are e-mailed. The versions themselves are written in desk/kit.py."""
+
+    form = KitAnnouncementForm
+    list_display = ["number", "announced_at", "recipients"]
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def save_model(self, request, obj, form, change):
+        obj.recipients = kit.tell_educators(obj.number)
+        super().save_model(request, obj, form, change)
+        self.message_user(
+            request,
+            f"Educators now see the notice. {obj.recipients} e-mail(s) were sent"
+            + ("." if mail.configured() else ": no mail server is configured."),
+        )

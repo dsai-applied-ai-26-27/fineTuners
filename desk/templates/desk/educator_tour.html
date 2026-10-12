@@ -1,0 +1,89 @@
+{% load ui %}
+{% comment %} The educator tour: how writing a course works, in a few steps. Built from the same parts
+   as the first tour (templates/components/tour.html, static/js/components/tour.js) and
+   included by base.html for someone who writes a course. It opens by itself once, the
+   first time they arrive after being given the role (`welcome.educator_tour`, from
+   catalog/welcome.py), and whenever an `educator-tour` event is dispatched: Settings, the
+   Educators page and the guide do that. The guide (desk/guide.html) has every step in
+   full; this is the short version. {% endcomment %}
+<dialog class="dialog tour tour--educator" x-data="tour({% if welcome.educator_tour %}true{% else %}false{% endif %}, 'educator')"
+        data-seen="{% url 'catalog:seen' %}" data-upto="0"
+        @educator-tour.window="open($event)" @close="seen()" @keydown.right="next()" @keydown.left="back()"
+        aria-labelledby="educator-tour-title">
+  <div class="tour__bar">
+    <p id="educator-tour-title">Writing a course · <span x-text="step + 1">1</span> of <span x-text="count">6</span></p>
+    <button class="btn btn--small" type="button" @click="$root.close()" x-show="!last">Skip</button>
+  </div>
+
+  <div class="tour__steps">
+    <section class="tour__step" data-step :data-on="step === 0">
+      <div class="tour__figure" aria-hidden="true">
+        <div class="tour__card">
+          <p class="nextup__label"><span>Educators · your course</span></p>
+          <strong>You write this course</strong>
+          <span class="tour__button">{% icon "download" %}Download the course files</span>
+        </div>
+      </div>
+      <h3>You are an educator now</h3>
+      <p>You write one course for everyone who studies it here. Your page is <strong>Educators</strong> in the menu: your course, the form that takes your work, what was added so far, and what students asked about it.</p>
+    </section>
+
+    <section class="tour__step" data-step :data-on="step === 1">
+      <div class="tour__figure" aria-hidden="true">
+        <pre class="tour__code">git clone …/dsai-educator-kit.git
+git pull        <i># before each session</i></pre>
+      </div>
+      <h3>Get the educator kit</h3>
+      <p>A public repository with the instructions your AI assistant follows, the format of every file, and three small tools. It holds no course. Clone it once; <code>git pull</code> brings each new version, and you are told when there is one.</p>
+    </section>
+
+    <section class="tour__step" data-step :data-on="step === 2">
+      <div class="tour__figure" aria-hidden="true">
+        <pre class="tour__code">uv run tools/unpack.py rl.zip
+<i># courses/rl/ is now what the site has</i></pre>
+      </div>
+      <h3>Start from what the site has</h3>
+      <p>Download your course's files on the Educators page and unpack them into the kit. That is your starting point, kept by git on your computer only. Then put the slides and papers in the course's <code>source/</code> folder; they never leave your computer.</p>
+    </section>
+
+    <section class="tour__step" data-step :data-on="step === 3">
+      <div class="tour__figure" aria-hidden="true">
+        <pre class="tour__code">Update the CMS for this course: rl</pre>
+      </div>
+      <h3>Let your assistant write. Then check it</h3>
+      <p>Open the kit in your AI assistant and give it that line. It writes notes, cards and problems from your material. Reading them against the lecture is your part: an assistant writes mistakes as confidently as everything else.</p>
+    </section>
+
+    <section class="tour__step" data-step :data-on="step === 4">
+      <div class="tour__figure" aria-hidden="true">
+        <div class="tour__card">
+          <p class="nextup__label"><span>Hand in</span></p>
+          <div class="tour__asks">
+            <span data-on>rl-20261012-1830.zip</span>
+          </div>
+          <span class="tour__button">{% icon "upload" %}Hand in</span>
+        </div>
+      </div>
+      <h3>Pack it and hand it in</h3>
+      <p><code>uv run tools/pack.py rl</code> checks your course and makes one zip. Upload it on the Educators page. A hand-in may only add: new files and new lines. If it passes the site's check it is live at once.</p>
+    </section>
+
+    <section class="tour__step" data-step :data-on="step === 5">
+      <div class="tour__figure" aria-hidden="true">
+        <pre class="tour__code">git stash
+uv run tools/unpack.py rl.zip
+git stash pop</pre>
+      </div>
+      <h3>If the course moved on without you</h3>
+      <p>When someone else added to your course, the site refuses a zip built on the older version and shows these steps: set your work aside, bring in the latest, put your work back on top. Every step, in full, is in <a class="link" href="{% url 'desk:guide' %}">the guide</a>. This tour stays in Settings.</p>
+    </section>
+  </div>
+
+  <div class="tour__foot">
+    <div class="tour__dots" aria-hidden="true">
+      <template x-for="index in count" :key="index"><i :data-on="index - 1 === step"></i></template>
+    </div>
+    <button class="btn" type="button" @click="back()" x-show="step > 0" x-cloak>Back</button>
+    <button class="btn btn--filled" type="button" @click="next()" x-text="last ? 'Start writing' : 'Next'" autofocus>Next</button>
+  </div>
+</dialog>

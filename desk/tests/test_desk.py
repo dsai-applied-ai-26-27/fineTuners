@@ -240,11 +240,11 @@ class EducatorTests(DeskTestCase):
     def test_an_educator_sees_their_course_and_how_to_hand_work_in(self):
         page = self.client.get(EDUCATORS)
         self.assertContains(page, "You write this course")
-        self.assertContains(page, "courses/rl/course.yaml")
+        self.assertContains(page, "uv run tools/unpack.py rl.zip")
         self.assertContains(page, "Update the CMS for this course: rl")
         self.assertContains(page, "uv run tools/pack.py rl")
         self.assertContains(page, settings.EDUCATOR_KIT_URL)
-        self.assertContains(page, 'href="/educators/courses/rl/files.zip"')
+        self.assertContains(page, 'action="/educators/courses/rl/files.zip"')
         # Their own course is no longer among those looking for someone.
         self.assertEqual([c.slug for c in page.context["seeking"]], [])
         # Others see none of it.
@@ -257,7 +257,7 @@ class EducatorTests(DeskTestCase):
         Educator.objects.create(user=self.ada, series="nlp")
         page = self.client.get(EDUCATORS)
         self.assertContains(page, "Natural Language Processing")
-        self.assertContains(page, 'href="/educators/courses/nlp/files.zip"')
+        self.assertContains(page, 'action="/educators/courses/nlp/files.zip"')
 
     def test_they_can_download_the_files_of_their_course_and_only_theirs(self):
         """The zip is built from the course's folder, so this needs one on disk."""
@@ -269,7 +269,7 @@ class EducatorTests(DeskTestCase):
             (folder / "content" / "decks" / "mdp.yaml").write_text("title: MDPs\n", "utf-8")
             (folder / "source" / "L1.pdf").write_bytes(b"%PDF")
             with override_settings(CONTENT_ROOTS=[Path(scratch)]):
-                answer = self.client.get("/educators/courses/rl/files.zip")
+                answer = self.client.post("/educators/courses/rl/files.zip")
                 self.assertEqual(answer.status_code, 200)
                 self.assertEqual(answer["Content-Type"], "application/zip")
                 self.assertIn('filename="rl.zip"', answer["Content-Disposition"])
@@ -280,15 +280,15 @@ class EducatorTests(DeskTestCase):
                     )
                 # Another course is not theirs, and another person gets nothing at all.
                 self.assertEqual(
-                    self.client.get("/educators/courses/aai/files.zip").status_code, 404
+                    self.client.post("/educators/courses/aai/files.zip").status_code, 404
                 )
                 self.client.force_login(self.bob)
                 self.assertEqual(
-                    self.client.get("/educators/courses/rl/files.zip").status_code, 404
+                    self.client.post("/educators/courses/rl/files.zip").status_code, 404
                 )
                 self.client.force_login(self.admin)
                 self.assertEqual(
-                    self.client.get("/educators/courses/rl/files.zip").status_code, 200
+                    self.client.post("/educators/courses/rl/files.zip").status_code, 200
                 )
 
     def test_they_see_what_was_asked_about_it_but_not_by_whom(self):

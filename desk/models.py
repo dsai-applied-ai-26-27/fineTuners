@@ -101,9 +101,25 @@ class EducatorApplication(models.Model):
         self.save(update_fields=["status", "decided_at"])
         role = Educator.objects.filter(user=self.user, series=self.series)
         if status == self.Status.ACCEPTED:
-            Educator.objects.get_or_create(user=self.user, series=self.series)
+            _, new = Educator.objects.get_or_create(user=self.user, series=self.series)
+            if new:
+                # After the commit, so that the mail is never about a role that was
+                # not given after all.
+                transaction.on_commit(self._welcome)
         else:
             role.delete()
+
+    def _welcome(self):
+        from . import mail
+
+        mail.send(
+            [self.user],
+            "You are an educator on DSAI Vault",
+            f"Your application to write `{self.series}` was accepted.\n\n"
+            "The next time you open the site it shows you how writing a course works. "
+            "Your page is Educators in the menu; the guide has every step, from getting "
+            f"the kit to handing in your work:\n\n{settings.SITE_URL}/educators/guide/",
+        )
 
 
 class Educator(models.Model):
@@ -114,6 +130,11 @@ class Educator(models.Model):
     )
     series = models.SlugField(max_length=64)
     since = models.DateTimeField(auto_now_add=True)
+    # The version of the course (its content hash) this person last took from the site
+    # or put on it. When a hand-in is refused, it tells "you removed something" apart
+    # from "the course moved on since your copy" (desk/handins.py).
+    synced_version = models.CharField(max_length=64, blank=True)
+    synced_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         constraints = [
@@ -139,3 +160,66 @@ class CourseSetting(models.Model):
 
     def __str__(self):
         return self.series
+
+
+class HandIn(models.Model):
+    """What an educator added to a course, taken in by the site (desk/handins.py).
+
+    One row is one step in the history of a course: who, when, which files are new and
+    how many lines were added to which. `archive` is the whole course as it stood after
+    that step, as a zip. That copy is the hand-in itself: the folder the site reads it
+    from is unpacked from it and can be rebuilt.
+    """
+
+    class Status(models.TextChoices):
+        LIVE = "live", "On the site"
+        MERGED = "merged", "In the published files"
+        WITHDRAWN = "withdrawn", "Taken off the site"
+
+    # SET_NULL: when a person deletes their account, what they added to a course stays,
+    # without their name.
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="handins"
+    )
+    series = models.SlugField(max_length=64)
+    slug = models.SlugField(max_length=64)  # the year of the course it was handed in to
+    status = models.CharField(max_length=10, choices=Status, default=Status.LIVE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    settled_at = models.DateTimeField(null=True, blank=True)  # when it was merged or withdrawn
+    version = models.CharField(max_length=64)  # content hash of the course after it
+    new_files = models.JSONField(default=list)  # names
+    grown = models.JSONField(default=dict)  # name -> lines added
+    lines_added = models.PositiveIntegerField(default=0)
+    archive = models.BinaryField()
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["slug", "status"])]
+
+    def __str__(self):
+        return f"{self.slug} #{self.pk}: {self.summary}"
+
+    @property
+    def summary(self):
+        files, lines = len(self.new_files), self.lines_added
+        parts = []
+        if files:
+            parts.append(f"{files} new file{'s' * (files != 1)}")
+        if lines:
+            parts.append(f"{lines} line{'s' * (lines != 1)} added")
+        return ", ".join(parts) or "course.yaml changed"
+
+
+class KitAnnouncement(models.Model):
+    """The owner told educators that a version of the educator kit is out (desk/kit.py).
+    Until a version is announced, nobody is told to pull it."""
+
+    number = models.PositiveIntegerField(unique=True)
+    announced_at = models.DateTimeField(auto_now_add=True)
+    recipients = models.PositiveIntegerField(default=0)  # how many were e-mailed
+
+    class Meta:
+        ordering = ["-number"]
+
+    def __str__(self):
+        return f"Kit version {self.number}"

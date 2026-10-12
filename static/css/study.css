@@ -194,6 +194,31 @@
   .notice--top {
     margin-bottom: var(--s5);
   }
+  /* A notice with more than one line in it: a heading, then what to do. */
+  .notice--stack {
+    display: grid;
+    justify-items: start;
+    gap: var(--s2);
+    font-weight: 400;
+    & p:first-child {
+      display: flex;
+      align-items: center;
+      gap: var(--s3);
+    }
+    & ul {
+      display: grid;
+      gap: 2px;
+      padding-left: 1.25rem;
+    }
+    & code {
+      padding: 0.1em 0.35em;
+      border-radius: var(--r-xs);
+      background: color-mix(in oklab, var(--on-secondary-container) 9%, transparent);
+      font-family: var(--font-mono);
+      font-size: 0.9em;
+      overflow-wrap: anywhere;
+    }
+  }
   /* A form on a plate. The fields themselves are Django's widgets ({{ form.name }}), so
      they are styled by element and not by a class of their own. */
   .form {
@@ -324,6 +349,115 @@
     border-top: 1px solid var(--outline-variant);
     font-size: var(--text-s);
   }
+  /* A button in the middle of a sentence. */
+  .inline-form {
+    display: inline;
+  }
+  button.link {
+    font: inherit;
+  }
+  .brief__sub {
+    margin-top: var(--s3);
+    padding-top: var(--s4);
+    border-top: 1px solid var(--outline-variant);
+  }
+  /* The form that takes a hand-in: the file, and the button beside it. */
+  .handin {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s2);
+    & .input {
+      flex: 1 1 16rem;
+      width: auto;
+      padding-block: 0.5625rem;
+    }
+  }
+  /* Why a hand-in was not taken in. */
+  .refused {
+    display: grid;
+    gap: var(--s2);
+    padding: var(--s4);
+    border-radius: var(--r-m);
+    background: var(--missed-container);
+    color: var(--on-missed-container);
+    & code {
+      background: color-mix(in oklab, var(--on-missed-container) 9%, transparent);
+    }
+    & .link {
+      color: inherit;
+      text-decoration: underline;
+    }
+    & .brief__prompt {
+      margin-top: 0;
+    }
+  }
+  .refused__head {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    font-weight: 600;
+    & .icon {
+      flex: none;
+      width: 1.125rem;
+      height: 1.125rem;
+    }
+  }
+  .refused__report {
+    max-height: 18rem;
+    padding: var(--s3) var(--s4);
+    border-radius: var(--r-s);
+    background: var(--surface-raised);
+    color: var(--on-surface);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    line-height: 1.6;
+    white-space: pre-wrap;
+    overflow: auto;
+    overflow-wrap: anywhere;
+  }
+  /* What was added to a course, newest first: a line down the side joins the steps. */
+  .steps {
+    display: grid;
+    padding: 0;
+    list-style: none;
+    & > li {
+      position: relative;
+      padding: 0 0 var(--s4) var(--s5);
+      border-left: 1px solid var(--outline-variant);
+    }
+    & > li:last-child {
+      padding-bottom: 0;
+      border-left-color: transparent;
+    }
+    & > li::before {
+      content: "";
+      position: absolute;
+      top: 0.4rem;
+      left: -0.3125rem;
+      width: 0.5625rem;
+      height: 0.5625rem;
+      border-radius: 50%;
+      background: var(--primary);
+      box-shadow: 0 0 0 3px var(--surface-raised);
+    }
+  }
+  .steps__files {
+    margin-top: var(--s1);
+    font-size: var(--text-s);
+    & summary {
+      cursor: pointer;
+      color: var(--primary);
+      font-weight: 550;
+    }
+    & ul {
+      display: grid;
+      gap: 2px;
+      margin-top: var(--s2);
+      padding: 0;
+      list-style: none;
+    }
+  }
   /* What was sent, and what came back: requests and applications, one per row. */
   .sent {
     display: grid;
@@ -360,10 +494,13 @@
     color: var(--on-shaky-container);
     font-size: var(--text-xs);
     &[data-status="done"],
+    &[data-status="live"],
+    &[data-status="merged"],
     &[data-status="accepted"] {
       background: var(--solid-container);
       color: var(--on-solid-container);
     }
+    &[data-status="withdrawn"],
     &[data-status="declined"] {
       background: var(--surface-high);
       color: var(--on-surface-variant);

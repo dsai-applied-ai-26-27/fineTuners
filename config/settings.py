@@ -193,15 +193,20 @@ GOOGLE_SIGN_IN = bool(GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET)
 # Shown on the privacy page as the address for questions. Left out when empty.
 CONTACT_EMAIL = os.environ.get("DSAI_CONTACT_EMAIL", "")
 
+# The address of the site as people type it, for links in e-mail.
+SITE_URL = os.environ.get("DSAI_SITE_URL") or (
+    f"https://{ALLOWED_HOSTS[0]}" if ALLOWED_HOSTS and not DEBUG else "http://127.0.0.1:8000"
+)
+
 # The owner's assistant bot, told whenever a request or an application arrives
 # (desk/notify.py). Both come from the environment: the address is the server's own,
 # so like every server address it is kept out of the repository. Empty: no messages.
 BMO_NOTIFY_URL = os.environ.get("BMO_NOTIFY_URL", "")
 BMO_NOTIFY_TOKEN = os.environ.get("BMO_NOTIFY_TOKEN", "")
 
-# The educator kit: the repository every educator clones, with the instructions for
-# their AI assistant, the format and the checker, and no course content. Its address is
-# shown on the educators' page. It is built by `manage.py export_authoring`.
+# The educator kit: the public repository every educator clones, with the instructions
+# for their AI assistant, the format and the tools, and no course content. Its address is
+# shown on the educators' pages. It is built by `manage.py export_authoring`.
 EDUCATOR_KIT_URL = os.environ.get(
     "DSAI_EDUCATOR_KIT", "https://github.com/vrosi21/dsai-educator-kit"
 )
@@ -281,11 +286,30 @@ MEDIA_ROOT = Path(os.environ.get("DSAI_MEDIA_ROOT", BASE_DIR / "media"))
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 
-MAILERS = {
-    "default": {
-        "BACKEND": "django.core.mail.backends.console.EmailBackend",
-    },
-}
+# E-mail to educators (desk/mail.py). MAILERS names where mail goes, the way DATABASES
+# names where data goes: a real mail server once DSAI_EMAIL_HOST is set, the terminal
+# while developing, and nowhere at all on a server without one. There the site simply
+# does not write to anybody, and no address ends up in a log.
+DEFAULT_FROM_EMAIL = (
+    os.environ.get("DSAI_EMAIL_FROM") or os.environ.get("DSAI_EMAIL_USER") or "vault@localhost"
+)
+if os.environ.get("DSAI_EMAIL_HOST"):
+    MAILERS = {
+        "default": {
+            "BACKEND": "django.core.mail.backends.smtp.EmailBackend",
+            "OPTIONS": {
+                "host": os.environ["DSAI_EMAIL_HOST"],
+                "port": int(os.environ.get("DSAI_EMAIL_PORT") or 587),
+                "username": os.environ.get("DSAI_EMAIL_USER", ""),
+                "password": os.environ.get("DSAI_EMAIL_PASSWORD", ""),
+                "use_tls": True,
+                "timeout": 10,
+            },
+        },
+    }
+else:
+    _printed = "console" if DEBUG else "dummy"
+    MAILERS = {"default": {"BACKEND": f"django.core.mail.backends.{_printed}.EmailBackend"}}
 
 
 # Course content
@@ -299,6 +323,11 @@ EXAMPLE_COURSE_ROOT = BASE_DIR / "docs" / "example-course"
 
 # Every folder listed here is scanned for `<slug>/course.yaml`.
 CONTENT_ROOTS = [COURSES_DIR]
+# Where a course is unpacked when an educator has added to it and the owner's files do not
+# hold those additions yet (desk/handins.py). Beside the media folder: on the server that
+# is the data volume, the one place the application may write. It is a working copy and
+# can be deleted; the hand-ins themselves are rows in the database.
+HANDINS_DIR = Path(os.environ.get("DSAI_HANDINS_DIR", MEDIA_ROOT.parent / "handins"))
 if env_flag("DSAI_SHOW_EXAMPLE", DEBUG):
     CONTENT_ROOTS.append(EXAMPLE_COURSE_ROOT)
 
@@ -381,9 +410,8 @@ if not DEBUG:
         # Asks for the HSTS "preload" flag. That list is per registered domain, and the
         # site lives on a host name it does not own (pages.dev): nothing to submit.
         "security.W021",
-        # Objects to MAILERS printing to the console. The site sends no e-mail, so a
-        # message that does get sent should land in the logs. Remove this line when
-        # sign-in arrives and a real SMTP backend is configured.
+        # Objects to MAILERS not being a real mail server. Until DSAI_EMAIL_HOST is set
+        # the site sends no e-mail, on purpose (see MAILERS above).
         "mail.E001",
     ]
 

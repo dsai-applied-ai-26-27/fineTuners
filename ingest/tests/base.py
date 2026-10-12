@@ -26,6 +26,7 @@ class CourseTestCase(TestCase):
             CONTENT_ROOTS=[self.tmp / "courses"],
             COURSES_DIR=self.tmp / "courses",
             MEDIA_ROOT=self.tmp / "media",
+            HANDINS_DIR=self.tmp / "handins",
         )
         override.enable()
         self.addCleanup(override.disable)

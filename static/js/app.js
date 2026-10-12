@@ -11,6 +11,7 @@ import cover from "./components/cover.js";
 import flashcards from "./components/flashcards.js";
 import news from "./components/news.js";
 import nextUp from "./components/nextup.js";
+import notice from "./components/notice.js";
 import palaceWalk from "./components/palace.js";
 import paper from "./components/paper.js";
 import settingsPanel from "./components/settings.js";
@@ -45,6 +46,7 @@ Alpine.data("cover", cover);
 Alpine.data("settingsPanel", settingsPanel);
 Alpine.data("tour", tour);
 Alpine.data("news", news);
+Alpine.data("notice", notice);
 for (const [name, component] of Object.entries(widgets)) Alpine.data(name, component);
 
 // Typeset the maths that arrived in the page's HTML, then start Alpine.

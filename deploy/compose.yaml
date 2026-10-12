@@ -29,6 +29,13 @@ services:
       # application arrives (desk/notify.py). Empty: they are stored and nobody is told.
       BMO_NOTIFY_URL: ${BMO_NOTIFY_URL:-}
       BMO_NOTIFY_TOKEN: ${BMO_NOTIFY_TOKEN:-}
+      # Optional: a mail server, for e-mail to educators (desk/mail.py). Without a host
+      # the site writes to nobody.
+      DSAI_EMAIL_HOST: ${DSAI_EMAIL_HOST:-}
+      DSAI_EMAIL_PORT: ${DSAI_EMAIL_PORT:-587}
+      DSAI_EMAIL_USER: ${DSAI_EMAIL_USER:-}
+      DSAI_EMAIL_PASSWORD: ${DSAI_EMAIL_PASSWORD:-}
+      DSAI_EMAIL_FROM: ${DSAI_EMAIL_FROM:-}
     volumes:
       - data:/data # the database and the images copied from course content
       - ./courses:/courses:ro # course files, replaced by `deploy content`
