@@ -31,7 +31,8 @@
 
   {% if contact %}
   <h2>Questions</h2>
-  <p>Write to <a href="mailto:{{ contact }}">{{ contact }}</a>.</p>
+  {# The address is where the link leads, and is not written out on the page. #}
+  <p><a class="link" href="mailto:{{ contact }}">Write to the person who runs the site</a>.</p>
   {% endif %}
 
   <p class="legal__back"><a class="link" href="{% url 'catalog:home' %}">{% icon "back" %}Back to the start</a></p>

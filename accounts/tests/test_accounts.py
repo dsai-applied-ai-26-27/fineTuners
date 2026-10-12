@@ -119,6 +119,17 @@ class LandingTests(TestCase):
         with self.settings(CONTACT_EMAIL="owner@example.test"):
             self.assertContains(self.client.get("/privacy/"), "mailto:owner@example.test")
 
+    @override_settings(CONTACT_EMAIL="owner@example.test")
+    def test_the_contact_address_is_behind_a_link_and_never_written_out(self):
+        """Where the address is used, it is where a link leads. Nobody reads it off the
+        page: it stands in the HTML once per link, inside the href, and nowhere else."""
+        for page in ("/privacy/", "/terms/"):
+            text = self.client.get(page).text
+            links = text.count('href="mailto:owner@example.test"')
+            self.assertGreaterEqual(links, 1, msg=page)
+            self.assertEqual(text.count("owner@example.test"), links, msg=page)
+        self.assertContains(self.client.get("/privacy/"), "Write to the person who runs the site")
+
     def test_the_terms_page_is_public_and_linked(self):
         response = self.client.get("/terms/")
         self.assertEqual(response.status_code, 200)
