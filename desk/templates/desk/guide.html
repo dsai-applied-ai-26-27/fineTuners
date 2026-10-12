@@ -19,7 +19,8 @@
   <div class="plate brief">
     <h2>What you work with</h2>
     <p><strong>The educator kit</strong> is a public repository: <a class="link" href="{{ kit }}">{{ kit }}</a>{% if kit_version %} (version {{ kit_version.number }}, {{ kit_version.date|date:"j F Y" }}){% endif %}. It holds the instructions your AI assistant follows, the format of every content file, and three small tools. It holds no course.</p>
-    <p><strong>Your course</strong> comes from this site. You download its files, put them into your copy of the kit, add to them, and hand the result back here. Git keeps track of your course on your computer only; nothing you write is ever pushed to the kit's repository.</p>
+    <p><strong>Your course</strong> comes from this site. You download its files, put them into your copy of the kit, work on them, and hand the result back here. That hand-in is the only upload there is.</p>
+    <p><strong>Git is used locally.</strong> You will meet <code>git commit</code> and <code>git stash</code> below. Neither sends anything anywhere: a commit is git remembering a version in your own copy, on your computer. It is there so that <code>git diff</code> can show exactly what changed, and so that your work can be put on top of someone else's when the course has moved on. Nothing you write is ever pushed to the kit's repository.</p>
     <p><strong>You need</strong> <a class="link" href="https://git-scm.com/downloads" rel="noopener">git</a>, <a class="link" href="https://docs.astral.sh/uv/" rel="noopener">uv</a> (it runs the tools and fetches what they need), and an AI assistant that can read and write files on your computer.</p>
   </div>
 
@@ -51,7 +52,7 @@ git remote set-url --push origin no-pushing</pre>
         <pre class="brief__prompt">uv run tools/pack.py rl</pre>
         It checks the course and writes one file, <code>out/rl-&lt;date&gt;-&lt;time&gt;.zip</code>: your <code>course.yaml</code> and <code>content/</code>, nothing from <code>source/</code>.</li>
       <li><strong>Hand it in.</strong> On Educators, under your course, choose that zip and press <strong>Hand in</strong>. The site checks it in full. If it passes it is live at once and appears in the list of what was added.</li>
-      <li><strong>Record it.</strong> Your copy and the site now agree, so make that your new starting point:
+      <li><strong>Note it down, on your computer.</strong> Your copy and the site now agree, so tell git that this is your new starting point. This uploads nothing; it is a bookmark in your own copy, so that the next <code>git diff</code> shows only what you do from here on:
         <pre class="brief__prompt">git add -A courses/rl
 git commit -m "rl: handed in"</pre>
       </li>

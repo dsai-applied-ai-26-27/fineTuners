@@ -46,7 +46,7 @@
         <li><strong>Start from what the site has.</strong>
           {# A form, because the site also notes which version you now have. #}
           <form class="inline-form" method="post" action="{% url 'desk:files' course.series %}">{% csrf_token %}<button class="btn btn--tonal btn--small" type="submit">{% icon "download" %}Download the course files</button></form>
-          Then, in the kit: <code>uv run tools/unpack.py {{ course.slug }}.zip</code>. It puts the course in <code>courses/{{ course.slug }}/</code> and commits it, in your copy only: that commit is your starting point.</li>
+          Then, in the kit: <code>uv run tools/unpack.py {{ course.slug }}.zip</code>. It puts the course in <code>courses/{{ course.slug }}/</code> and bookmarks it with a commit in your own copy (nothing is uploaded by that): your starting point.</li>
         <li><strong>Add the material.</strong> Lecture slides, labs and past papers go in <code>courses/{{ course.slug }}/source/</code>. They stay on your computer and are never packed or uploaded.</li>
         <li><strong>Let your assistant write.</strong> Open the kit's folder in your AI assistant and give it this:
           <pre class="brief__prompt">Update the CMS for this course: {{ course.slug }}</pre>
@@ -61,7 +61,7 @@
       {% if course.handed %}
       <div class="notice notice--stack" role="status">
         <p>{% icon "check" %}<strong>Taken in: {{ course.handed.summary }}. It is on the site now.</strong></p>
-        <p>Record it in your copy, so that your next piece of work starts from here: <code>git add -A courses/{{ course.slug }}</code> then <code>git commit -m "{{ course.slug }}: handed in"</code></p>
+        <p>Note it down in your own copy, so that your next piece of work starts from here: <code>git add -A courses/{{ course.slug }}</code> then <code>git commit -m "{{ course.slug }}: handed in"</code>. That is a bookmark on your computer; it uploads nothing.</p>
       </div>
       {% endif %}
       {% if course.refused %}{% include "desk/refused.html" with refused=course.refused %}{% endif %}
