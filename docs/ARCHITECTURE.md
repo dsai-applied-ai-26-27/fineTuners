@@ -554,8 +554,11 @@ look, never who sent something or what they wrote. When someone asks for content
 course or reports a fault in it, the people who write that course are told this way
 (and nobody is told of what they sent themselves).
 
-**Announcements** (`desk.Announcement`, in the admin). Something the owner writes for
-everyone, or for educators only: a title, a few lines, an optional link. Adding one is
+**Announcements** (`desk.Announcement`, in the admin). Something the owner writes: a
+title, a few lines, an optional link. Who it is for is two choices, students and
+educators or educators only, and optionally one course (`notices.audience_of`): with a
+course it reaches those who have it on their dashboard (`accounts.Enrollment`) and those
+who write it, or, for educators only, those who write it. Adding one is
 announcing it: `notices.announce` leaves a copy under each person's bell, in one
 `bulk_create`. Each copy points back at the announcement (a nullable foreign key with
 `CASCADE`), and that is what makes one correctable: saving a change in the admin updates

@@ -17,6 +17,7 @@ from catalog import editions
 from catalog.models import Course
 
 from . import handins, kit, mail, notices
+from .forms import course_choices
 from .models import (
     Announcement,
     Educator,
@@ -283,15 +284,42 @@ class HandInAdmin(CourseColumn, admin.ModelAdmin):
             self.message_user(request, f"{record.slug}: taken off the site.", level)
 
 
+class AnnouncementForm(forms.ModelForm):
+    class Meta:
+        model = Announcement
+        fields = ["title", "body", "url", "audience", "series"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # The model keeps the course as text. The form offers the courses there are, open
+        # to students or not (one may be for the people writing a course before it opens).
+        # The field is absent once it can no longer be changed.
+        if "series" in self.fields:
+            courses = editions.latest(list(Course.objects.all()))
+            self.fields["series"] = forms.ChoiceField(
+                label="Course",
+                required=False,
+                choices=course_choices(courses, "Every course"),
+                help_text="Optional. Choose a course to tell only its people: those who have "
+                "it on their dashboard and those who write it. With Educators only, those "
+                "who write it.",
+            )
+
+
 @admin.register(Announcement)
 class AnnouncementAdmin(admin.ModelAdmin):
     """Something to tell people. Adding one is announcing it: it goes under the bell of
     everyone it is for, at once. Changing it corrects every copy, deleting it takes every
     copy away."""
 
-    list_display = ["title", "audience", "created_at", "recipients"]
-    list_filter = ["audience"]
+    form = AnnouncementForm
+    list_display = ["title", "audience", "course", "created_at", "recipients"]
+    list_filter = ["audience", "series"]
     search_fields = ["title", "body"]
+
+    @admin.display(description="Course", ordering="series")
+    def course(self, row):
+        return course_titles().get(row.series, row.series) if row.series else "Every course"
 
     def get_fieldsets(self, request, obj=None):
         said = (
@@ -300,14 +328,15 @@ class AnnouncementAdmin(admin.ModelAdmin):
             "is gone from every bell. It says what you write and nothing else: no name is "
             "attached to it."
         )
-        fields = ["title", "body", "url", "audience"]
-        if obj is not None:
-            fields += ["created_at", "recipients"]
+        if obj is None:
+            fields = ["title", "body", "url", "audience", "series"]
+        else:
+            fields = ["title", "body", "url", "audience", "course", "created_at", "recipients"]
         return [(None, {"fields": fields, "description": said})]
 
     def get_readonly_fields(self, request, obj=None):
         # Who it is for is decided when it is announced: afterwards the copies are out.
-        return ["audience", "created_at", "recipients"] if obj is not None else []
+        return ["audience", "course", "created_at", "recipients"] if obj is not None else []
 
     def save_model(self, request, obj, form, change):
         # save_model is the admin's hook around saving one object: the place for what
