@@ -9,7 +9,7 @@
 <header class="dash-head">
   <div>
     <h1>Notifications</h1>
-    <p class="dash-head__lead">What the site had to tell you: answers to what you sent, and news about a course you write. The newest are also under the bell at the top.</p>
+    <p class="dash-head__lead">What the site had to tell you: announcements, answers to what you sent, and news about a course you write. The newest are also under the bell at the top.</p>
   </div>
 </header>
 
@@ -26,6 +26,6 @@
   {% endfor %}
 </ul>
 {% else %}
-<div class="empty">{% icon "bell" %}<strong>Nothing yet</strong><p>Answers to what you send, and news about a course you write, show up here.</p></div>
+<div class="empty">{% icon "bell" %}<strong>Nothing yet</strong><p>Announcements, answers to what you send, and news about a course you write show up here.</p></div>
 {% endif %}
 {% endblock %}

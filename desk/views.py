@@ -117,10 +117,15 @@ def ask(request):
             notices.tell(
                 notices.owners(), title, url=reverse("admin:desk_request_change", args=[sent.pk])
             )
-            if course and sent.kind != Request.Kind.IDEA:
+            heard = {
+                Request.Kind.CONTENT: "Content asked for in {course}",
+                Request.Kind.BUG: "Something reported wrong in {course}",
+            }.get(sent.kind)
+            if course and heard:
                 notices.tell(
                     notices.educators_of(sent.series, but=request.user),
-                    f"Asked about {course.title}: {sent.get_kind_display().lower()}",
+                    heard.format(course=course.title),
+                    "Read it, and answer it, on the course's page.",
                     url=_desk_url(sent.series, "asked"),
                 )
             # After the row is safely stored, and never before: see desk/notify.py.

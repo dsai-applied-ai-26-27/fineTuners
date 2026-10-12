@@ -6,6 +6,7 @@ cache of files that can be rebuilt, and a series outlives one academic year of a
 """
 
 from django.conf import settings
+from django.core.validators import RegexValidator
 from django.db import models, transaction
 from django.utils import timezone
 
@@ -245,17 +246,71 @@ class KitAnnouncement(models.Model):
         return f"Kit version {self.number}"
 
 
+# Where a line under the bell may lead: a page of this site ("/courses/rl/", but not
+# "//elsewhere") or a full https address. Nothing else is a link, so what the owner types
+# into an announcement can never become a script in somebody's browser.
+site_link = RegexValidator(
+    r"^(/(?!/)\S*|https://\S+)$",
+    "Write a page of this site, like /courses/rl/, or a full address that starts with https://",
+)
+
+
+class Announcement(models.Model):
+    """Something the owner tells people, written in the admin (desk/admin.py).
+
+    Saving one leaves a notification under the bell of everyone it is for. Those rows
+    point back here, which is what makes an announcement correctable: changing it changes
+    every copy, and deleting it takes every copy away (desk/notices.py).
+    """
+
+    class Audience(models.TextChoices):
+        EVERYONE = "everyone", "Everyone who uses the site"
+        EDUCATORS = "educators", "Educators only"
+
+    title = models.CharField(
+        max_length=160, help_text="One line. It is what people see first, under the bell."
+    )
+    body = models.TextField(
+        "text",
+        max_length=1000,
+        blank=True,
+        help_text="A few sentences at most. Plain text; a new line stays a new line.",
+    )
+    url = models.CharField(
+        "link",
+        max_length=300,
+        blank=True,
+        validators=[site_link],
+        help_text="Optional: what opens when it is clicked. A page of this site, like "
+        "/courses/rl/, or a full address that starts with https://",
+    )
+    audience = models.CharField("for", max_length=10, choices=Audience, default=Audience.EVERYONE)
+    created_at = models.DateTimeField("announced", auto_now_add=True)
+    recipients = models.PositiveIntegerField("told", default=0)  # how many people
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.title
+
+
 class Notification(models.Model):
     """A line the site left for one person: an answer arrived, a course they write
-    changed, a new version of the kit is out. Shown under the bell at the top of every
-    page (desk/notices.py)."""
+    changed, a new version of the kit is out, the owner announced something. Shown under
+    the bell at the top of every page (desk/notices.py)."""
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notifications"
     )
     title = models.CharField(max_length=160)
-    body = models.CharField(max_length=300, blank=True)
+    body = models.CharField(max_length=1000, blank=True)
     url = models.CharField(max_length=300, blank=True)  # a path on this site
+    # Set for a copy of an announcement. CASCADE: when the announcement is deleted, the
+    # database deletes its copies with it, which is how one is taken back.
+    announcement = models.ForeignKey(
+        Announcement, null=True, blank=True, on_delete=models.CASCADE, related_name="copies"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     read_at = models.DateTimeField(null=True, blank=True)
 

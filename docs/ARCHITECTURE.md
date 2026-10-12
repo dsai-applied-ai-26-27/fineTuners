@@ -550,7 +550,20 @@ the thing happens. The context processor hands the newest few to every page lazi
 it is one query, and only for someone signed in. Opening the bell posts to
 `/notifications/read/` ([bell.js](../static/js/components/bell.js)), which is what makes
 the number go away on every device. A notification says what happened and where to
-look, never who sent something or what they wrote.
+look, never who sent something or what they wrote. When someone asks for content of a
+course or reports a fault in it, the people who write that course are told this way
+(and nobody is told of what they sent themselves).
+
+**Announcements** (`desk.Announcement`, in the admin). Something the owner writes for
+everyone, or for educators only: a title, a few lines, an optional link. Adding one is
+announcing it: `notices.announce` leaves a copy under each person's bell, in one
+`bulk_create`. Each copy points back at the announcement (a nullable foreign key with
+`CASCADE`), and that is what makes one correctable: saving a change in the admin updates
+every copy (`notices.correct`), and deleting it lets the database delete the copies with
+it. `ModelAdmin.save_model` is the hook that does both. The link is checked by a
+validator on the model: a page of this site or an https address, nothing else, so what
+is typed there can never be a script under somebody's bell. People who join later do not
+get earlier announcements.
 
 **Kit versions and telling educators** ([desk/kit.py](../desk/kit.py)). The versions of
 the kit are a list in code, written into the kit as `VERSION` and `CHANGELOG.md`. A

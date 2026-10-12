@@ -87,8 +87,9 @@ accounts/    the pieces around signing in that are ours (the rest is django-alla
              already shown them (the tour, the news)
 desk/        what people send in (Ask or report, applications to write a course), who
              writes which course (educators) and what they hand in for it, the owner's
-             switches for a course, notifications (the bell), and the message to the
-             owner's bot when something arrives
+             switches for a course, notifications (the bell), the announcements the
+             owner writes in the admin, and the message to the owner's bot when
+             something arrives
 ingest/      files -> database: schemas, Markdown renderer, sync, management commands
 templates/   base page and shared fragments
 static/      CSS, JavaScript (no build step), vendored libraries, fonts, icons

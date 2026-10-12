@@ -385,6 +385,11 @@ With a Gmail mailbox the host is `smtp.gmail.com`, the user is the address, and 
 password is an *app password* made in that Google account (Security, 2-Step
 Verification, App passwords), never the account's own password.
 
+**Telling people something.** In the admin, under Requests and educators, Announcements:
+write a title, a few lines and, if you like, a link, and choose who it is for (everyone,
+or educators only). Saving it puts it under their bells at once. Change it there to
+correct every copy; delete it to take it back. It is not e-mailed.
+
 **Opening a course, and who writes it.** In the admin, under Courses: tick the course and
 choose an action. *Open to students* and *Close* decide whether students see it at all;
 a course whose file says `enabled: false` stays hidden until it is opened here. *Ask for

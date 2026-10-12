@@ -13,19 +13,49 @@ open. It says what happened and where to look; the thing itself is on that page.
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 
-from .models import Educator, Notification
+from .models import Announcement, Educator, Notification
 
 SHOWN = 12  # how many the bell lists
 
 
-def tell(users, title, body="", url=""):
+def tell(users, title, body="", url="", announcement=None):
     """Leave one notification for each of `users`. Returns how many."""
     # A set of ids: a person who is, say, both the owner and an educator is told once.
     ids = {user.pk for user in users if user is not None and user.is_active}
+    # bulk_create: one INSERT for all of them, not one per person.
     Notification.objects.bulk_create(
-        Notification(user_id=pk, title=title[:160], body=body[:300], url=url[:300]) for pk in ids
+        Notification(
+            user_id=pk,
+            title=title[:160],
+            body=body[:1000],
+            url=url[:300],
+            announcement=announcement,
+        )
+        for pk in ids
     )
     return len(ids)
+
+
+def everyone():
+    """Every person who can sign in."""
+    return list(get_user_model().objects.filter(is_active=True))
+
+
+def announce(announcement):
+    """Put an announcement under the bell of everyone it is for. Returns how many."""
+    educators_only = announcement.audience == Announcement.Audience.EDUCATORS
+    users = all_educators() if educators_only else everyone()
+    return tell(
+        users, announcement.title, announcement.body, announcement.url, announcement=announcement
+    )
+
+
+def correct(announcement):
+    """The announcement was changed in the admin: change every copy of it. Returns how
+    many. Whether someone has read it already stays as it was."""
+    return announcement.copies.update(
+        title=announcement.title[:160], body=announcement.body[:1000], url=announcement.url[:300]
+    )
 
 
 def owners():

@@ -981,6 +981,18 @@
   }
   .notes--page {
     padding: var(--s2);
+    /* On the page there is room: an announcement keeps its lines. */
+    & span {
+      white-space: pre-line;
+    }
+  }
+  /* Under the bell a long text is cut after three lines; the page has all of it. */
+  .bell-pop .notes span {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    overflow: hidden;
   }
   /* On a course's own page. Under an empty course: what can be done about it. */
   .empty__actions {

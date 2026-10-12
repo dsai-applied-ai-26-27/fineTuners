@@ -17,7 +17,14 @@ from catalog import editions
 from catalog.models import Course
 
 from . import handins, kit, mail, notices
-from .models import Educator, EducatorApplication, HandIn, KitAnnouncement, Request
+from .models import (
+    Announcement,
+    Educator,
+    EducatorApplication,
+    HandIn,
+    KitAnnouncement,
+    Request,
+)
 
 
 def course_titles():
@@ -274,6 +281,45 @@ class HandInAdmin(CourseColumn, admin.ModelAdmin):
                 )
             level = messages.SUCCESS if report is None or report.ok else messages.ERROR
             self.message_user(request, f"{record.slug}: taken off the site.", level)
+
+
+@admin.register(Announcement)
+class AnnouncementAdmin(admin.ModelAdmin):
+    """Something to tell people. Adding one is announcing it: it goes under the bell of
+    everyone it is for, at once. Changing it corrects every copy, deleting it takes every
+    copy away."""
+
+    list_display = ["title", "audience", "created_at", "recipients"]
+    list_filter = ["audience"]
+    search_fields = ["title", "body"]
+
+    def get_fieldsets(self, request, obj=None):
+        said = (
+            "Saving puts this under the bell of everyone it is for, at once. A mistake can "
+            "be mended afterwards: change it here and every copy changes; delete it and it "
+            "is gone from every bell. It says what you write and nothing else: no name is "
+            "attached to it."
+        )
+        fields = ["title", "body", "url", "audience"]
+        if obj is not None:
+            fields += ["created_at", "recipients"]
+        return [(None, {"fields": fields, "description": said})]
+
+    def get_readonly_fields(self, request, obj=None):
+        # Who it is for is decided when it is announced: afterwards the copies are out.
+        return ["audience", "created_at", "recipients"] if obj is not None else []
+
+    def save_model(self, request, obj, form, change):
+        # save_model is the admin's hook around saving one object: the place for what
+        # must happen together with it.
+        super().save_model(request, obj, form, change)
+        if change:
+            count = notices.correct(obj)
+            self.message_user(request, f"Corrected under {count} bell(s).")
+            return
+        obj.recipients = notices.announce(obj)
+        obj.save(update_fields=["recipients"])
+        self.message_user(request, f"Announced: it is under {obj.recipients} bell(s) now.")
 
 
 class KitAnnouncementForm(forms.ModelForm):
