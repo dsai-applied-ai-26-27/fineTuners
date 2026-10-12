@@ -171,7 +171,22 @@ class PageTests(CourseTestCase):
             response,
             'Not written up yet: <a href="/courses/rl/"><b>Reinforcement Learning</b></a>.',
         )
-        self.assertContains(response, "Open one to ask for it.")
+        # And the way to ask for it is right there, with the course already filled in.
+        self.assertContains(
+            response,
+            'Need it? <a class="link" href="/ask/?kind=content&amp;course=rl&amp;from=/">'
+            "Ask for it</a>",
+        )
+        form = self.client.get("/ask/?kind=content&course=rl&from=/").context["form"]
+        self.assertEqual(form.initial["series"], "rl")
+        # With several, the form is where one is chosen.
+        Course.objects.create(slug="aai", series="aai", title="Applied AI", code="AAI", semester=1)
+        Enrollment.objects.create(user=self.user, series="aai")
+        response = self.get("home")
+        self.assertContains(
+            response,
+            'Need one of them? <a class="link" href="/ask/?kind=content&amp;from=/">Ask for it</a>',
+        )
         self.assertNotContains(response, 'class="course-card tone" href="/courses/rl/"')
         self.assertEqual([c.slug for c in response.context["nav_courses"]], [])  # C is archived
         self.assertNotContains(self.get("settings"), "Reinforcement Learning")
