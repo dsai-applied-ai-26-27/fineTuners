@@ -300,6 +300,8 @@
   /* Text that explains, on a plate: what an educator does, how to hand work in. */
   .brief {
     display: grid;
+    /* One column that may be narrower than its widest line, which then wraps. */
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--s3);
     line-height: 1.6;
     color: var(--on-surface-variant);
@@ -370,6 +372,9 @@
     & .input {
       flex: 1 1 16rem;
       width: auto;
+      /* A file field has a width of its own, wider than a phone leaves it. */
+      min-width: 0;
+      max-width: 100%;
       padding-block: 0.5625rem;
     }
   }
@@ -576,6 +581,233 @@
       border-top: 0;
     }
   }
+  /* ---- the educators' dashboard (desk/templates/desk/educators.html) ----------------- */
+  /* What is waiting: one row per thing, each leading to the part of a course's page it
+     is about. It sits where "Next up" sits for a student, and is built from it. */
+  .waiting {
+    align-items: start;
+  }
+  .waiting__list {
+    display: grid;
+    margin-top: var(--s2);
+    padding: 0;
+    list-style: none;
+    & li + li {
+      border-top: 1px solid var(--outline-variant);
+    }
+    & a {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: var(--s3);
+      padding: var(--s3) 0;
+      color: var(--on-surface);
+    }
+    & .icon {
+      width: 1.125rem;
+      height: 1.125rem;
+      color: var(--outline);
+      transition:
+        color var(--dur-1) var(--ease),
+        translate var(--dur-1) var(--ease);
+    }
+    & a:hover .icon {
+      color: var(--primary);
+      translate: 3px 0;
+    }
+  }
+  .waiting__text {
+    display: grid;
+    & strong {
+      font-weight: 600;
+    }
+    & span {
+      font-size: var(--text-s);
+      color: var(--on-surface-faint);
+    }
+  }
+  /* The kit, beside it: which version there is, and the one habit that goes with it. */
+  .kit-box {
+    align-content: start;
+    justify-items: start;
+    & code {
+      padding: 0.1em 0.35em;
+      border-radius: var(--r-xs);
+      background: var(--surface-high);
+      font-family: var(--font-mono);
+      font-size: 0.9em;
+    }
+  }
+  .kit-box__version {
+    font-size: var(--text-xl);
+    font-weight: 600;
+    line-height: 1.2;
+    & span {
+      display: block;
+      margin-top: var(--s1);
+      font-size: var(--text-s);
+      font-weight: 400;
+      line-height: 1.45;
+      color: var(--on-surface-variant);
+    }
+  }
+  .kit-box__note {
+    font-size: var(--text-s);
+    line-height: 1.55;
+    color: var(--on-surface-variant);
+  }
+  /* A course you write. Like a course on the students' dashboard, but it carries two
+     buttons, so the card is not one big link: its title and "Open" are. */
+  .write-card {
+    display: grid;
+    grid-template-rows: auto auto auto 1fr auto;
+    gap: var(--s1);
+    padding: var(--s5);
+    border-radius: var(--r-m);
+    background: var(--surface-raised);
+    color: var(--on-surface);
+    box-shadow: inset 0 0 0 1px var(--outline-variant);
+    scroll-margin-top: calc(var(--topbar) + var(--s4));
+    & .course-card__title a {
+      color: inherit;
+    }
+    & .course-card__title a:hover {
+      color: var(--primary);
+    }
+  }
+  .write-card__facts {
+    display: grid;
+    align-self: start;
+    gap: var(--s1);
+    margin-top: var(--s4);
+    padding-top: var(--s3);
+    border-top: 1px solid var(--outline-variant);
+    font-size: var(--text-s);
+    & div {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--s3);
+    }
+    & dt {
+      color: var(--on-surface-faint);
+    }
+    & dd {
+      font-weight: 550;
+      text-align: right;
+    }
+    /* How the copy stands, as a dot before the words: the words alone must do. */
+    & dd[data-copy]::before {
+      content: "";
+      display: inline-block;
+      width: 0.5rem;
+      height: 0.5rem;
+      margin-right: 0.4rem;
+      border-radius: 50%;
+      background: var(--outline);
+    }
+    & dd[data-copy="current"]::before {
+      background: var(--solid);
+    }
+    & dd[data-copy="differs"]::before {
+      background: var(--shaky);
+    }
+  }
+  .write-card__foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s2);
+    margin-top: var(--s4);
+  }
+
+  /* ---- one course, for the people who write it (desk/templates/desk/course.html) ------ */
+  /* What you do here, and beside it what you need for it. One column on a narrow screen. */
+  .work {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    align-items: start;
+    gap: var(--s4);
+    & .plate {
+      scroll-margin-top: calc(var(--topbar) + var(--s4));
+    }
+  }
+  .work__main,
+  .work__side {
+    display: grid;
+    /* minmax(0, …): a column may be narrower than the widest thing in it (a file name, a
+       line of code), which then wraps instead of pushing the page sideways on a phone. */
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--s4);
+    min-width: 0;
+  }
+  .work__over {
+    display: flex;
+    align-items: center;
+    gap: var(--s3);
+    margin-bottom: var(--s3);
+    font-size: var(--text-s);
+    font-weight: 600;
+    color: var(--on-surface-faint);
+  }
+  /* How your copy of the course stands against the site. */
+  .copy-state {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--s3);
+    padding: var(--s3) var(--s4);
+    border-radius: var(--r-s);
+    background: var(--surface-low);
+    & .icon {
+      width: 1.125rem;
+      height: 1.125rem;
+      margin-top: 0.2rem;
+      color: var(--on-surface-faint);
+    }
+    &[data-copy="current"] .icon {
+      color: var(--solid);
+    }
+    &[data-copy="differs"] {
+      background: var(--shaky-container);
+      color: var(--on-shaky-container);
+      & strong,
+      & .icon {
+        color: inherit;
+      }
+    }
+  }
+  /* A plate that folds away under its own heading. */
+  .fold {
+    & > summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--s3);
+      cursor: pointer;
+      list-style: none;
+    }
+    & > summary::-webkit-details-marker {
+      display: none;
+    }
+    & > summary .icon {
+      flex: none;
+      width: 1.25rem;
+      height: 1.25rem;
+      color: var(--on-surface-faint);
+      transition: rotate var(--dur-1) var(--ease);
+    }
+    &[open] > summary .icon {
+      rotate: 180deg;
+    }
+    & > summary ~ * {
+      margin-top: var(--s3);
+    }
+  }
+  @media (max-width: 60rem) {
+    .work {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
   /* ---- the bell (templates/components/bell.html) ------------------------------------ */
   .bell {
     position: relative;

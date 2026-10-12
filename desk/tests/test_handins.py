@@ -24,7 +24,7 @@ from ingest.tests.base import CourseTestCase
 
 User = get_user_model()
 C = "example"
-PAGE = "/educators/"
+PAGE = f"/educators/courses/{C}/"  # the course's own page, for the people who write it
 UPLOAD = f"/educators/courses/{C}/hand-in/"
 FILES = f"/educators/courses/{C}/files.zip"
 DECK = "content/decks/least-squares.yaml"
@@ -173,7 +173,7 @@ class TakingInTests(HandInCase):
             answer = self.hand_in(self.mine)
         record = HandIn.objects.get()
         self.assertRedirects(
-            answer, f"{PAGE}?handed={record.pk}#course-{C}", fetch_redirect_response=False
+            answer, f"{PAGE}?handed={record.pk}#hand-in", fetch_redirect_response=False
         )
         self.assertEqual((record.user, record.status, record.slug), (self.ada, "live", C))
         self.assertEqual(record.new_files, ["content/guides/a-second-look.md"])
@@ -320,7 +320,7 @@ class MovedOnTests(HandInCase):
         (note,) = Notification.objects.filter(user=self.bob)
         self.assertIn("changed on the site", note.title)
         self.assertIn("Download the course files again", note.body)
-        self.assertEqual(note.url, f"/educators/#course-{C}")
+        self.assertEqual(note.url, f"{PAGE}#files")
         self.assertFalse(Notification.objects.filter(user=self.ada).exists())  # she did it
         self.assertIn("Hand-in on the site", Notification.objects.get(user=self.admin).title)
 
@@ -400,7 +400,7 @@ class HistoryTests(HandInCase):
 
         self.assertRedirects(
             self.client.post(back(self.second)),
-            f"{PAGE}?taken_back=1#course-{C}",
+            f"{PAGE}?taken_back=1#history",
             fetch_redirect_response=False,
         )
         self.second.refresh_from_db()

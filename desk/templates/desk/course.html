@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% load ui %}
+{% comment %} One course, for the people who write it (desk.views.course). Two columns on a wide
+   screen: what you do here on the left (hand in, and what was handed in so far), what you
+   need for it on the right (your copy of the files, what students asked, the steps of a
+   session). Each part has an id, so a notification can lead straight to it. {% endcomment %}
+
+{% block title %}{{ course.title }} · Educators · DSAI Vault{% endblock %}
+{% block crumbs %}<a href="{% url 'catalog:home' %}">Courses</a>{% icon "next" %}<a href="{% url 'desk:educators' %}">Educators</a>{% icon "next" %}<span>{{ course.title }}</span>{% endblock %}
+
+{% block content %}
+<header class="dash-head tone" style="--hue: {{ course.hue }}">
+  <div>
+    <p class="work__over"><span class="course-card__code">{{ course.code }}</span><span>You write this course</span></p>
+    <h1>{{ course.title }}</h1>
+    <p class="dash-head__lead">{% if course.ready %}On the site now: {{ course.counts.reading }} note{{ course.counts.reading|pluralize }}, {{ course.counts.cards }} card{{ course.counts.cards|pluralize }}, {{ course.counts.questions }} problem{{ course.counts.questions|pluralize }}. <a class="link" href="{{ course.get_absolute_url }}">Open the course</a>{% else %}Nothing is on the site for this course yet.{% endif %}</p>
+  </div>
+  <div class="dash-head__tools no-print">
+    <a class="btn btn--outlined btn--small" href="{% url 'desk:educators' %}">{% icon "back" %}All your courses</a>
+    <a class="btn btn--outlined btn--small" href="{% url 'desk:guide' %}">{% icon "guide" %}The guide</a>
+  </div>
+</header>
+
+{% if taken_back %}<p class="notice notice--top" role="status">{% icon "check" %}Taken back. The course on the site is as it was before that hand-in. Your own copy still has the work.</p>{% endif %}
+
+<div class="work">
+  <div class="work__main">
+    <section class="plate brief" id="hand-in">
+      <h2>Hand in</h2>
+      {% if course.handed %}
+      <div class="notice notice--stack" role="status">
+        <p>{% icon "check" %}<strong>Taken in: {{ course.handed.summary }}. It is on the site now.</strong></p>
+        <p>Note it down in your own copy, so that your next piece of work starts from here: <code>git add -A courses/{{ course.slug }}</code> then <code>git commit -m "{{ course.slug }}: handed in"</code>. That is a bookmark on your computer; it uploads nothing.</p>
+      </div>
+      {% endif %}
+      {% if course.refused %}{% include "desk/refused.html" with refused=course.refused %}{% endif %}
+
+      {% comment %} enctype="multipart/form-data" is what lets a form carry a file; without it the
+         browser would send only the file's name. The view finds it in request.FILES. {% endcomment %}
+      <form class="handin" method="post" enctype="multipart/form-data" action="{% url 'desk:hand_in' course.series %}">
+        {% csrf_token %}
+        <input class="input" type="file" name="zip" accept=".zip,application/zip" required aria-label="The zip made by pack.py">
+        <button class="btn btn--filled" type="submit">{% icon "upload" %}Hand in</button>
+        {# Unticked, a hand-in that takes something away is shown back first, not taken in. #}
+        <label class="handin__tick"><input type="checkbox" name="removals" value="yes"><span>It may change and remove what is there</span></label>
+      </form>
+      <p class="form__hint">The zip that <code>tools/pack.py</code> made, built on the version the site has. What passes is on the site at once. A hand-in that removes or rewrites anything is first shown back to you, line by line, and is taken in when you tick the box.</p>
+    </section>
+
+    <section class="plate brief" id="history">
+      <h2>The course, step by step</h2>
+      {% if course.timeline %}
+      <ol class="steps">
+        {% for step in course.timeline %}
+        <li>
+          <p class="sent__meta"><strong>{{ step.summary }}</strong><span>{{ step.created_at|date:"j M Y, H:i" }} · {% if step.user_id == user.pk %}you{% elif step.user %}{{ step.user.get_full_name|default:"another educator" }}{% else %}a former educator{% endif %}</span><span class="chip sent__status" data-status="{{ step.status }}">{{ step.get_status_display }}</span></p>
+          <details class="steps__files"><summary>Files, and this version</summary>
+            <ul>
+              {% for name in step.new_files %}<li><code>{{ name }}</code> new</li>{% endfor %}
+              {% for name, lines in step.grown.items %}<li><code>{{ name }}</code> +{{ lines }} line{{ lines|pluralize }}</li>{% endfor %}
+              {% for name, lines in step.shrunk.items %}<li><code>{{ name }}</code> {{ lines }} line{{ lines|pluralize }} removed or rewritten</li>{% endfor %}
+              {% for name in step.removed_files %}<li><code>{{ name }}</code> removed</li>{% endfor %}
+              {% if step.removed_ids %}<li>ids gone: {{ step.removed_ids|join:", " }}</li>{% endif %}
+            </ul>
+            {# The backup: the whole course as it stood after this step. #}
+            <p><a class="link" href="{% url 'desk:handin_zip' step.pk %}">Download the course as it was after this step</a></p>
+          </details>
+          {% if course.undo and course.undo.pk == step.pk %}
+          <form class="steps__undo" method="post" action="{% url 'desk:take_back' step.pk %}">{% csrf_token %}<button class="btn btn--small" type="submit">Take it back</button><span class="form__hint">The site returns to the version before it. Your copy keeps the work.</span></form>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ol>
+      {% else %}
+      <p>Nothing has been handed in yet. Every hand-in is listed here, with what it added and removed, and the whole course as it stood after it is kept: an earlier version can always be downloaded again.</p>
+      {% endif %}
+    </section>
+  </div>
+
+  <div class="work__side">
+    <section class="plate brief" id="files">
+      <h2>Your copy</h2>
+      {% comment %} The site remembers which version this person last downloaded or handed in
+         (Educator.synced_version) and compares it with what it has now. {% endcomment %}
+      <p class="copy-state" data-copy="{{ course.copy }}">
+        {% if course.copy == "current" %}{% icon "check" %}<span><strong>Same as the site.</strong> What you last downloaded or handed in is what the site has. A hand-in built on it will be taken.</span>
+        {% elif course.copy == "differs" %}{% icon "sync" %}<span><strong>Not what the site has.</strong> The course on the site changed after your last download or hand-in: someone else handed in, or a hand-in was taken back. Download it again before you hand in; <a class="link" href="{% url 'desk:guide' %}#moved">the guide</a> shows how to keep work you have not handed in.</span>
+        {% else %}{% icon "info" %}<span><strong>Not downloaded yet.</strong> Start from what the site has.</span>{% endif %}
+      </p>
+      {# A form, because the site also notes which version you now have. #}
+      <form method="post" action="{% url 'desk:files' course.series %}">{% csrf_token %}<button class="btn btn--tonal" type="submit">{% icon "download" %}Download the course files</button></form>
+      <p class="form__hint">Then, in the kit: <code>uv run tools/unpack.py {{ course.slug }}.zip</code></p>
+    </section>
+
+    <section class="plate brief" id="asked">
+      <h2>Asked about this course</h2>
+      {% if course.asked %}
+      <ul class="sent">
+        {% for item in course.asked %}
+        <li>
+          <p class="sent__meta"><strong>{{ item.get_kind_display }}</strong><span>{{ item.created_at|date:"j M Y" }}</span></p>
+          <p class="sent__text">{{ item.message }}</p>
+          {% comment %} Who asked is not shown: an educator needs the question, not the person. {% endcomment %}
+          <form class="sent__done" method="post" action="{% url 'desk:resolve' item.pk %}">
+            {% csrf_token %}
+            <input class="input" type="text" name="answer" maxlength="1000" placeholder="A line back to them (optional)" aria-label="Answer">
+            <button class="btn btn--tonal btn--small" type="submit">Done</button>
+          </form>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p>Nothing is open. What students ask or report about this course shows here, without their names.</p>
+      {% endif %}
+    </section>
+
+    {# Open the first time, when it is news; folded once something has been handed in. #}
+    <details class="plate brief fold" id="steps"{% if not course.timeline %} open{% endif %}>
+      <summary><h2>A session, start to finish</h2>{% icon "expand" %}</summary>
+      <ol>
+        <li><strong>Get the educator kit.</strong> Instructions for your AI assistant, the format and the tools, and no course content: <a class="link" href="{{ kit }}" rel="noopener noreferrer">{{ kit }}</a>. Clone it once; run <code>git pull</code> in it before each session.</li>
+        <li><strong>Start from what the site has.</strong> Download the course files, above, and in the kit run <code>uv run tools/unpack.py {{ course.slug }}.zip</code>. It puts the course in <code>courses/{{ course.slug }}/</code> and bookmarks it with a commit in your own copy (nothing is uploaded by that): your starting point.</li>
+        <li><strong>Add the material.</strong> Lecture slides, labs and past papers go in <code>courses/{{ course.slug }}/source/</code>. They stay on your computer and are never packed or uploaded. <strong>Important:</strong> material from an earlier year goes in a folder named after that year, <code>source/2025-26/</code>, never mixed in with this year's, so that it is written up as that year's and not as this one's.</li>
+        <li><strong>Let your assistant write.</strong> Open the kit's folder in your AI assistant and give it this:
+          <pre class="brief__prompt">Update the CMS for this course: {{ course.slug }}</pre>
+        </li>
+        <li><strong>Check, pack, hand in.</strong> Read what it wrote against the lecture; <code>git diff</code> shows every line that changed. Then <code>uv run tools/pack.py {{ course.slug }}</code>, and hand in the zip it makes.</li>
+      </ol>
+      <p class="brief__state"><a class="link" href="{% url 'desk:guide' %}">Every step in full</a></p>
+    </details>
+  </div>
+</div>
+{% endblock %}

@@ -347,7 +347,7 @@ class BellTests(EducatorCase):
         self.assertIn("/admin/desk/request/", owners.url)
         educators = Notification.objects.get(user=self.bob)
         self.assertIn("Asked about Reinforcement Learning", educators.title)
-        self.assertEqual(educators.url, "/educators/#course-rl")
+        self.assertEqual(educators.url, "/educators/courses/rl/#asked")
         for note in (owners, educators):
             self.assertNotIn("Ada", note.title + note.body)
             self.assertNotIn("Lecture 3", note.title + note.body)

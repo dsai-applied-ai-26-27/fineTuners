@@ -185,7 +185,7 @@ def take(user, course, upload, *, confirmed=False):
         notices.educators_of(course.series, but=user),
         f"{course.title} changed on the site",
         f"{record.summary}. Download the course files again before your next hand-in.",
-        url=f"/educators/#course-{slug}",
+        url=f"/educators/courses/{course.series}/#files",
     )
     notices.tell(
         [owner for owner in notices.owners() if owner.pk != user.pk],
@@ -309,6 +309,6 @@ def withdraw(record, by=None):
         f"A hand-in for `{record.slug}` was taken back",
         "The course on the site is as it was before it. Download the course files "
         "again before your next hand-in.",
-        url=f"/educators/#course-{record.slug}",
+        url=f"/educators/courses/{record.series}/#files",
     )
     return report

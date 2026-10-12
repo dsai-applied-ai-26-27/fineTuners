@@ -99,7 +99,7 @@ def ask(request):
                 notices.tell(
                     notices.educators_of(sent.series, but=request.user),
                     f"Asked about {course.title}: {sent.get_kind_display().lower()}",
-                    url=f"{reverse('desk:educators')}#course-{course.slug}",
+                    url=_desk_url(sent.series, "asked"),
                 )
             # After the row is safely stored, and never before: see desk/notify.py.
             transaction.on_commit(
@@ -198,23 +198,40 @@ def _may_write(user, series):
     return user.is_staff or Educator.objects.filter(user=user, series=series).exists()
 
 
-def _educators_page(request, *, refused=None):
-    """The educators' page: what the role is, the courses you write (how to add to them,
-    the form that takes a hand-in, what was added so far, what was asked), your
-    applications, and the courses still looking for someone.
+def _desk_url(series, part=""):
+    """The address of a course's own page for its educators, and of a part of it."""
+    return reverse("desk:course", args=[series]) + (f"#{part}" if part else "")
 
-    `refused` is (series, Refused) when a hand-in has just been turned down: the page is
-    shown again with the reason beside that course.
+
+def _copy_state(role, course):
+    """How this person's copy of the course stands against the site.
+
+    "none": never downloaded. "current": what they last took from the site, or gave it,
+    is what the site has. "differs": the course on the site is another version now
+    (someone else handed in, or a hand-in was taken back), so a hand-in built on that
+    copy would be refused (desk/handins.py); better to know before the work than after.
     """
-    by_series = _titles(request)
-    writing = []
-    series = list(Educator.objects.filter(user=request.user).values_list("series", flat=True))
+    if role is None or not role.synced_version:
+        return "none"
+    folder = live.folder(course.slug)
+    if folder is None:
+        return "none"
+    return "current" if role.synced_version == handin.content_version(folder) else "differs"
+
+
+def _desks(request, roles, *, handed="", refused=None):
+    """The courses of `roles` ({series: Educator or None}) with everything their pages
+    show: what is on the site, what was asked, what was handed in, how the copy stands.
+
+    Read once for all of them: one query for the requests, one for the hand-ins.
+    """
+    series = list(roles)
     asked = Request.objects.filter(series__in=series, status=Request.Status.NEW).exclude(
         kind=Request.Kind.IDEA
     )
     # defer(): the zip of each hand-in stays in the database; a list needs its summary.
     steps = HandIn.objects.filter(series__in=series).defer("archive").select_related("user")
-    handed = request.GET.get("handed", "")
+    desks = []
     # Their courses are read directly, not from the catalogue: an educator may be
     # writing a course that students cannot see yet.
     for course in _written_by(series):
@@ -223,31 +240,66 @@ def _educators_page(request, *, refused=None):
         course.ready = has_content(course)
         course.asked = [item for item in asked if item.series == name]
         course.timeline = [step for step in steps if step.series == name][:30]
+        course.last = course.timeline[0] if course.timeline else None
         # The newest step, if it is on the site and theirs, can be taken back by them.
         newest = next((s for s in course.timeline if s.status == HandIn.Status.LIVE), None)
         course.undo = newest if newest and newest.user_id == request.user.pk else None
         course.handed = next((s for s in course.timeline if str(s.pk) == handed), None)
-        course.refused = refused[1] if refused and refused[0] == name else None
-        writing.append(course)
+        course.refused = refused if refused and name in roles else None
+        course.copy = _copy_state(roles[name], course)
+        course.desk_url = _desk_url(name)
+        desks.append(course)
+    return sorted(desks, key=lambda c: (c.semester or 99, c.order, c.title))
 
+
+def _waiting(desks):
+    """What an educator should look at first, most pressing first: questions people are
+    waiting on, then a copy that is no longer what the site has, then a course with
+    nothing in it (unless it is already named for one of the others)."""
+    rows = []
+    for course in desks:
+        count = len(course.asked)
+        if count:
+            said = "1 request to answer" if count == 1 else f"{count} requests to answer"
+            rows.append({"course": course, "text": said, "url": _desk_url(course.series, "asked")})
+    for course in desks:
+        if course.copy == "differs":
+            rows.append(
+                {
+                    "course": course,
+                    "text": "Your copy is not what the site has",
+                    "url": _desk_url(course.series, "files"),
+                }
+            )
+    named = {row["course"].pk for row in rows}
+    for course in desks:
+        if not course.ready and not course.timeline and course.pk not in named:
+            rows.append(
+                {"course": course, "text": "Nothing written yet", "url": _desk_url(course.series)}
+            )
+    return rows
+
+
+def _offers(request):
+    """This person's applications, each with the course it is for."""
+    by_series = _titles(request)
     offers = list(EducatorApplication.objects.filter(user=request.user))
     for offer in offers:
         offer.course = by_series.get(offer.series)
-    state = educator_state(request.user)
+    return [offer for offer in offers if offer.course]
+
+
+def _become(request, writes=()):
+    """The page for someone who writes no course (yet): what it takes, the courses
+    looking for someone, and their own applications."""
     return render(
         request,
-        "desk/educators.html",
+        "desk/become.html",
         {
-            "writing": writing,
-            "offers": [offer for offer in offers if offer.course],
-            "seeking": [c for c in _seeking(request) if c.series not in series],
-            "kit": settings.EDUCATOR_KIT_URL,
-            "kit_version": kit.VERSIONS[0] if kit.VERSIONS else None,
-            # Versions of the kit this person has not been told about yet.
-            "kit_news": kit.news_for(state["kit_seen"]) if series else [],
+            "offers": _offers(request),
+            "seeking": [c for c in _seeking(request) if c.series not in writes],
+            "writes": bool(writes),
             "applied": "applied" in request.GET,
-            "taken_back": "taken_back" in request.GET,
-            "welcome": {"educator": bool(series), "educator_tour": state["offer"]},
             "active": "educators",
         },
     )
@@ -255,7 +307,72 @@ def _educators_page(request, *, refused=None):
 
 @signed_in
 def educators(request):
-    return _educators_page(request)
+    """Educators, in the menu. For someone who writes courses it is their dashboard: what
+    is waiting, and a card per course that leads to that course's own page. For everyone
+    else it says what an educator does and which courses need one."""
+    roles = {role.series: role for role in Educator.objects.filter(user=request.user)}
+    if not roles:
+        return _become(request)
+    desks = _desks(request, roles)
+    state = educator_state(request.user)
+    # Applications that are still open; an accepted one is a course above.
+    offers = [o for o in _offers(request) if o.status != EducatorApplication.Status.ACCEPTED]
+    return render(
+        request,
+        "desk/educators.html",
+        {
+            "desks": desks,
+            "waiting": _waiting(desks),
+            "offers": offers,
+            "seeking": len([c for c in _seeking(request) if c.series not in roles]),
+            "kit": settings.EDUCATOR_KIT_URL,
+            "kit_version": kit.VERSIONS[0] if kit.VERSIONS else None,
+            # Versions of the kit this person has not been told about yet.
+            "kit_news": kit.news_for(state["kit_seen"]),
+            "applied": "applied" in request.GET,
+            "welcome": {"educator": True, "educator_tour": state["offer"]},
+            "active": "educators",
+        },
+    )
+
+
+@signed_in
+def open_courses(request):
+    """The courses nobody writes yet, for someone who already writes one and may take
+    another. (Someone who writes none sees the same page under Educators.)"""
+    writes = Educator.objects.filter(user=request.user).values_list("series", flat=True)
+    return _become(request, writes=set(writes))
+
+
+def _course_page(request, series, *, refused=None):
+    """One course, for the people who write it: the form that takes a hand-in, what was
+    handed in so far, their copy of the files, what was asked.
+
+    `refused` is a handins.Refused when a hand-in has just been turned down: the page is
+    shown again with the reason above the form.
+    """
+    if not _may_write(request.user, series):
+        raise Http404
+    role = Educator.objects.filter(user=request.user, series=series).first()
+    desks = _desks(request, {series: role}, handed=request.GET.get("handed", ""), refused=refused)
+    if not desks:
+        raise Http404
+    return render(
+        request,
+        "desk/course.html",
+        {
+            "course": desks[0],
+            "kit": settings.EDUCATOR_KIT_URL,
+            "taken_back": "taken_back" in request.GET,
+            "welcome": {"educator": role is not None},
+            "active": "educators",
+        },
+    )
+
+
+@signed_in
+def course(request, series):
+    return _course_page(request, series)
 
 
 @signed_in
@@ -318,7 +435,7 @@ def hand_in(request, series):
         confirmed = request.POST.get("removals") == "yes"
         record = handins.take(request.user, course, upload, confirmed=confirmed)
     except handins.Refused as refusal:
-        return _educators_page(request, refused=(series, refusal))
+        return _course_page(request, series, refused=refusal)
 
     url = _admin_url(request, record)
     transaction.on_commit(
@@ -331,7 +448,7 @@ def hand_in(request, series):
             key=f"dsai-handin-{record.pk}",
         )
     )
-    return redirect(f"{reverse('desk:educators')}?handed={record.pk}#course-{course.slug}")
+    return redirect(f"{reverse('desk:course', args=[series])}?handed={record.pk}#hand-in")
 
 
 @signed_in
@@ -350,7 +467,7 @@ def take_back(request, pk):
         f"A hand-in for `{record.slug}` was taken back by its educator",
         url=reverse("admin:desk_handin_change", args=[record.pk]),
     )
-    return redirect(f"{reverse('desk:educators')}?taken_back=1#course-{record.slug}")
+    return redirect(f"{reverse('desk:course', args=[record.series])}?taken_back=1#history")
 
 
 @signed_in
@@ -386,7 +503,7 @@ def resolve(request, pk):
     item.answer = request.POST.get("answer", "").strip()[:1000]
     item.save(update_fields=["status", "answer"])
     answered(item)
-    return redirect("desk:educators")
+    return redirect(_desk_url(item.series, "asked"))
 
 
 def answered(item):

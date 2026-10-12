@@ -6,11 +6,14 @@ app_name = "desk"
 
 urlpatterns = [
     path("ask/", views.ask, name="ask"),
+    # The dashboard of someone who writes courses; for everyone else, what that means.
     path("educators/", views.educators, name="educators"),
+    path("educators/open/", views.open_courses, name="open_courses"),
     path("educators/apply/", views.apply, name="apply"),
     path("educators/guide/", views.guide, name="guide"),
     # The files of one course as a zip, for the person who writes it; and the way back:
     # the zip they hand in.
+    path("educators/courses/<slug:series>/", views.course, name="course"),
     path("educators/courses/<slug:series>/files.zip", views.files, name="files"),
     path("educators/courses/<slug:series>/hand-in/", views.hand_in, name="hand_in"),
     path("educators/hand-ins/<int:pk>.zip", views.handin_zip, name="handin_zip"),

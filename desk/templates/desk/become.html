@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% load ui %}
+{% comment %} What an educator is, and the courses that need one (desk.views._become). It is what
+   Educators shows to someone who writes no course, and where someone who does goes to take
+   another. {% endcomment %}
+
+{% block title %}{% if writes %}Write another course{% else %}Educators{% endif %} · DSAI Vault{% endblock %}
+{% block crumbs %}<a href="{% url 'catalog:home' %}">Courses</a>{% icon "next" %}{% if writes %}<a href="{% url 'desk:educators' %}">Educators</a>{% icon "next" %}<span>Another course</span>{% else %}<span>Educators</span>{% endif %}{% endblock %}
+
+{% block content %}
+<header class="dash-head">
+  <div>
+    <h1>{% if writes %}Write another course{% else %}Educators{% endif %}</h1>
+    <p class="dash-head__lead">The courses here are written by students. An educator takes one course and turns its lectures into what everyone else studies from.</p>
+  </div>
+  <div class="dash-head__tools no-print">
+    <a class="btn btn--outlined btn--small" href="{% url 'desk:guide' %}">{% icon "guide" %}The guide</a>
+  </div>
+</header>
+
+{% if applied %}<p class="notice notice--top" role="status">{% icon "check" %}Application sent, thank you. You will be contacted on the number you gave; its state shows below.</p>{% endif %}
+
+{% if offers %}
+<section class="semester">
+  <header class="semester__head"><h2>Your applications</h2></header>
+  <div class="semester__body">
+    <ul class="sent plate">
+      {% for offer in offers %}
+      <li>
+        <p class="sent__meta"><strong>{{ offer.course.title }}</strong><span>sent {{ offer.created_at|date:"j M Y" }}</span><span class="chip sent__status" data-status="{{ offer.status }}">{{ offer.get_status_display }}</span></p>
+        {% if offer.status == "pending" %}<p class="sent__text"><a class="link" href="{% url 'desk:apply' %}?course={{ offer.series }}">Change what you sent</a></p>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+{% endif %}
+
+<section class="semester">
+  <header class="semester__head">
+    <h2>Courses nobody is writing yet</h2>
+  </header>
+  <div class="semester__body">
+    {% if seeking %}
+    <div class="plate brief">
+      {% comment %} {% regroup %} turns a sorted list into groups: here one per semester, each with
+         its `grouper` (the label) and its `list` (the courses). The view sorts them. {% endcomment %}
+      {% regroup seeking by semester_label as semesters %}
+      {% for semester in semesters %}
+      <p class="seeking__group">{{ semester.grouper|default:"No semester" }}</p>
+      <ul class="seeking">
+        {% for course in semester.list %}
+        <li><span class="course-card__code tone" style="--hue: {{ course.hue }}">{{ course.code }}</span><span>{{ course.title }}</span><a class="btn btn--small btn--tonal" href="{% url 'desk:apply' %}?course={{ course.series }}">Apply</a></li>
+        {% endfor %}
+      </ul>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="semester__waiting">Every course has someone writing it at the moment.</p>
+    {% endif %}
+  </div>
+</section>
+
+<section class="semester">
+  <header class="semester__head">
+    <h2>What it takes</h2>
+  </header>
+  <div class="semester__body">
+    <div class="plate brief">
+      <p><strong>The work.</strong> For each lecture: notes that can be read in one sitting, flashcards, and where the course has them, problems and past papers with worked answers. All of it is plain text files in a fixed format, written on your own computer.</p>
+      <p><strong>The tools.</strong> It can be done by hand or with a free chatbot. For a whole course, what works is a paid AI assistant that reads the slides and writes the files, with you checking every lecture against the original. <a class="link" href="{% url 'desk:guide' %}">The guide</a> shows the whole way, from the first clone to the hand-in.</p>
+      <p><strong>What you get.</strong> The course you know best, in a form your whole year can study from, and requests about it come to you.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}
