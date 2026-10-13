@@ -11,15 +11,17 @@
 <header class="dash-head">
   <div>
     <h1>The courses you write</h1>
-    <p class="dash-head__lead">What is waiting comes first. Each course has a page of its own, with its files, the form that takes your work and everything handed in so far.</p>
+    <p class="dash-head__lead">What is waiting comes first. Each course has a page of its own, with its files, the form that takes your work and everything handed in so far.{% if seeking %} {{ seeking }} other course{{ seeking|pluralize }} {{ seeking|pluralize:"has,have" }} nobody writing {{ seeking|pluralize:"it,them" }} yet.{% endif %}</p>
   </div>
   <div class="dash-head__tools no-print">
+    {# Any open course can be applied for, also one that has an educator. #}
+    {% if more %}<a class="btn btn--tonal btn--small" href="{% url 'desk:open_courses' %}">Write another course</a>{% endif %}
     <a class="btn btn--outlined btn--small" href="{% url 'desk:guide' %}">{% icon "guide" %}The guide</a>
     <button class="btn btn--outlined btn--small" type="button" @click="$dispatch('educator-tour')">{% icon "help" %}How it works</button>
   </div>
 </header>
 
-{% if applied %}<p class="notice notice--top" role="status">{% icon "check" %}Application sent, thank you. You will be contacted on the number you gave; its state shows below.</p>{% endif %}
+{% if applied %}<p class="notice notice--top" role="status">{% icon "check" %}{% if applied == "1" %}Application sent{% else %}{{ applied }} applications sent, one per course{% endif %}, thank you. You will be contacted on the number you gave; {% if applied == "1" %}its state shows{% else %}each is answered on its own, and its state shows{% endif %} below.</p>{% endif %}
 
 {% comment %} A new version of the educator kit, announced by the owner (desk/kit.py). Shown until
    this person presses the button, which tells the server (static/js/components/notice.js). {% endcomment %}
@@ -113,9 +115,5 @@
     </ul>
   </div>
 </section>
-{% endif %}
-
-{% if seeking %}
-<p class="dash-more no-print">{{ seeking }} course{{ seeking|pluralize }} {{ seeking|pluralize:"has,have" }} nobody writing {{ seeking|pluralize:"it,them" }} yet. <a class="link" href="{% url 'desk:open_courses' %}">Write another course</a></p>
 {% endif %}
 {% endblock %}

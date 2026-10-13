@@ -13,7 +13,7 @@ from django.utils.http import urlencode
 from django.views.decorators.http import require_POST
 
 from catalog import editions
-from catalog.mine import catalogue
+from catalog.mine import by_semester, catalogue
 from catalog.models import Course
 from catalog.nav import course_data, has_content
 from catalog.welcome import educator_state
@@ -176,57 +176,99 @@ def ask(request):
     )
 
 
-def _seeking(request):
-    """Open courses nobody is writing yet: what one can apply for. By semester, then in
-    the order of the dashboard."""
+def _open_to(request, writes=()):
+    """The courses someone can offer to write: every open course they do not write
+    already, by semester and then in the order of the dashboard. A course may have any
+    number of educators, so one that has some is offered too; each is marked `vacant`
+    when nobody writes it yet."""
     gate = switches(request)
-    courses = [course for course in catalogue(request) if not gate.has_educator(course)]
+    courses = [course for course in catalogue(request) if course.series not in writes]
+    for course in courses:
+        course.vacant = not gate.has_educator(course)
     return sorted(courses, key=lambda c: (c.semester or 99, c.order, c.title))
+
+
+def _seeking(request, writes=()):
+    """Those of them nobody is writing yet."""
+    return [course for course in _open_to(request, writes) if course.vacant]
+
+
+def _writes(user):
+    return set(Educator.objects.filter(user=user).values_list("series", flat=True))
 
 
 @signed_in
 def apply(request):
-    """Offer to write a course. Sending it again for the same course updates the offer."""
-    courses = _seeking(request)
-    by_series = {course.series: course for course in courses}
-    wanted = request.POST.get("series") or request.GET.get("course", "")
-    wanted = next((c.series for c in courses if wanted in (c.series, c.slug)), "")
-    existing = EducatorApplication.objects.filter(user=request.user, series=wanted).first()
-    taken = bool(request.GET.get("course")) and not wanted and request.method == "GET"
+    """Offer to write one course or several. Each course is an application of its own,
+    answered on its own; sending the form again for a course updates that application."""
+    courses = _open_to(request, _writes(request.user))
+    mine = {offer.series: offer for offer in EducatorApplication.objects.filter(user=request.user)}
+    asked = request.GET.get("course", "")
+    wanted = next((c.series for c in courses if asked in (c.series, c.slug)), "")
+    # Asked for by name, and not among those that can be applied for.
+    unavailable = bool(asked) and not wanted and request.method == "GET"
 
     if request.method == "POST":
-        form = EducatorApplicationForm(request.POST, instance=existing, courses=courses)
+        form = EducatorApplicationForm(request.POST, courses=courses)
         if form.is_valid():
-            offer = form.save(commit=False)
-            offer.user = request.user
-            if offer.status != EducatorApplication.Status.ACCEPTED:
-                offer.status, offer.decided_at = EducatorApplication.Status.PENDING, None
-            offer.save()
-            course = by_series[offer.series]
-            url = _admin_url(request, offer)
-            notices.tell(
-                notices.owners(),
-                f"Educator application: {course.title}",
-                url=reverse("admin:desk_educatorapplication_change", args=[offer.pk]),
-            )
-            transaction.on_commit(
-                lambda: _tell_owner(
-                    f"Educator application: {course.title}",
-                    "Someone offers to write this course. Open the admin to read it.",
-                    level="success",
-                    url=url,
-                    key=f"dsai-educator-{offer.pk}",
+            # All of them or none: atomic() makes the saves inside it one transaction.
+            with transaction.atomic():
+                offers = form.offers(request.user, mine)
+            by_series = {course.series: course for course in courses}
+            for offer in offers:
+                notices.tell(
+                    notices.owners(),
+                    f"Educator application: {by_series[offer.series].title}",
+                    url=reverse("admin:desk_educatorapplication_change", args=[offer.pk]),
                 )
+            # The bot rings once for what one person sent at once.
+            if len(offers) == 1:
+                title = f"Educator application: {by_series[offers[0].series].title}"
+                text = "Someone offers to write this course. Open the admin to read it."
+                url = _admin_url(request, offers[0])
+            else:
+                title = f"Educator applications: {len(offers)} courses"
+                text = (
+                    "Someone offers to write "
+                    + ", ".join(by_series[offer.series].title for offer in offers)
+                    + ". Each is an application of its own in the admin."
+                )
+                url = request.build_absolute_uri(
+                    reverse("admin:desk_educatorapplication_changelist") + "?status__exact=pending"
+                )
+            key = f"dsai-educator-{offers[0].pk}"
+            transaction.on_commit(
+                lambda: _tell_owner(title, text, level="success", url=url, key=key)
             )
-            return redirect(f"{reverse('desk:educators')}?applied=1")
+            return redirect(f"{reverse('desk:educators')}?applied={len(offers)}")
     else:
-        initial = {"series": wanted, "name": request.user.get_full_name()}
-        form = EducatorApplicationForm(instance=existing, courses=courses, initial=initial)
+        # What they said about themselves the last time is offered again; the note is
+        # about one course, so it comes back only with that course's own application.
+        last = mine.get(wanted) or next(iter(mine.values()), None)
+        initial = {
+            "series": [wanted] if wanted else [],
+            "name": last.name if last else request.user.get_full_name(),
+            "phone": last.phone if last else "",
+            "year": last.year if last else None,
+            "tools": last.tools if last else EducatorApplication.Tools.UNSURE,
+            "note": mine[wanted].note if wanted in mine else "",
+        }
+        form = EducatorApplicationForm(initial=initial, courses=courses)
 
+    ticked = set(form["series"].value() or [])
+    for course in courses:
+        course.ticked = course.series in ticked
+        course.offer = mine.get(course.series)
     return render(
         request,
         "desk/apply.html",
-        {"form": form, "existing": existing, "taken": taken, "active": "educators"},
+        {
+            "form": form,
+            "groups": by_semester(courses),
+            "existing": mine.get(wanted),
+            "unavailable": unavailable,
+            "active": "educators",
+        },
     )
 
 
@@ -332,14 +374,20 @@ def _offers(request):
 def _become(request, writes=()):
     """The page for someone who writes no course (yet): what it takes, the courses
     looking for someone, and their own applications."""
+    offers = _offers(request)
+    mine = {offer.series: offer for offer in offers}
+    courses = _open_to(request, writes)
+    for course in courses:
+        course.offer = mine.get(course.series)
     return render(
         request,
         "desk/become.html",
         {
-            "offers": _offers(request),
-            "seeking": [c for c in _seeking(request) if c.series not in writes],
+            "offers": offers,
+            "courses": courses,
+            "seeking": [course for course in courses if course.vacant],
             "writes": bool(writes),
-            "applied": "applied" in request.GET,
+            "applied": request.GET.get("applied"),
             "active": "educators",
         },
     )
@@ -364,12 +412,15 @@ def educators(request):
             "desks": desks,
             "waiting": _waiting(desks),
             "offers": offers,
-            "seeking": len([c for c in _seeking(request) if c.series not in roles]),
+            # Every open course they do not write can be applied for; how many of
+            # those have nobody at all is said beside the button.
+            "more": len(_open_to(request, roles)),
+            "seeking": len(_seeking(request, roles)),
             "kit": settings.EDUCATOR_KIT_URL,
             "kit_version": kit.VERSIONS[0] if kit.VERSIONS else None,
             # Versions of the kit this person has not been told about yet.
             "kit_news": kit.news_for(state["kit_seen"]),
-            "applied": "applied" in request.GET,
+            "applied": request.GET.get("applied"),
             "welcome": {"educator": True, "educator_tour": state["offer"]},
             "active": "educators",
         },
@@ -380,8 +431,7 @@ def educators(request):
 def open_courses(request):
     """The courses nobody writes yet, for someone who already writes one and may take
     another. (Someone who writes none sees the same page under Educators.)"""
-    writes = Educator.objects.filter(user=request.user).values_list("series", flat=True)
-    return _become(request, writes=set(writes))
+    return _become(request, writes=_writes(request.user))
 
 
 def _course_page(request, series, *, refused=None):
