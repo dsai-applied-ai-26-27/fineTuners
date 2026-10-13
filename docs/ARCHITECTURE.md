@@ -405,7 +405,10 @@ people who write courses. Like `progress` and `accounts`, its tables are real da
 - `Request`: something a person sent: content they miss, a fault, an idea. It has a
   status and an `answer`, which the person reads on the page they sent it from.
 - `EducatorApplication`: an offer to write a course, with a name, a phone number, the
-  year of study and how they would write it. One per person and course; sending the form
+  year of study and how they would write it. The form takes several courses at once
+  (`EducatorApplicationForm.offers` stores one application for each, so each is
+  answered on its own), and any open course can be ticked, also one that has an
+  educator: a course may have several. One per person and course; sending the form
   again updates it. `decide()` answers it, and accepting is what creates the role.
 - `Educator`: the role. This person writes this course.
 - `CourseSetting`: the owner's two switches for a course, each with three positions:

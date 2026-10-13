@@ -653,6 +653,51 @@
     text-transform: uppercase;
     color: var(--on-surface-faint);
   }
+  /* A course in that list: its name, and under it whether someone writes it. */
+  .seeking__name {
+    display: grid;
+    min-width: 0;
+    & span {
+      font-size: var(--text-s);
+      color: var(--on-surface-faint);
+    }
+  }
+  /* The same list as boxes to tick, in the form that applies for several at once. */
+  .pick {
+    display: grid;
+  }
+  .pick__item {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--s3);
+    min-height: 2.75rem;
+    padding: var(--s2) var(--s2);
+    border-radius: var(--r-s);
+    cursor: pointer;
+    transition: background var(--dur-1) var(--ease);
+    & input {
+      width: 1.0625rem;
+      height: 1.0625rem;
+      accent-color: var(--primary);
+    }
+    &:hover {
+      background: var(--state-hover);
+    }
+    &:has(input:checked) {
+      background: var(--secondary-container);
+    }
+    /* Codes are of different lengths; the names after them start in one line. */
+    & .course-card__code {
+      min-width: 3.5rem;
+      text-align: center;
+    }
+  }
+  .pick__note {
+    font-size: var(--text-s);
+    color: var(--on-surface-faint);
+    white-space: nowrap;
+  }
   .seeking {
     display: grid;
     & li {
@@ -671,8 +716,11 @@
   /* ---- the educators' dashboard (desk/templates/desk/educators.html) ----------------- */
   /* What is waiting: one row per thing, each leading to the part of a course's page it
      is about. It sits where "Next up" sits for a student, and is built from it. */
-  .waiting {
-    align-items: start;
+  /* The list starts at the top of the card. Two classes, because .nextup, further down
+     this file, centres what is in it: with one line waiting, that line floated in the
+     middle of a card as tall as the kit beside it. */
+  .nextup.waiting {
+    align-items: flex-start;
   }
   .waiting__list {
     display: grid;
@@ -1036,10 +1084,19 @@
     }
     .seeking li {
       grid-template-columns: auto minmax(0, 1fr);
-      & .btn {
+      & .btn,
+      & .chip {
         grid-column: 2;
         justify-self: start;
       }
+    }
+    /* Whether someone writes it goes under the name, where there is room. */
+    .pick__item {
+      grid-template-columns: auto auto minmax(0, 1fr);
+    }
+    .pick__note {
+      grid-column: 3;
+      white-space: normal;
     }
   }
 

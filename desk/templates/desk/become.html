@@ -18,7 +18,7 @@
   </div>
 </header>
 
-{% if applied %}<p class="notice notice--top" role="status">{% icon "check" %}Application sent, thank you. You will be contacted on the number you gave; its state shows below.</p>{% endif %}
+{% if applied %}<p class="notice notice--top" role="status">{% icon "check" %}{% if applied == "1" %}Application sent{% else %}{{ applied }} applications sent, one per course{% endif %}, thank you. You will be contacted on the number you gave; {% if applied == "1" %}its state shows{% else %}each is answered on its own, and its state shows{% endif %} below.</p>{% endif %}
 
 {% if offers %}
 <section class="semester">
@@ -38,25 +38,32 @@
 
 <section class="semester">
   <header class="semester__head">
-    <h2>Courses nobody is writing yet</h2>
+    <h2>Courses you can write</h2>
+    <p class="semester__year">{% if seeking %}{{ seeking|length }} with nobody yet{% else %}Each has someone{% endif %}</p>
   </header>
   <div class="semester__body">
-    {% if seeking %}
+    {% if courses %}
     <div class="plate brief">
+      <p>Apply for one, or tick several in the form: each course is an application of its own. A course that has an educator can take another; they write it together.</p>
       {% comment %} {% regroup %} turns a sorted list into groups: here one per semester, each with
          its `grouper` (the label) and its `list` (the courses). The view sorts them. {% endcomment %}
-      {% regroup seeking by semester_label as semesters %}
+      {% regroup courses by semester_label as semesters %}
       {% for semester in semesters %}
       <p class="seeking__group">{{ semester.grouper|default:"No semester" }}</p>
       <ul class="seeking">
         {% for course in semester.list %}
-        <li><span class="course-card__code tone" style="--hue: {{ course.hue }}">{{ course.code }}</span><span>{{ course.title }}</span><a class="btn btn--small btn--tonal" href="{% url 'desk:apply' %}?course={{ course.series }}">Apply</a></li>
+        <li>
+          <span class="course-card__code tone" style="--hue: {{ course.hue }}">{{ course.code }}</span>
+          <span class="seeking__name">{{ course.title }}<span>{% if course.vacant %}nobody writes it yet{% else %}has an educator{% endif %}</span></span>
+          {% if course.offer %}<a class="chip sent__status" data-status="{{ course.offer.status }}" href="{% url 'desk:apply' %}?course={{ course.series }}">{{ course.offer.get_status_display }}</a>
+          {% else %}<a class="btn btn--small {% if course.vacant %}btn--tonal{% else %}btn--outlined{% endif %}" href="{% url 'desk:apply' %}?course={{ course.series }}">Apply</a>{% endif %}
+        </li>
         {% endfor %}
       </ul>
       {% endfor %}
     </div>
     {% else %}
-    <p class="semester__waiting">Every course has someone writing it at the moment.</p>
+    <p class="semester__waiting">{% if writes %}You write every course that is open.{% else %}No course is open for applications at the moment.{% endif %}</p>
     {% endif %}
   </div>
 </section>

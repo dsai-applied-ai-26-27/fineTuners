@@ -37,6 +37,27 @@ class Update:
 
 UPDATES = (
     Update(
+        number=2,
+        date=date(2026, 10, 14),
+        title="Write any course, and write it on the site",
+        points=(
+            Point(
+                "Apply for any course, or several",
+                "A course can have more than one educator, so you can offer to write one "
+                "that already has someone, and tick several courses in one go. Each is "
+                "answered on its own.",
+                "desk:educators",
+                "See the courses",
+            ),
+            Point(
+                "Educators can edit on the site",
+                "Whoever writes a course can now change it in the browser: press Edit on "
+                "any of its pages. Notes, flashcards, problems and images, with a preview "
+                "and a history to go back in.",
+            ),
+        ),
+    ),
+    Update(
         number=1,
         date=date(2026, 10, 12),
         title="Ask for content, report a mistake, write a course",

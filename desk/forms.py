@@ -201,11 +201,24 @@ REQUEST_FORMS = {
 
 
 class EducatorApplicationForm(forms.ModelForm):
+    """An offer to write one course or several. What the person says about themselves is
+    asked once; `offers()` then stores one application per course that was ticked, so each
+    is answered on its own.
+
+    It is a ModelForm for the fields the model has (their lengths and choices are checked
+    from it), with one field of its own: `series`, the courses. The model's `series` is
+    one course, the form's is a list of them, so it is declared here and left out of
+    `Meta.fields`, and `save()` is not what stores it."""
+
+    series = forms.MultipleChoiceField(
+        error_messages={"required": "Tick at least one course."},
+    )
+
     class Meta:
         model = EducatorApplication
         # Not every column of the model: a form takes only the fields it names, so
         # whatever else a request carries is ignored.
-        fields = ["series", "name", "phone", "year", "tools", "note"]
+        fields = ["name", "phone", "year", "tools", "note"]
         # What a field looks like in HTML is its widget. The attributes are hints to the
         # browser: which keyboard a phone shows, what it may fill in by itself.
         widgets = {
@@ -218,11 +231,27 @@ class EducatorApplicationForm(forms.ModelForm):
 
     def __init__(self, *args, courses=(), **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["series"] = forms.ChoiceField(
-            choices=course_choices(courses, "Choose a course")
-        )
+        # Only these can be ticked: a value that is not among a field's choices is
+        # refused, whatever a request sends.
+        self.fields["series"].choices = [(course.series, course.title) for course in courses]
         self.fields["year"].choices = EducatorApplication.Year.choices
         self.fields["tools"].choices = EducatorApplication.Tools.choices
+
+    def offers(self, user, existing):
+        """Store what was sent: one application per course. `existing` is this person's
+        applications so far, by course; one for the same course is updated and asked
+        again, unless it was accepted already. Returns them."""
+        said = {name: self.cleaned_data[name] for name in self._meta.fields}
+        made = []
+        for series in self.cleaned_data["series"]:
+            offer = existing.get(series) or EducatorApplication(user=user, series=series)
+            for name, value in said.items():
+                setattr(offer, name, value)
+            if offer.status != EducatorApplication.Status.ACCEPTED:
+                offer.status, offer.decided_at = EducatorApplication.Status.PENDING, None
+            offer.save()
+            made.append(offer)
+        return made
 
     def clean_phone(self):
         phone = " ".join(self.cleaned_data["phone"].split())

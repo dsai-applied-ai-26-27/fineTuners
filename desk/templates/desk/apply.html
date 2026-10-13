@@ -9,12 +9,12 @@
 <header class="dash-head">
   <div>
     <h1>Become an educator</h1>
-    <p class="dash-head__lead">An educator writes a course for everyone else: turns its lectures into the notes, flashcards and problems this site shows. One application per course.</p>
+    <p class="dash-head__lead">An educator writes a course for everyone else: turns its lectures into the notes, flashcards and problems this site shows. Tick every course you would write: each is an application of its own, and is answered on its own.</p>
   </div>
 </header>
 
 <div class="desk">
-{% if taken %}<p class="notice" role="status">{% icon "info" %}That course already has someone writing it. You can still pick another one below.</p>{% endif %}
+{% if unavailable %}<p class="notice" role="status">{% icon "info" %}That course cannot be applied for: it is not open yet, or you write it already. The ones that can are below.</p>{% endif %}
 {% if existing %}<p class="notice" role="status">{% icon "info" %}You have applied for this course ({{ existing.get_status_display|lower }}). Sending the form again updates your application.</p>{% endif %}
 
 <div class="plate brief">
@@ -28,12 +28,30 @@
   {% csrf_token %}
   {% for error in form.non_field_errors %}<p class="form__error" role="alert">{{ error }}</p>{% endfor %}
 
-  <div class="form__field">
-    <label for="{{ form.series.id_for_label }}">Which course?</label>
-    {{ form.series }}
-    <p class="form__hint">Courses that nobody is writing yet.</p>
-    {% for error in form.series.errors %}<p class="form__error">{{ error }}</p>{% endfor %}
-  </div>
+  {% comment %} The boxes are written out by hand, for the layout: a heading per semester, and
+     beside each course whether someone writes it already. They all carry the field's
+     name, so the browser sends the ticked ones as one list, which is what the form's
+     MultipleChoiceField reads and checks against the courses it was given. {% endcomment %}
+  <fieldset class="form__field">
+    <legend>Which courses? <span class="form__optional">one or more</span></legend>
+    {% for error in form.series.errors %}<p class="form__error" role="alert">{{ error }}</p>{% endfor %}
+    {% for label, members in groups %}
+    <p class="seeking__group">{{ label }}</p>
+    <div class="pick">
+      {% for course in members %}
+      <label class="pick__item tone" style="--hue: {{ course.hue }}">
+        <input type="checkbox" name="series" value="{{ course.series }}"{% if course.ticked %} checked{% endif %}>
+        <span class="course-card__code">{{ course.code }}</span>
+        <span class="pick__title">{{ course.title }}</span>
+        <span class="pick__note">{% if course.offer %}you applied · {{ course.offer.get_status_display|lower }}{% elif course.vacant %}nobody writes it yet{% else %}has an educator{% endif %}</span>
+      </label>
+      {% endfor %}
+    </div>
+    {% empty %}
+    <p class="form__hint">No course is open for applications at the moment.</p>
+    {% endfor %}
+    <p class="form__hint">A course can have more than one educator: they write it together, and each sees what the other handed in. What you say below goes with every course you tick.</p>
+  </fieldset>
 
   <div class="form__pair">
     <div class="form__field">
@@ -70,7 +88,7 @@
 
   <div class="form__foot">
     <a class="btn" href="{% url 'desk:educators' %}">Cancel</a>
-    <button class="btn btn--filled" type="submit">Send application</button>
+    <button class="btn btn--filled" type="submit">Send</button>
   </div>
 </form>
 </div>

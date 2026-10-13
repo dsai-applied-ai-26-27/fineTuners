@@ -21,7 +21,13 @@ from accounts.models import Enrollment
 from catalog.mine import by_semester
 from catalog.models import Course
 from desk.forms import BugForm, ContentForm, IdeaForm, course_choices
-from desk.models import CourseSetting, Educator, EducatorApplication, Request
+from desk.models import (
+    CourseSetting,
+    Educator,
+    EducatorApplication,
+    Notification,
+    Request,
+)
 from desk.switches import Switches
 
 User = get_user_model()
@@ -322,14 +328,88 @@ class AskTests(DeskTestCase):
 
 
 class ApplyTests(DeskTestCase):
-    def test_only_courses_nobody_writes_are_offered(self):
+    def test_every_open_course_is_offered_and_says_whether_someone_writes_it(self):
         page = self.client.get(APPLY, {"course": "rl"})
         offered = [value for value, _ in page.context["form"].fields["series"].choices]
-        self.assertEqual(offered, ["", "rl"])  # not aai (written), not nlp (not open)
-        self.assertEqual(page.context["form"].initial["series"], "rl")
+        self.assertEqual(offered, ["aai", "rl"])  # not nlp: it is not open
+        self.assertEqual(page.context["form"].initial["series"], ["rl"])
+        self.assertContains(page, 'name="series" value="rl" checked')
+        self.assertContains(page, 'name="series" value="aai">')
+        self.assertContains(page, "nobody writes it yet", count=1)
+        self.assertContains(page, "has an educator", count=1)
         self.assertContains(page, 'value="Ada Lovelace"')  # the name comes from the account
-        # Asking for one that is taken says so instead of failing.
-        self.assertContains(self.client.get(APPLY, {"course": "aai"}), "already has someone")
+        # Asking for one that cannot be applied for says so instead of failing.
+        self.assertContains(self.client.get(APPLY, {"course": "nlp"}), "cannot be applied for")
+
+    def test_a_course_that_has_an_educator_can_be_applied_for(self):
+        Educator.objects.create(user=self.bob, series="aai")
+        answer = self.client.post(APPLY, self.application(series="aai"))
+        self.assertRedirects(answer, f"{EDUCATORS}?applied=1")
+        offer = EducatorApplication.objects.get()
+        self.assertEqual((offer.series, offer.status), ("aai", "pending"))
+        offer.decide(EducatorApplication.Status.ACCEPTED)
+        # Two people write it now; neither took the other's place.
+        writers = Educator.objects.filter(series="aai").values_list("user__username", flat=True)
+        self.assertEqual(sorted(writers), ["ada", "bob"])
+
+    def test_several_courses_at_once_are_separate_applications(self):
+        cv = course("cv", "Computer Vision", semester=6)
+        with mock.patch(NOTIFY) as notify, self.captureOnCommitCallbacks(execute=True):
+            answer = self.client.post(APPLY, self.application(series=["rl", "aai", cv.series]))
+        self.assertRedirects(answer, f"{EDUCATORS}?applied=3")
+        offers = {offer.series: offer for offer in EducatorApplication.objects.all()}
+        self.assertEqual(sorted(offers), ["aai", "cv", "rl"])
+        self.assertEqual({offer.phone for offer in offers.values()}, {"+387 61 123 456"})
+        self.assertContains(self.client.get(answer.url), "3 applications sent, one per course")
+        # The owner is told in the admin of each, and the bot rings once: how many and
+        # for which courses, never who.
+        told = Notification.objects.filter(user=self.admin).values_list("title", flat=True)
+        self.assertEqual(len(told), 3)
+        notify.assert_called_once()
+        said = " ".join([*notify.call_args.args, *map(str, notify.call_args.kwargs.values())])
+        self.assertIn("Educator applications: 3 courses", said)
+        self.assertIn("Computer Vision", said)
+        for private in ("Ada", "387", "I had a 10"):
+            self.assertNotIn(private, said)
+        # Each is answered on its own.
+        offers["rl"].decide(EducatorApplication.Status.ACCEPTED)
+        offers["aai"].decide(EducatorApplication.Status.DECLINED)
+        self.assertEqual(list(Educator.objects.values_list("series", flat=True)), ["rl"])
+        states = dict(EducatorApplication.objects.values_list("series", "status"))
+        self.assertEqual(states, {"rl": "accepted", "aai": "declined", "cv": "pending"})
+        board = self.client.get(EDUCATORS)
+        self.assertContains(board, "The courses you write")
+        self.assertContains(board, "Waiting for an answer")  # cv
+        self.assertContains(board, "Declined")  # aai
+
+    def test_one_that_is_not_open_refuses_all_of_them(self):
+        answer = self.client.post(APPLY, self.application(series=["rl", "nlp"]))
+        self.assertEqual(answer.status_code, 200)
+        self.assertContains(answer, 'name="series" value="rl" checked')  # what was ticked stays
+        self.assertFalse(EducatorApplication.objects.exists())
+        answer = self.client.post(APPLY, self.application(series=[]))
+        self.assertContains(answer, "Tick at least one course.")
+
+    def test_what_was_said_once_is_offered_again_for_the_next_course(self):
+        self.client.post(APPLY, self.application())
+        page = self.client.get(APPLY, {"course": "aai"})
+        initial = page.context["form"].initial
+        self.assertEqual((initial["phone"], initial["year"]), ("+387 61 123 456", "2"))
+        self.assertEqual(initial["note"], "")  # that was about the other course
+        self.assertContains(page, "you applied · waiting for an answer")  # beside rl
+        self.assertEqual(
+            self.client.get(APPLY, {"course": "rl"}).context["form"].initial["note"],
+            "I had a 10 in it.",
+        )
+
+    def test_the_course_one_writes_is_not_among_them(self):
+        Educator.objects.create(user=self.ada, series="rl")
+        page = self.client.get(APPLY, {"course": "rl"})
+        self.assertContains(page, "cannot be applied for")
+        self.assertNotContains(page, 'name="series" value="rl"')
+        answer = self.client.post(APPLY, self.application(series="rl"))
+        self.assertEqual(answer.status_code, 200)
+        self.assertFalse(EducatorApplication.objects.exists())
 
     def test_applying_stores_it_and_tells_the_owner_without_the_details(self):
         with mock.patch(NOTIFY) as notify, self.captureOnCommitCallbacks(execute=True):
@@ -387,8 +467,8 @@ class ApplyTests(DeskTestCase):
         )
         self.assertIsNone(again.decided_at)
 
-    def test_a_course_that_is_taken_or_closed_cannot_be_applied_for(self):
-        for series in ("aai", "nlp", "nothing"):
+    def test_a_course_that_is_closed_or_is_none_cannot_be_applied_for(self):
+        for series in ("nlp", "nothing"):
             with self.subTest(series=series):
                 answer = self.client.post(APPLY, self.application(series=series))
                 self.assertEqual(answer.status_code, 200)
@@ -430,9 +510,13 @@ class EducatorTests(DeskTestCase):
         self.assertContains(page, settings.EDUCATOR_KIT_URL)
         self.assertContains(page, 'action="/educators/courses/rl/files.zip"')
         self.assertContains(page, 'action="/educators/courses/rl/hand-in/"')
-        # Their own course is no longer among those looking for someone.
-        self.assertEqual(board.context["seeking"], 0)
-        self.assertEqual(self.client.get(OPEN).context["seeking"], [])
+        # Their own course is no longer among those to apply for; the one the owner
+        # writes still is, though it is not looking for anyone.
+        self.assertEqual((board.context["seeking"], board.context["more"]), (0, 1))
+        more = self.client.get(OPEN)
+        self.assertEqual([c.slug for c in more.context["courses"]], ["aai"])
+        self.assertEqual(more.context["seeking"], [])
+        self.assertContains(more, "has an educator")
         # Others see none of it.
         self.client.force_login(self.bob)
         other = self.client.get(EDUCATORS)
@@ -482,16 +566,25 @@ class EducatorTests(DeskTestCase):
 
     def test_someone_who_writes_a_course_can_still_take_another(self):
         board = self.client.get(EDUCATORS)
-        self.assertNotContains(board, "Write another course")  # nothing is left to take
+        # At the top, beside the guide: any open course can be applied for.
+        self.assertContains(board, 'href="/educators/open/">Write another course</a>')
+        self.assertNotContains(board, "nobody writing")  # the one there is has someone
+        self.assertNotContains(board, "dash-more")
         course("cv", "Computer Vision", semester=6)
         board = self.client.get(EDUCATORS)
-        self.assertContains(board, "1 course has nobody writing it yet")
-        self.assertContains(board, 'href="/educators/open/"')
+        self.assertContains(board, "1 other course has nobody writing it yet.")
         page = self.client.get(OPEN)
         self.assertTemplateUsed(page, "desk/become.html")
         self.assertContains(page, "Write another course")
         self.assertContains(page, "Computer Vision")
+        self.assertContains(page, "Applied AI")  # it has someone, and can take another
         self.assertNotContains(page, "Reinforcement Learning")  # already theirs
+        # With every open course their own, there is nothing to offer.
+        Educator.objects.bulk_create(
+            [Educator(user=self.ada, series=series) for series in ("aai", "cv")]
+        )
+        self.assertNotContains(self.client.get(EDUCATORS), "Write another course")
+        self.assertContains(self.client.get(OPEN), "You write every course that is open.")
 
     def test_an_educator_of_a_course_students_cannot_see_yet_still_has_it(self):
         Educator.objects.create(user=self.ada, series="nlp")
