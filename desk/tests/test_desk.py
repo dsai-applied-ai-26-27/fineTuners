@@ -414,6 +414,11 @@ class EducatorTests(DeskTestCase):
         self.assertContains(board, 'href="/educators/courses/rl/"')
         self.assertContains(board, 'action="/educators/courses/rl/files.zip"')
         self.assertContains(board, settings.EDUCATOR_KIT_URL)
+        # Two buttons that say where they lead: the page for working on the course, and
+        # the course as students see it. ("Open" used to lead to the first.)
+        self.assertContains(board, 'href="/educators/courses/rl/">Manage')
+        self.assertContains(board, 'href="/courses/rl/">View course</a>')
+        self.assertNotContains(board, ">Open<")
         # The form that takes work is on the course's page, not here.
         self.assertNotContains(board, 'action="/educators/courses/rl/hand-in/"')
 
@@ -613,6 +618,15 @@ class ClosedCourseTests(DeskTestCase):
         page = self.client.get("/courses/nlp/")
         self.assertContains(page, "Students cannot see this course yet")
         self.assertNotContains(self.client.get("/courses/rl/"), "Students cannot see this course")
+
+    def test_so_can_whoever_writes_it_and_nobody_else(self):
+        """An educator has to be able to read what they wrote before the course opens."""
+        self.assertEqual(self.client.get("/courses/nlp/").status_code, 404)
+        Educator.objects.create(user=self.ada, series="nlp")
+        page = self.client.get("/courses/nlp/")
+        self.assertContains(page, "Students cannot see this course yet")
+        self.client.force_login(self.bob)
+        self.assertEqual(self.client.get("/courses/nlp/").status_code, 404)
 
     def test_opening_it_in_the_admin_makes_it_appear(self):
         self.client.force_login(self.admin)

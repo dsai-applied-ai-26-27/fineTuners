@@ -258,6 +258,8 @@ It is uploaded with `wrangler`, not by CI, because it changes about never.
 the certificate for the origin name. Its file has one block for us, which forwards to
 `dsai-vault:8080`. That works because our proxy joins its Docker network under that name
 (`FRONT_NETWORK` in the server's `.env`, which `deploy install` works out by itself).
+That block is the one part of this site kept in somebody else's file; see "The site
+answers 525" under [Day to day](#day-to-day) for what happens when it is lost.
 
 **`proxy`** — [deploy/Caddyfile](../deploy/Caddyfile). Answers 404 to anything without the
 right secret header, so the site cannot be read around Cloudflare. Serves `/media/` from
@@ -334,6 +336,26 @@ you to read and run rather than something a session does for you.
 **Going back to an earlier version.** The server keeps the last three images. Deploy the
 earlier commit again by hand (the `git archive <commit> | ssh …` line above, with that
 commit in both places). Migrations are not reversed by this; so far none has needed it.
+
+**The site answers 525 for everyone** ("SSL handshake failed", or people report an SSL
+error). The certificate visitors see is Cloudflare's and is fine; what fails is
+Cloudflare reaching the server. The main Caddy answers for the origin name only because
+its Caddyfile has a block for it, and that file belongs to another project on the server.
+When that project is deployed again, its own copy of the file replaces it, the block is
+gone, Caddy has no certificate to show for the name, and the handshake fails. Nothing in
+this project is broken when that happens (it did, on 13 October 2026). `deploy status`
+says so on its `front:` line, and every deploy prints the same line. To put the block
+back:
+
+```
+ssh <server> 'bash -s' < deploy/restore-front.sh
+```
+
+It appends the block to the file as it is now, never replaces the file, keeps a copy,
+applies the change only if Caddy accepts it, reloads without a restart, and asks another
+site of that Caddy the same thing before and after to show it was not disturbed. The
+lasting cure is in the other project: the Caddyfile it ships has to contain this site's
+block too.
 
 **Changing the shared secret.** Edit `ORIGIN_SECRET` in `~/dsai-vault/.env` on the server,
 run `deploy restart`, then run `deploy/setup-cloudflare.sh` again so Cloudflare sends the

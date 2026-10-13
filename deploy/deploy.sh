@@ -109,6 +109,30 @@ check_proxy() {
 	echo "  proxy: answers with the secret, refuses without it"
 }
 
+# Whether the Caddy that owns port 443 still has this site's block. That file belongs to
+# another project on the server; when that project is deployed again, its own copy of the
+# file replaces it and the block is gone. The public address then answers 525 ("SSL
+# handshake failed") for everyone, with nothing wrong in here. deploy/restore-front.sh
+# puts the block back.
+front_door() {
+	local container caddyfile
+	container="$(docker ps --filter publish=443 --format '{{.Names}}' | head -n 1)"
+	if [[ -z "$container" ]]; then
+		echo "nothing on this server publishes port 443"
+		return 1
+	fi
+	caddyfile="$(docker inspect "$container" --format \
+		'{{range .Mounts}}{{if eq .Destination "/etc/caddy/Caddyfile"}}{{.Source}}{{end}}{{end}}')"
+	if [[ -f "$caddyfile" ]] && grep -qF "reverse_proxy dsai-vault:8080" "$caddyfile"; then
+		echo "the main Caddy ('$container') passes requests on to this site"
+		return 0
+	fi
+	echo "MISSING: the main Caddy ('$container') has no block for this site, so the"
+	echo "         public address answers 525. Put it back from your computer with:"
+	echo "           ssh <server> 'bash -s' < deploy/restore-front.sh"
+	return 1
+}
+
 prune() {
 	local old
 	# Newest first; everything after the first few goes, with its image.
@@ -153,6 +177,8 @@ cmd_app() {
 	say "checking the result"
 	compose exec -T web python deploy/smoke.py
 	check_proxy
+	# Said, not enforced: this deploy did its work either way, and the fix is elsewhere.
+	echo "  front: $(front_door || true)"
 	prune
 
 	[[ "$content_ok" == 1 ]] || die "version $commit is live, but some course content did not load (see above)"
@@ -263,6 +289,7 @@ cmd_status() {
 	compose ps
 	printf '\nversion: %s\n' "$(docker image inspect dsai-vault:live --format '{{ index .Config.Labels "dsai.commit" }}' 2>/dev/null || echo 'nothing deployed')"
 	printf 'courses: %s\n' "$(find "$ROOT/courses" -mindepth 2 -maxdepth 2 -name course.yaml 2>/dev/null | wc -l)"
+	printf 'front:   %s\n' "$(front_door || true)"
 }
 
 cmd_ci() {

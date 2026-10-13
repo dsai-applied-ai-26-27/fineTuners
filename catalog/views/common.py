@@ -3,6 +3,7 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils.functional import SimpleLazyObject
 
+from desk.access import may_write
 from desk.switches import switches
 from ingest import live
 from ingest.discover import newest_mtime
@@ -16,11 +17,12 @@ def load_course(request, slug, active=""):
     """Fetch a course (404 if unknown) plus the context every page inside it shares.
 
     `active` is the key of the navigation entry to highlight. A course the owner has not
-    opened yet is "no such page" to everyone but staff, who see it with a note saying
-    so: that is how the owner looks at a course before opening it."""
+    opened yet is "no such page" to everyone but the people writing it and staff, who see
+    it with a note saying so: that is how a course is looked at before it opens."""
     course = get_object_or_404(Course, slug=slug)
     is_open = switches(request).is_open(course)
-    if not is_open and not request.user.is_staff:
+    # Asked only for a course that is closed, so an open one costs no extra query.
+    if not is_open and not may_write(request.user, course.series or course.slug):
         raise Http404
     data = course_data(course)
     context = {
