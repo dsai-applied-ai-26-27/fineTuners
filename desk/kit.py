@@ -27,6 +27,20 @@ class Version:
 
 VERSIONS = (
     Version(
+        number=3,
+        date=date(2026, 10, 13),
+        title="Your course can also be changed on the site",
+        changes=(
+            "The site now has an editor: on any page of your course press Edit. Every "
+            "kind of content has a form with a preview, images can be added, and History "
+            "shows what was changed and brings an earlier version back.",
+            "The kit works as before. Both change the same course: after anything was "
+            "changed on the site, download the course again before you work here.",
+            "Your assistant is told to leave what was made on the site as it is: the "
+            "layout of those files, and images named by a string of hex digits.",
+        ),
+    ),
+    Version(
         number=2,
         date=date(2026, 10, 12),
         title="Material from an earlier year, and a README that starts from zero",
