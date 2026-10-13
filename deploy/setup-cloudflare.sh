@@ -66,6 +66,16 @@ EOF
 fi
 docker exec "$container" caddy reload --config /etc/caddy/Caddyfile >/dev/null 2>&1
 echo "    reloaded '$container'"
+
+# Remembered beside the site's own settings. That Caddyfile belongs to another project and
+# may be replaced by it; deploy/restore-front.sh then puts the block back from this.
+env_file="$HOME/dsai-vault/.env"
+if [[ -f "$env_file" ]]; then
+	kept="$(mktemp "$env_file.XXXXXX")" # created readable by its owner only
+	grep -v '^ORIGIN_HOST=' "$env_file" >"$kept" || true
+	printf 'ORIGIN_HOST=%s\n' "$name" >>"$kept"
+	mv "$kept" "$env_file"
+fi
 REMOTE
 
 echo "    waiting for the certificate"

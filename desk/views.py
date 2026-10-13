@@ -20,6 +20,7 @@ from catalog.welcome import educator_state
 from ingest import handin, live
 
 from . import handins, kit, mail, notices
+from .access import may_write
 from .forms import REQUEST_FORMS, EducatorApplicationForm
 from .models import Educator, EducatorApplication, HandIn, Request
 from .notify import notify
@@ -234,8 +235,7 @@ def _written_by(series):
     return editions.latest(list(Course.objects.filter(series__in=series)))
 
 
-def _may_write(user, series):
-    return user.is_staff or Educator.objects.filter(user=user, series=series).exists()
+_may_write = may_write  # the name these views have always used for it
 
 
 def _desk_url(series, part=""):
