@@ -91,6 +91,8 @@ INSTALLED_APPS = [
     "progress",
     # What people send the owner, who writes which course, the owner's switches.
     "desk",
+    # Changing a course on the site itself: forms for the people who write it.
+    "editor",
 ]
 
 # Everything is behind a sign-in unless a view opts out with @login_not_required (the
@@ -205,6 +207,12 @@ CONTACT_EMAIL = os.environ.get("DSAI_CONTACT_EMAIL", "")
 SITE_URL = os.environ.get("DSAI_SITE_URL") or (
     f"https://{ALLOWED_HOSTS[0]}" if ALLOWED_HOSTS and not DEBUG else "http://127.0.0.1:8000"
 )
+
+# Academic years (catalog/editions.py). A course can exist in every year from the
+# programme's first to the one that is running now, and which one that is follows from
+# the date: a year begins in the month named here, so in October 2026 it is 2026-27.
+FIRST_ACADEMIC_YEAR = os.environ.get("DSAI_FIRST_ACADEMIC_YEAR", "2024-25")
+ACADEMIC_YEAR_STARTS = int(os.environ.get("DSAI_ACADEMIC_YEAR_STARTS", "10"))
 
 # The owner's assistant bot, told whenever a request or an application arrives
 # (desk/notify.py). Both come from the environment: the address is the server's own,
@@ -352,6 +360,9 @@ SERVE_SOURCE_FILES = env_flag("DSAI_SERVE_SOURCE", DEBUG)
 BODY_LIMITS = [
     # A hand-in: the zip of a course (desk.handins.MAX_UPLOAD, 25 MB) and the form around it.
     ("/educators/courses/", 26 * 1024 * 1024),
+    # An image added in the editor: 8 MB as it is sent (editor.images.MAX_UPLOAD), and
+    # the form around it. What is kept of it is far smaller.
+    ("/edit/image/", 9 * 1024 * 1024),
 ]
 
 
@@ -370,6 +381,12 @@ RATE_LIMITS = [
     # The forms that write to the owner. Nobody sends thirty requests a minute by hand.
     ("desk", "/ask/", 30),
     ("desk", "/educators/", 30),
+    # An image sent to the editor is decoded and encoded twice: the costliest request
+    # there is, so the fewest. Listed first: the first line that matches is applied.
+    ("edit-image", "/edit/image/", 30),
+    # The editor asks for a preview after every pause in typing, and a save re-reads the
+    # whole course: generous for someone writing, far below what a loop would ask.
+    ("edit", "/edit/", 180),
 ]
 
 # Django's cache framework: named stores behind one API. "default" keeps each course's

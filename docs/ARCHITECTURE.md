@@ -520,13 +520,44 @@ validates everything and writes to the database only if nothing is wrong. So one
 both the check and the going live. A refusal (`Refused`, with a kind and the lines of the
 reason) changes nothing and is shown on the page with what to do about it.
 
+An edit made on the site is the same thing without the zip (`handins.change`, see
+[The editor](#the-editor-changing-a-course-on-the-site)).
+
 **Nothing is lost.** Each `HandIn` row keeps the whole course as it stood after that step
-(`archive`, a zip in the database, which is what backups contain), with the version
-before and after. The steps of a course are its history: on the course's page each can
-be downloaded and, to go back to it, handed in again. An educator can take back their
-own newest hand-in, and the owner any, in the admin (`handins.withdraw`): it and every
-later one for the course are withdrawn, since each was built on the one before, and the
-course is loaded again as it was.
+(`files`) and when the step began (`before`), with the fingerprint of both. The steps of
+a course are its history: each can be looked at line by line, downloaded, and brought
+back ([The history](#the-history-versions-of-a-course)). An educator can take back
+their own newest hand-in, and the owner any, in the admin (`handins.withdraw`): it and
+every later one for the course are withdrawn, since each was built on the one before,
+and the course is loaded again as it was.
+
+**How versions are kept** ([desk/blobs.py](../desk/blobs.py)). As git does it: the bytes
+of a file are one `Blob` row under their SHA-256, and a version of a course is a list of
+names with hashes (`{name: sha}`, a JSON column). A file that did not change between two
+versions is stored once however many steps name it, which is what makes it affordable to
+keep the whole course at every step, images included. `blobs.put(files)` stores a
+version and returns its list, `blobs.get(list)` gives it back, and nothing is ever
+deleted. All of it is in the database, so a backup of the database is a backup of every
+version. `handins.kept(step)` and `handins.before(step)` are the two versions of a step;
+the zip an educator or `import_course` downloads is packed from `kept` when it is asked
+for. Lists of steps are read with `HandIn.objects.light()`, which leaves those columns
+in the database. (Until migration 0007 a step kept a zip, `archive`. The migration
+converts the steps there are, each only if it reproduces its recorded version to the
+byte; the column stays one release longer as their backup, and `kept` still reads it
+for a step that was not converted.)
+
+**Into the owner's git history** ([take_in.py](../ingest/management/commands/take_in.py),
+[export_steps.py](../desk/management/commands/export_steps.py)). The steps of a course
+are a history on the site; the owner's `courses/` folder is a git repository. `take_in`
+joins the two: it asks the server for every step that is live and not merged
+(`handins.pending`, printed by `export_steps` as one JSON document: the steps, and each
+file's bytes once), and makes each a commit there, with the step's author (a name, and
+an address that is not one), its time and its summary. It holds what arrives to the same
+rules as a zip: only a course's files (`handin.check`), each step whole (its files give
+the version it claims), the newest valid under the full check, the owner's files at the
+version the steps began from, and nothing uncommitted in the folder. The last commit
+carries `.merged`, so the next `publish` settles the steps as it would after
+`import_course`.
 
 **Where the site reads a course from** ([ingest/live.py](../ingest/live.py)). The owner's
 course files are a folder the application cannot write to, replaced as a whole by
@@ -589,6 +620,237 @@ arrives after being given the role (`welcome()["educator_tour"]`), before any ne
 stays in Settings beside the first tour. [desk/templates/desk/guide.html](../desk/templates/desk/guide.html)
 is the long form: the kit's README told from the site's side.
 
+## The editor: changing a course on the site
+
+[editor/](../editor/) lets the people who write a course change it in the browser: the
+same people as a hand-in (`desk.access.may_write`: its educators, and staff), all
+addresses under `/edit/<course>/`. It keeps nothing of a course itself (its one model
+holds images that wait to be saved, see [Images](#images)). An edit is a hand-in that
+the site makes itself, so everything a hand-in is held to holds here, and the owner's course
+files are still never written by the application.
+
+```
+form in the browser -> editor view -> the new text of ONE file -> desk.handins.change()
+                                                                    lock, checks, sync,
+                                                                    a step in the history
+```
+
+**Reading.** The database holds a course rendered, which is no use to someone who wants
+to change the text. [editor/source.py](../editor/source.py) reads the file itself from
+`ingest.live.folder(slug)`: `load_page` splits a Markdown page into its front matter (a
+dict) and its body, `fingerprint` is the SHA-256 of the file as loaded, which the form
+carries along (`seen`).
+
+**The form.** [editor/forms.py](../editor/forms.py) `PageForm` draws a page's front
+matter field by field and its text in one box. Which fields a kind of page is asked for
+is `SHOWN`; what a file holds beyond those is kept. What the fields may contain is not
+decided there: `clean()` builds the front matter and gives it to
+`ingest.schemas.DocMeta`, the model the importer checks a file against, so a field's
+error is the importer's own message. `Rows` is a widget for a list of lines (takeaways,
+sources): one box each, all under one name, read back with `getlist`.
+
+**Writing.** `source.compose` makes the file's new text and leaves alone what was not
+changed: a page whose front matter was not touched keeps it byte for byte (comments, key
+order, `[a, b]` lists), and saving without a change gives the same file, which is
+reported as nothing to save. Front matter that did change is written by
+[ingest/yamledit.py](../ingest/yamledit.py), the opposite direction of `yamlio.py`: one
+canonical layout, and anything with a line break or a backslash as a literal block, where
+LaTeX cannot be damaged. A test reads back every YAML file of the example course through
+it.
+
+**Saving** is `desk.handins.change(user, course, edit)`. `edit` is a function that is
+given the course's files as they are at that moment, under the course's lock, and
+returns them as they should be; `source.save` passes one that checks the fingerprint
+first (`Refused("conflict")` if the file is no longer what the form was filled from),
+then replaces or removes the one file. `change` then does what `take` does for a zip:
+the file rules (`ingest.handin.check`), the owner's fields of `course.yaml` (skipped for
+staff, who act for the owner), `sync_course` on a staged copy, a `HandIn` row with
+`via="site"`. It differs in two places, both because the edit is made from the site's
+own version by hand: there is no "built on your copy" test, and no second confirmation
+for what it removes.
+
+**Saves and steps.** Someone editing saves often. Saves by one person within
+`handins.SESSION` (30 minutes) of each other extend one `HandIn` (`saves`, `updated_at`,
+and its summary recomputed against the version the step began from), so the history
+reads as sittings, and others are told once per step. A save that removes a file always
+begins a step, so the one before it still holds that file. A step made on the site is
+taken back like any other. A step keeps only where it ended, so each save also leaves a
+line in the step's `trail`: when, and which files it changed, by hash. The bytes are in
+the blob store either way; the trail is what makes a text that a later save of the same
+sitting replaced findable again.
+
+### Everything in YAML: forms made from the schemas
+
+Cards, questions, formulas, terms, hooks, palaces, an exam's page and the course's own
+file are YAML, and what each may contain is written down once, as the Pydantic models of
+[ingest/schemas.py](../ingest/schemas.py). Their forms are made from those models, so
+there is no form class per content type and no second set of rules.
+
+**A schema as a form** ([editor/schema.py](../editor/schema.py)).
+
+- `describe(model, course)` walks a model's fields and gives each a kind: one line,
+  Markdown, an id, a number, a choice (a `Literal`), a topic or lecture of the course to
+  pick, lines of links, a group (a nested model), a list (a list of nested models, as
+  deep as the content goes: a plan has phases that have tasks). Labels and the help
+  under a field are the schema's own descriptions.
+- These are not Django `Form`s: Django's forms are flat, content is nested. The nesting
+  is in the names of the inputs (`steps-0-do`, `plan-phases-1-tasks-0-text`), and
+  `parse(nodes, request.POST)` reads them back into the dicts and lists that would stand
+  in the file. Entries of a list are taken in the order they stand on the page, so
+  moving one in the browser is moving its element; what is empty or the schema's default
+  is left out, and a number or a date becomes one.
+- `validate(model, data)` is the model itself, and its errors come back keyed by place
+  (`("steps", 1, "do")`), in the importer's words (`schemas.explain`). `bind` lays values
+  and errors over the fields for [nodes.html](../editor/templates/editor/nodes.html),
+  which includes itself for a group and `row.html` for each entry of a list.
+- Some fields apply to some items only: the choices of a multiple-choice question, the
+  steps of a derivation. `SWITCHES` names the choice that decides (`type` for a
+  question; for a card a choice that is not written anywhere, since a card's kind
+  follows from the fields it has). The page shows and hides with `x-show`; `parse` does
+  not read what is hidden, so turning a card into another kind takes the old fields out.
+
+**One piece of a file** ([ingest/yamledit.py](../ingest/yamledit.py), second half). A
+deck of forty cards is one file, and changing one card must change that card's lines and
+nothing else. `yaml.compose` says where every part of a file sits, so `replace_item`,
+`add_item`, `remove_item` and `set_keys` work on lines of text: the rest of the file
+keeps its comments and layout byte for byte, and the history shows what really changed.
+None of them is trusted: `changed()` reads the result back and compares it with the data
+that was meant, and writes the file whole (correct, without its comments) if they
+differ.
+
+**Kinds of content** ([editor/items.py](../editor/items.py)). Most YAML files are a few
+settings and a list. A `Shelf` describes one such kind (decks, problem sets, papers, the
+sections of the formula sheet, the glossary, the hooks): the file or folder, the key of
+the list, the schema of an item. `save_item`, `remove_item`, `save_keys` and `create`
+are functions from the file's text to its new text, run through `handins.change` under
+the course's lock on the file as it is at that moment. An item's form carries the
+fingerprint of that item's data, not of the file: two people on two cards of one deck do
+not collide, two on the same card do. Whether anything changed at all is asked of the
+schema (`same`, `_meaning`): `kind: phrase` written out and left to its default are the
+same item, so saving a form untouched writes nothing.
+
+**The pages.** [editor/shelves.py](../editor/shelves.py) is one set of views for every
+shelf (the list of decks, one deck with its cards, a card, a deck's settings, a new deck
+with its first card, removing either); the URL says which shelf, as an extra argument
+from [editor/urls.py](../editor/urls.py) (`shelf_urls`).
+[editor/whole.py](../editor/whole.py) has the files that are one form each: an exam's
+page (with its papers, which are a shelf inside the exam's folder), a palace, and
+`course.yaml` in two halves, the description and topics for the people who write the
+course and the rest for staff. All of them draw
+[item.html](../editor/templates/editor/item.html); its preview column shows every
+Markdown field of the form as the site would render it (`POST …/preview/fields/`).
+
+### Images
+
+An image can be pasted into a text box of the editor, dropped on it, or chosen with the
+Image button ([editor.js](../static/js/components/editor.js), `place`). What the course
+keeps of it is decided on the server, in [editor/images.py](../editor/images.py), with
+[Pillow](https://pillow.readthedocs.io/):
+
+- **Checked**: at most 8 MB as sent and 40 megapixels, a JPEG, PNG, WebP or GIF that
+  really decodes (Pillow is kept to those four formats), and not an animation. A
+  claim of being larger than it is ("decompression bomb") is refused before decoding.
+- **Turned and cleaned**: a phone stores a portrait photo lying down with a note to turn
+  it. It is turned for real, and then nothing but the pixels and the colour profile is
+  written out: no EXIF, so no position, time or phone model travels with a photo.
+- **Scaled and encoded**: 1600 pixels on the longer side at most, as WebP, twice: for
+  photographs (quality 82) and exactly (lossless). The smaller one is kept, which is the
+  exact one for a screenshot or a drawing and the other for a photo.
+- **Named by its bytes**: `<first 16 hex digits of its SHA-256>.webp`, so the same image
+  is the same file however often it is uploaded.
+- An **SVG** is kept as it is, if it is small and carries no script (the rule a hand-in
+  already holds an SVG to, `ingest.handin.SVG_ACTIVE`).
+
+**Kept aside, then part of the course.** When the picture is chosen the form is not
+saved yet, and an image belongs to a course only once some text shows it. So it waits in
+`editor.Upload` (the app's one model), and the form gets back the line of Markdown that
+shows it, `![…](assets/<name>)`. The preview can already show it: `source.PreviewAssets`
+tells the renderer that the file is known although it is not in the folder
+(`Assets.knows`, which a sync always answers with no) and gives it the address of
+`views.image`, which serves an upload to the people who write that course. On a save,
+`images.attach` looks at the file being written, and adds the uploads it refers to into
+the `assets/` folder beside it, where the format wants an image. From there it is a file
+of the course like any other: in the step's history, in the blob store once, copied to
+`MEDIA_ROOT` by the sync. An upload nothing came to refer to is deleted after a week;
+one kept for another course is never taken.
+
+The two addresses that take or give a file begin with `/edit/image/`, ahead of the
+course, so that `BODY_LIMITS` (9 MB there, for someone signed in) and `RATE_LIMITS` (30
+a minute) can name them.
+
+### Another year of a course
+
+A course is written once per academic year; each year is a course of its own (its own
+address, content and progress) in one `series`. Which years there can be is not listed
+anywhere: [catalog/editions.py](../catalog/editions.py) works it out. `current_year()`
+is the year today falls in (it turns in `settings.ACADEMIC_YEAR_STARTS`, October), and
+`years()` runs from `settings.FIRST_ACADEMIC_YEAR` to it, so each October there is one
+more. `missing(course)` are those a course has no edition for, and the year switch at the
+top of a course's page offers **Add a year** to the people who write it when there are
+any.
+
+**Adding one** (`editor.whole.years`) makes a year that begins on the site. No folder
+among the owner's course files stands behind it, and the application never writes one.
+It is `desk.handins.begin`: the first step of a new course's history, with nothing
+before it (`base_version` empty). Its `course.yaml` is made from the year it was added
+beside (title, code, topics, settings; the year and the `series` set), and its content
+is empty or a copy of another year's. `handins.overlay` shows a course whose first step
+on the site has no base although the owner has no folder for it; any other course
+without an owner's folder stays gone, as before. Taking that first step back takes the
+year back.
+
+**The owner's files.** `import_course` used to refuse a zip of a course it did not know.
+It now takes one whose `course.yaml` names, as its `series`, a course the owner has, and
+makes the folder beside that course (so in the same `semester-N`). After the next
+`publish` the site reads the year from there and lets go of its own copy, as with any
+hand-in.
+
+**Which year is the course.** `editions.latest` keeps one course per series for the
+dashboard and the navigation: the newest year *that has something in it*
+(`Course.has_content`, noted by the sync), or the newest if none has. A year someone has
+just added therefore does not hide last year's notes.
+
+### The history: versions of a course
+
+`/edit/<course>/history/` and the pages under it, for the same people as the editor
+([editor/history.py](../editor/history.py), the views at the end of
+[editor/views.py](../editor/views.py)).
+
+- **The steps**, newest first, and **one step**: what it changed in each file, line by
+  line. `history.compare(before, after)` is `difflib.SequenceMatcher` over the lines of
+  each file that differs, grouped into hunks with three lines of context, capped per
+  file and per page. An image is said to be replaced, not shown.
+- **Bring this version back** (`views.restore`) makes the course what it was after a
+  step. It is `handins.change` with a function that returns that version, so it passes
+  every check, is a new step built on what is there now, and can itself be taken back.
+  Nothing is ever removed from the history. A version whose `course.yaml` differs in
+  what is the owner's can be brought back by staff only.
+- **Every version of one file** (`history.versions`): as it was before anything changed
+  on the site, after each step, and after each save within a step, read from `before`,
+  `files` and `trail`. One version can be read, compared with the file as it is now, and
+  put back, which is an ordinary save of that one file. A hash opens a file only if this
+  file of this course really had that version: the list is the access check.
+
+**Reading one course cheaply.** `live.folder(slug)` is asked on every page of the
+editor. `handins.overlay` answers it from the folder already unpacked for the newest
+step (its `.handin` marker says which step and version), with one query that leaves the
+archives in the database; `live.folders()`, which a sync asks, stays exact.
+
+**The preview** (`POST /edit/<course>/preview/`) renders the text with
+`ingest.markdown.Renderer`, the importer's own, and returns the HTML with whatever the
+renderer objected to, line by line. Links are resolved against an index of the course
+that `source.resolver` keeps per process until the course's `content_hash` changes.
+Nothing is stored. The browser typesets the maths with the KaTeX it already has
+([editor.js](../static/js/components/editor.js) uses the `x-math` directive of
+[math.js](../static/js/math.js)) and lists what KaTeX refuses beside the server's
+objections. The same component is the toolbar (buttons that write Markdown and LaTeX
+around the selection) and the question before leaving with unsaved text.
+
+**Where it shows.** `load_course` puts `can_edit` and `editing` in the context of every
+course page. `catalog/course_base.html` draws an Edit switch for those who may write the
+course; it posts to `editor:switch`, which keeps the choice in the session. Switched on,
+a page fills the `editing` block with what it offers (`Edit this page`, `New lecture`).
+
 ## Tests
 
 `manage.py test` runs Django's test runner.
@@ -620,6 +882,33 @@ is the long form: the kit's README told from the site's side.
   person wrote. The bot is never contacted: the one function that opens a connection is
   replaced. Code queued with `transaction.on_commit` does not run inside a test's
   transaction, so those tests use `captureOnCommitCallbacks(execute=True)`.
+- [editor/tests/](../editor/tests/): who gets in; a form filled from a file and saved
+  untouched changes nothing; a change to the text leaves the front matter's bytes alone
+  and the reverse; a new page and its address; removing, and not removing what is linked
+  to; two people on one page; the preview's HTML and line numbers; the owner told once
+  per step. What an edit may do to a course is tested with the hand-ins
+  (`EditedOnTheSiteTests` in desk/tests/test_handins.py), and the writer in
+  [ingest/tests/test_yamledit.py](../ingest/tests/test_yamledit.py).
+  [test_history.py](../editor/tests/test_history.py): the comparison itself; a version
+  brought back as a new step; a removed page and a text replaced within one sitting
+  found and put back; that a hash alone opens nothing.
+  [test_items.py](../editor/tests/test_items.py) and
+  [test_whole.py](../editor/tests/test_whole.py): a schema read as a form and a form
+  read back as data; every item and every file of the example course sent back
+  untouched changes nothing; one card changed leaves the rest of its file byte for
+  byte; a new deck, exam, paper, palace; what the schema and the course refuse.
+  [test_images.py](../editor/tests/test_images.py): a photo made as a phone writes one
+  (on its side, with a position) comes out upright, as WebP, without the position; what
+  is not a picture is refused; an upload joins the course with the text that shows it.
+  [test_years.py](../editor/tests/test_years.py): the year turns in October; a year
+  added empty and as a copy; a full sync keeps it; `import_course` makes its folder.
+- [desk/tests/test_take_in.py](../desk/tests/test_take_in.py): in a courses folder
+  that is a git repository, three steps by two people become three commits with their
+  authors and dates; a course the owner changed, uncommitted work, a step that did not
+  arrive whole and a path outside the course are refused; the SSH command line.
+  How versions are kept
+  (`KeptTests`) and that converted steps are the same course to the byte
+  (`ConvertedTests`, which runs the migration's function) are with the hand-ins.
 - [catalog/tests/test_welcome.py](../catalog/tests/test_welcome.py): who is offered the
   tour, who the news, and that each is offered once per account.
 

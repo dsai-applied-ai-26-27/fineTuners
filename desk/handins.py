@@ -14,10 +14,19 @@ checks it and, if it passes, the course on the site becomes that version at once
 4. In course.yaml only the topics and the description are theirs.
 5. The site's own validation, all of it, must pass.
 
-Nothing is ever lost by a hand-in. Each one is kept whole in the database
-(`HandIn.archive`: the course as it stood after it), so every earlier version can be
-fetched again, and a hand-in can be taken back (`withdraw`), which puts the course back
-to the version before it.
+Nothing is ever lost by a hand-in. Each one is kept whole in the database (`HandIn.files`
+and `before`: the course as it stood after the step and when it began, each file's bytes
+stored once in desk/blobs.py), so every earlier version can be fetched again, and a
+hand-in can be taken back (`withdraw`), which puts the course back to the version before
+it.
+
+An edit made on the site (the `editor` app) is the same thing without the zip: `change`
+makes the next version from the one the site has, and it passes the same checks, lands in
+the same history and can be taken back the same way. Only two of the rules above have
+nothing to ask there: it cannot be built on an old copy (2), and what it removes was
+removed by hand a moment ago (3). Someone editing saves often, so their saves within
+`SESSION` of each other are one step, not one each; except a save that removes a file,
+which always begins a step, so that the step before it still holds that file.
 
 Where the files go. The owner's course files are a folder the application cannot write
 to, replaced as a whole when the owner publishes. A hand-in therefore does not touch it:
@@ -34,6 +43,7 @@ import shutil
 import time
 import uuid
 from contextlib import contextmanager
+from datetime import timedelta
 from pathlib import Path
 
 from django.conf import settings
@@ -41,9 +51,10 @@ from django.db.utils import DatabaseError
 from django.utils import timezone
 
 from ingest import handin, live
+from ingest.discover import find_courses
 from ingest.sync import sync_course
 
-from . import notices
+from . import blobs, notices
 from .models import Educator, HandIn
 
 MAX_UPLOAD = 25 * 1024 * 1024  # the zip itself
@@ -53,12 +64,16 @@ MARKER = ".handin"  # in the folder of an unpacked course: which hand-in it is
 # Written by `manage.py import_course`, sent along by `publish`.
 MERGED = ".merged"
 STALE_LOCK = 300  # seconds after which a lock is taken to be left over from a crash
+# Someone editing on the site saves again and again. Saves by one person that follow each
+# other within this long are one step in the course's history, not one each.
+SESSION = timedelta(minutes=30)
 
 
 class Refused(Exception):
     """A hand-in that was not taken in. `kind` says why, `lines` says what exactly.
 
-    conflict   the course changed on the site after this person took their copy
+    conflict   the course changed on the site after this person took their copy, or
+               (in the editor) the very thing they were editing changed meanwhile
     start      the site does not know which version this person started from
     confirm    it removes or rewrites something, and that was not confirmed
     owner      it changes what is the owner's in course.yaml
@@ -149,21 +164,7 @@ def take(user, course, upload, *, confirmed=False):
         if not change.only_adds and not confirmed:
             raise Refused("confirm", change.lost)
 
-        work = root() / f".incoming-{uuid.uuid4().hex}"
-        staged = work / slug
-        try:
-            _write(staged, files)
-            # The importer validates first and writes to the database only if nothing
-            # is wrong, so this one call is both the check and the going live.
-            report = sync_course(staged)
-            if report.errors:
-                raise Refused("invalid", report.format().splitlines())
-            target = root() / slug
-            shutil.rmtree(target, ignore_errors=True)
-            staged.rename(target)
-        finally:
-            shutil.rmtree(work, ignore_errors=True)
-
+        target = _go_live(slug, files)
         record = HandIn.objects.create(
             user=user,
             series=course.series,
@@ -177,9 +178,10 @@ def take(user, course, upload, *, confirmed=False):
             removed_ids=change.ids,
             lines_added=change.lines_added,
             lines_removed=change.lines_removed,
-            archive=handin.pack_files(slug, files),
+            files=blobs.put(files),
+            before=blobs.put(current),
         )
-        (target / MARKER).write_text(str(record.pk), encoding="utf-8")
+        (target / MARKER).write_text(_mark(record), encoding="utf-8")
     remember(user, course.series, record.version)
     notices.tell(
         notices.educators_of(course.series, but=user),
@@ -194,6 +196,220 @@ def take(user, course, upload, *, confirmed=False):
         url=f"/admin/desk/handin/{record.pk}/change/",
     )
     return record
+
+
+def begin(user, series, slug, files):
+    """A course that starts on the site: another year of `series`, with no folder among
+    the owner's course files behind it yet. `files` is the whole of it ({name: bytes}),
+    course.yaml included.
+
+    It is the first step of that course's history, with nothing before it. Until the
+    owner takes it into the course files (import_course makes its folder) and publishes,
+    the site shows it from this step and those that follow, as it shows any hand-in.
+    Returns the step; raises Refused, and then nothing was made.
+    """
+    if not user.is_staff and not Educator.objects.filter(user=user, series=series).exists():
+        raise Refused("bad", ["You do not write this course."])
+    with lock(slug):
+        taken = live.folder(slug) is not None or HandIn.objects.filter(slug=slug).exists()
+        if taken:
+            raise Refused("conflict", ["There is a course at this address already."])
+        try:
+            handin.check(files, MAX_UNPACKED)
+        except handin.HandInError as error:
+            raise Refused("bad", [f"{error}."]) from error
+        target = _go_live(slug, files)
+        kept_as = blobs.put(files)
+        step = HandIn.objects.create(
+            user=user,
+            series=series,
+            slug=slug,
+            via=HandIn.Via.SITE,
+            base_version="",  # born here: this is what says so (see overlay)
+            version=handin.version_of(files),
+            new_files=sorted(files),
+            files=kept_as,
+            trail=[{"at": timezone.now().isoformat(timespec="seconds"), "files": kept_as}],
+        )
+        (target / MARKER).write_text(_mark(step), encoding="utf-8")
+    notices.tell(
+        [owner for owner in notices.owners() if owner.pk != user.pk],
+        f"A new year was started on the site: {slug}",
+        "It is live. To have it in your course files, download it in the admin and run "
+        "import_course.",
+        url=f"/admin/desk/handin/{step.pk}/change/",
+    )
+    return step
+
+
+def _go_live(slug, files):
+    """Make `files` the course on the site, if they are a valid course. Returns the folder
+    they are in now; raises Refused("invalid") with the importer's report otherwise, and
+    then the course is untouched."""
+    work = root() / f".incoming-{uuid.uuid4().hex}"
+    staged = work / slug
+    try:
+        _write(staged, files)
+        # The importer validates first and writes to the database only if nothing is
+        # wrong, so this one call is both the check and the going live.
+        report = sync_course(staged)
+        if report.errors:
+            raise Refused("invalid", report.format().splitlines())
+        target = root() / slug
+        shutil.rmtree(target, ignore_errors=True)
+        staged.rename(target)
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+    return target
+
+
+def files_at(slug, version):
+    """The course as it was at `version`, as {name: bytes}, or None if the site no longer
+    knows. It is what one of the steps on record left behind, or the owner's own files."""
+    row = HandIn.objects.filter(slug=slug, version=version).order_by("-pk").first()
+    if row is not None:
+        return kept(row)
+    began = HandIn.objects.filter(slug=slug, base_version=version).order_by("-pk").first()
+    if began is not None and began.before:
+        return blobs.get(began.before)
+    owner = find_courses(settings.CONTENT_ROOTS).get(slug)
+    if owner is not None:
+        files = handin.files_of(owner)
+        if handin.version_of(files) == version:
+            return files
+    return None
+
+
+def kept(row):
+    """The course as it stood after this step: {name: bytes}."""
+    if row.files:
+        return blobs.get(row.files)
+    # A step from before the blob store that could not be converted still has its zip.
+    return handin.unzip(bytes(row.archive), MAX_UNPACKED)[1]
+
+
+def before(row):
+    """The course as it stood when this step began, or None if that is not on record
+    (a step from before the site kept it, whose starting point has since moved on)."""
+    if row.before:
+        return blobs.get(row.before)
+    if not row.base_version and row.via == HandIn.Via.SITE and row.files:
+        return {}  # the step a year began with on the site: before it there was nothing
+    return files_at(row.slug, row.base_version) if row.base_version else None
+
+
+def _session(user, slug, version):
+    """The step a save on the site belongs to, if this person is in the middle of one:
+    the newest step of the course, theirs, made in the editor, not long ago, and still
+    what the site has."""
+    newest = (
+        HandIn.objects.filter(slug=slug, status=HandIn.Status.LIVE)
+        .order_by("-created_at", "-pk")
+        .defer("archive", "files")
+        .first()
+    )
+    if newest is None or newest.via != HandIn.Via.SITE or newest.user_id != user.pk:
+        return None
+    if newest.version != version:
+        return None
+    last = newest.updated_at or newest.created_at
+    return newest if timezone.now() - last <= SESSION else None
+
+
+def change(user, course, edit):
+    """An edit made on the site: the next version of the course, made from the one the
+    site has at this very moment.
+
+    `edit(files)` is given the course's files as they are now ({name: bytes}) and returns
+    them as they should be. It is called while the course is locked, so nothing it reads
+    can change under it; it raises Refused("conflict", …) if what the person was looking
+    at is no longer what is there. Everything a zip from the kit has to pass applies here
+    too, with two differences. There is no question of which copy it was built on: it is
+    built on the site's. And what it removes needs no second confirmation: the person
+    changed that very thing, on purpose, a moment ago.
+
+    Returns (the step in the course's history, whether this save began a new step). Raises
+    Refused, and then nothing at all has changed.
+    """
+    slug = course.slug
+    role = Educator.objects.filter(user=user, series=course.series).first()
+    if role is None and not user.is_staff:
+        raise Refused("bad", ["You do not write this course."])
+
+    with lock(slug):
+        folder = live.folder(slug)
+        if folder is None:
+            raise Refused("bad", ["The site has no files for this course to work on yet."])
+        current = handin.files_of(folder)
+        now = handin.version_of(current)
+        files = edit(dict(current))
+        try:
+            handin.check(files, MAX_UNPACKED)
+        except handin.HandInError as error:
+            raise Refused("bad", [f"{error}."]) from error
+        version = handin.version_of(files)
+        if version == now:
+            raise Refused("nothing", ["Nothing was changed."])
+        # What is the owner's in course.yaml stays the owner's; whoever runs the site is
+        # the owner, or acts for them.
+        if not user.is_staff:
+            theirs = files["course.yaml"].decode("utf-8", errors="replace")
+            problems = handin.protected_changes(current["course.yaml"].decode("utf-8"), theirs)
+            if problems:
+                raise Refused("owner", problems)
+
+        # A save that removes a file never joins the step before it. That step then keeps
+        # the file, so a page written and removed in one sitting can still be fetched.
+        gone = current.keys() - files.keys()
+        step = None if gone else _session(user, slug, now)
+        target = _go_live(slug, files)
+        fresh = step is None
+        after = blobs.put(files)
+        if fresh:
+            done = handin.compare(current, files)
+            step = HandIn(user=user, series=course.series, slug=slug, base_version=now)
+            step.via = HandIn.Via.SITE
+            step.before = blobs.put(current)
+        else:
+            # The step grows: what it did is now everything since it began.
+            done = handin.compare(blobs.get(step.before), files)
+            step.saves += 1
+            step.updated_at = timezone.now()
+        # What this one save changed. The step itself keeps only where it ends up, so
+        # this is where a text that a later save of the sitting replaces can be found.
+        changed = {
+            name: after.get(name)
+            for name in {*current, *files}
+            if current.get(name) != files.get(name)
+        }
+        step.trail = [
+            *step.trail,
+            {"at": timezone.now().isoformat(timespec="seconds"), "files": changed},
+        ]
+        step.version, step.files = version, after
+        step.new_files, step.removed_files = done.added, done.removed
+        step.grown, step.shrunk, step.removed_ids = done.grown, done.shrunk, done.ids
+        step.lines_added, step.lines_removed = done.lines_added, done.lines_removed
+        step.save()
+        (target / MARKER).write_text(_mark(step), encoding="utf-8")
+
+    if fresh:
+        # Once per step, not once per save. Their own copy of the course, if they keep
+        # one with the kit, is behind now as well, and their page says so by itself.
+        notices.tell(
+            notices.educators_of(course.series, but=user),
+            f"{course.title} changed on the site",
+            "It is being edited on the site. Download the course files again before your "
+            "next hand-in.",
+            url=f"/educators/courses/{course.series}/#files",
+        )
+        notices.tell(
+            [owner for owner in notices.owners() if owner.pk != user.pk],
+            f"Edited on the site: {course.title}",
+            "It is live.",
+            url=f"/admin/desk/handin/{step.pk}/change/",
+        )
+    return step, fresh
 
 
 def remember(user, series, version):
@@ -211,14 +427,29 @@ def _write(folder, files):
         path.write_bytes(data)
 
 
-def _unpacked(record, files):
-    """The folder holding this hand-in's course, unpacking it if it is not there."""
+def _mark(record):
+    """What the folder of an unpacked course says about itself: which step it is, and at
+    which version, since a step made in the editor grows while its number stays."""
+    return f"{record.pk} {record.version}"
+
+
+def _working(record):
+    """The folder holding this step's course, if it is there already."""
     target = root() / record.slug
     marker = target / MARKER
-    if not marker.is_file() or marker.read_text(encoding="utf-8").strip() != str(record.pk):
+    if marker.is_file() and marker.read_text(encoding="utf-8").strip() == _mark(record):
+        return target
+    return None
+
+
+def _unpacked(record, files):
+    """The folder holding this step's course, unpacking it if it is not there."""
+    target = _working(record)
+    if target is None:
+        target = root() / record.slug
         shutil.rmtree(target, ignore_errors=True)
         _write(target, files)
-        marker.write_text(str(record.pk), encoding="utf-8")
+        (target / MARKER).write_text(_mark(record), encoding="utf-8")
     return target
 
 
@@ -233,27 +464,54 @@ def _included(owner, record, files):
     return handin.version_of(theirs) == record.version or handin.holds(theirs, files)
 
 
-def overlay(base, *, settle=False, notes=None):
+def overlay(base, *, settle=False, notes=None, only=None):
     """For ingest.live: the folder to read each course from, given the owner's (`base`).
 
     A course with hand-ins on the site is read from the newest of them, unless the
     owner's files already include it. With `settle` (a real sync, not a check) those
     overtaken hand-ins are marked as merged and their folders removed.
+
+    Asked about one course (`only`), which is what a page does while someone waits, the
+    answer comes from the folder that is already unpacked, if it is this very step.
+    Whether the owner's files have caught up is a question for the next sync: until one
+    has run, the site shows the hand-in either way.
     """
+    # light(): each row names every file of a course. Only the newest of a course is
+    # ever opened, and what it kept is fetched when it is asked for.
+    rows = HandIn.objects.filter(status=HandIn.Status.LIVE).light()
+    if only is not None:
+        rows = rows.filter(slug=only)
     try:
-        rows = list(HandIn.objects.filter(status=HandIn.Status.LIVE).order_by("created_at", "pk"))
+        rows = list(rows.order_by("created_at", "pk"))
     except DatabaseError:  # the table is not there yet: a first migrate is still to come
         return base
-    result, newest, count = dict(base), {}, {}
+    result, newest, count, born = dict(base), {}, {}, set()
     for row in rows:
+        if row.slug not in newest and not row.base_version:
+            born.add(row.slug)  # its first step had nothing before it: it began here
         newest[row.slug] = row
         count[row.slug] = count.get(row.slug, 0) + 1
 
     for slug, row in newest.items():
         owner = base.get(slug)
-        if owner is None:
+        if owner is None and slug not in born:
             continue  # the owner has taken the course away; there is nothing to show
-        _slug, files = handin.unzip(bytes(row.archive), MAX_UNPACKED)
+        if only is not None and not settle:
+            ready = _working(row)
+            if ready is not None:
+                result[slug] = ready
+                continue
+        files = kept(row)
+        if owner is None:
+            # A year started on the site, which the owner's files have no folder for.
+            result[slug] = _unpacked(row, files)
+            if notes is not None:
+                notes[slug] = (
+                    "a year that was started on the site: your course files have no "
+                    "folder for it. Take it in (admin, Hand-ins, download; then "
+                    "import_course, which makes the folder) and publish again."
+                )
+            continue
         if _included(owner, row, files):
             if settle:
                 HandIn.objects.filter(slug=slug, status=HandIn.Status.LIVE).update(
@@ -268,7 +526,7 @@ def overlay(base, *, settle=False, notes=None):
                 f"hand-in{'s' * (n != 1)}. Take the newest in (admin, Hand-ins, download; "
                 "then import_course) and publish again."
             )
-    if settle and root().is_dir():
+    if settle and only is None and root().is_dir():
         for folder in root().iterdir():
             # What is left over: courses whose hand-ins were merged or taken back.
             if (
@@ -278,6 +536,42 @@ def overlay(base, *, settle=False, notes=None):
             ):
                 shutil.rmtree(folder, ignore_errors=True)
     return result
+
+
+def pending(slugs=None):
+    """What the owner's course files do not have yet: every step that is on the site and
+    not merged, oldest first, each with the files it kept. For `manage.py export_steps`,
+    which hands it to `take_in` on the owner's computer. Reads only.
+
+    Returns (steps, {sha: bytes}). A step is a plain dict (who, when, what it did, the
+    version before and after, and its files as {name: sha}); the bytes of every file are
+    in the second value, each once.
+    """
+    rows = HandIn.objects.filter(status=HandIn.Status.LIVE).select_related("user")
+    if slugs:
+        rows = rows.filter(slug__in=slugs)
+    steps, pool = [], {}
+    for row in rows.order_by("created_at", "pk"):
+        names = {}
+        for name, data in kept(row).items():
+            sha = blobs.sha_of(data)
+            pool.setdefault(sha, data)
+            names[name] = sha
+        steps.append(
+            {
+                "id": row.pk,
+                "slug": row.slug,
+                "series": row.series,
+                "via": row.via,
+                "at": (row.updated_at or row.created_at).isoformat(timespec="seconds"),
+                "by": (row.user.get_full_name() if row.user else "") or "An educator",
+                "summary": row.summary,
+                "base": row.base_version,
+                "version": row.version,
+                "files": names,
+            }
+        )
+    return steps, pool
 
 
 def root_base(record):
@@ -302,6 +596,13 @@ def withdraw(record, by=None):
     later.update(status=HandIn.Status.WITHDRAWN, settled_at=timezone.now())
     folder = live.folders(settle=True).get(record.slug)
     report = sync_course(folder, force=True) if folder else None
+    if folder is None:
+        # What was taken back is the step a year began with: without it there is no
+        # such course. Its rows go now, not at the next full sync.
+        from catalog.models import Course
+
+        Course.objects.filter(slug=record.slug).delete()
+        shutil.rmtree(root() / record.slug, ignore_errors=True)
     # Everyone who writes the course now has a copy that is ahead of the site.
     told = {*authors, *notices.educators_of(record.series)} - {by}
     notices.tell(

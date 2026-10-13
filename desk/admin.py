@@ -215,21 +215,34 @@ class EducatorAdmin(CourseColumn, admin.ModelAdmin):
 
 @admin.register(HandIn)
 class HandInAdmin(CourseColumn, admin.ModelAdmin):
-    """What educators added, step by step. Each one went live when it was handed in. From
-    here it can be downloaded (to take into your own course files with import_course)
-    and, if it should not be on the site, taken off again."""
+    """What educators did to a course, step by step: a zip handed in, or a sitting of
+    edits made on the site. Each one went live as it was made. From here it can be
+    downloaded (to take into your own course files with import_course) and, if it should
+    not be on the site, taken off again."""
 
-    list_display = ["created_at", "course", "summary", "who", "status"]
-    list_filter = ["status", "series"]
+    list_display = ["created_at", "course", "summary", "who", "via", "status"]
+    list_filter = ["status", "via", "series"]
     search_fields = ["slug", "user__email", "user__first_name", "user__last_name"]
     list_select_related = ["user"]
     actions = ["take_off"]
-    fields = ["course", "who", "created_at", "status", "settled_at", "summary", "files", "zip"]
+    fields = [
+        "course",
+        "who",
+        "via",
+        "created_at",
+        "updated_at",
+        "saves",
+        "status",
+        "settled_at",
+        "summary",
+        "changed",
+        "zip",
+    ]
     readonly_fields = fields
 
     def get_queryset(self, request):
-        # The zip of every row would be read just to draw a list: leave it in the database.
-        return super().get_queryset(request).defer("archive")
+        # What each step kept would be read just to draw a list: leave it in the database.
+        return super().get_queryset(request).light()
 
     def has_add_permission(self, request):
         return False  # hand-ins are uploaded on the site, by the educator
@@ -244,10 +257,17 @@ class HandInAdmin(CourseColumn, admin.ModelAdmin):
         return row.user.get_full_name() or row.user.email or row.user.username
 
     @admin.display(description="Files")
-    def files(self, row):
+    def changed(self, row):
+        # Not named `files`: that is a column of the model (every file the step kept),
+        # and the admin shows a model's field in preference to a method of this name.
         new = [(name, "new") for name in row.new_files]
         grown = [(name, f"+{lines} lines") for name, lines in row.grown.items()]
-        return format_html_join("", "<div><code>{}</code> {}</div>", new + grown) or "-"
+        shrunk = [
+            (name, f"{lines} lines removed or rewritten") for name, lines in row.shrunk.items()
+        ]
+        gone = [(name, "removed") for name in row.removed_files]
+        rows = new + grown + shrunk + gone
+        return format_html_join("", "<div><code>{}</code> {}</div>", rows) or "-"
 
     @admin.display(description="The course after it")
     def zip(self, row):

@@ -18,9 +18,12 @@ is saved to their account.
 - `courses/` is a git repository of its own (the content repository, see
   [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#course-files-and-the-educator-kit)). Commit there
   only when asked, and never anything under a `source/` folder.
-- Educators hand their work in on the site, where it goes live at once. To bring a
-  hand-in into the course files, download it from the admin (Hand-ins) and run
-  `manage.py import_course <zip>`. Never unpack one by hand: the command is what checks it.
+- Educators hand their work in on the site, or edit the course there, and either goes
+  live at once. To bring that into the course files, the owner runs `manage.py take_in`
+  (every step, as commits in `courses/`), or downloads one step from the admin
+  (Hand-ins) and runs `manage.py import_course <zip>`. Never unpack one by hand, and
+  never write those files yourself: the commands are what check them. `take_in` makes
+  commits in the content repository, so it is for the owner to run or to ask for.
 - Do not touch Python, templates, CSS or JavaScript. If the site cannot show something,
   report it; do not change code to make it fit.
 - Finish with `uv run python manage.py sync_content <course>` printing no errors.
@@ -71,7 +74,8 @@ uv run --env-file .env python manage.py publish       send all course content to
 uv run python manage.py startcourse <slug> --title "…" --code X --year "2026-27"
 uv run python manage.py export_schemas                regenerate docs/schemas and fields.md
 uv run python manage.py export_authoring educator-kit  rebuild the educator kit (then commit and push there)
-uv run python manage.py import_course <zip>           take in the course files an educator handed in
+uv run --env-file .env python manage.py take_in       commit every step made on the site into courses/
+uv run python manage.py import_course <zip>           take in one step by hand (or a year started on the site)
 uv run python manage.py test                          all tests
 uv run ruff check . && uv run ruff format .           lint and format
 ```
@@ -90,6 +94,10 @@ desk/        what people send in (Ask or report, applications to write a course)
              switches for a course, notifications (the bell), the announcements the
              owner writes in the admin, and the message to the owner's bot when
              something arrives
+editor/      changing a course on the site, for the people who write it: forms filled
+             from the course's files, a preview, and a save that goes through
+             desk/handins.py like a hand-in. Its one model holds uploaded images until
+             the text that shows them is saved
 ingest/      files -> database: schemas, Markdown renderer, sync, management commands
 templates/   base page and shared fragments
 static/      CSS, JavaScript (no build step), vendored libraries, fonts, icons
@@ -120,6 +128,11 @@ To sign in locally press "Development sign-in" on the landing page.
 - One course folder is one academic year. When a course is taught again, the new year
   is a new folder whose `course.yaml` says `series: <first folder>`; never rewrite a
   finished year in place, because people's progress is keyed to its ids.
+- Which years a course can have is worked out, never listed: from
+  `FIRST_ACADEMIC_YEAR` to the year today falls in (`catalog/editions.py`). A year can
+  begin on the site (`desk.handins.begin`): until the owner runs `import_course` on it,
+  which makes its folder, it exists only as steps in the database. A full sync must
+  keep such a course (`handins.overlay` lists it), not remove it as folderless.
 - The database holds two kinds of table. `catalog_*` is a cache of the course files and may
   be rebuilt at will. Users, `progress_*`, `accounts_*` (the courses each person chose,
   what they have been shown) and `desk_*` (requests, applications, educators, the
@@ -138,6 +151,23 @@ To sign in locally press "Development sign-in" on the landing page.
   must stay: it is built on the version the site has, what it removes is confirmed by
   the person, and the whole course as it stood is kept with every hand-in. Never write
   into the owner's course files from the application.
+- A course changes on the site through `desk.handins` and nowhere else: `take` for a
+  zip, `change` for an edit made in the editor. Both lock the course, validate all of
+  it, and leave a step in its history that can be taken back. A new way to change
+  content is a new caller of `change`, never a view that writes files.
+- Every step of a course's history keeps the whole course, as names with hashes whose
+  bytes are in `desk.Blob` (desk/blobs.py). Nothing is deleted from that table, on the
+  server or in a migration: it is the history, and the only copy of what educators
+  wrote on the site until the owner takes it into the course files.
+- An image uploaded in the editor is re-encoded by `editor/images.py` before anything
+  keeps it: scaled, turned upright, and written without EXIF, because a phone photo
+  carries where it was taken. Never store or serve an upload as it was sent.
+- The editor writes YAML with `ingest/yamledit.py` only (LaTeX goes in literal blocks,
+  where a backslash is safe), and what a form may contain is decided by
+  `ingest/schemas.py`, the same models the importer uses, not by the form. The forms
+  for YAML content are made from those models (`editor/schema.py`): a field added to a
+  schema appears in its form by itself, so a new content field needs no editor change,
+  and a new kind of file is an entry in `editor/items.py` or `editor/whole.py`.
 - When something happens that a person should hear of, leave them a notification
   (`desk.notices.tell`): what happened and where to look, never who sent it or what it
   says.
