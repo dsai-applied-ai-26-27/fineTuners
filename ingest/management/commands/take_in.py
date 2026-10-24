@@ -45,6 +45,7 @@ from pathlib import Path
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
+from django.utils import timezone
 
 from ingest import handin
 from ingest.discover import find_courses
@@ -235,7 +236,9 @@ class Command(BaseCommand):
             git(root, "add", "--all", "--", str(folder))
             if not git(root, "status", "--porcelain", "--", str(folder)).stdout.strip():
                 continue  # a step that ended where it began
-            when = dt.datetime.fromisoformat(step["at"]).isoformat(timespec="seconds")
+            # In the site's own time zone, so the log shows the day the step was made there.
+            at = timezone.localtime(dt.datetime.fromisoformat(step["at"]))
+            when = at.isoformat(timespec="seconds")
             how = "edited on the site" if step.get("via") == "site" else "handed in as a zip"
             git(
                 root,

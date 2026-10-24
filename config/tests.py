@@ -79,6 +79,11 @@ class RateLimitTests(TestCase):
     def setUp(self):
         caches["limits"].clear()
         self.addCleanup(caches["limits"].clear)
+        # Counts are kept per minute of the clock. Stopped mid-minute, a test's requests
+        # all fall in the same one, however long the test takes.
+        clock = mock.patch("config.ratelimit.time.time", return_value=1_800_000_030.0)
+        clock.start()
+        self.addCleanup(clock.stop)
         self.ada = get_user_model().objects.create_user("ada")
         self.bob = get_user_model().objects.create_user("bob")
 
