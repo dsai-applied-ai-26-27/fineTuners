@@ -398,6 +398,15 @@ two values everything still works: requests are stored and shown in the admin, n
 told, and the log says so once at start-up. A message never contains a name, a phone
 number or what was written.
 
+The same bot is told of the **courses' duties**: the dated labs, tests, exams and the like
+that the owner keeps in each course's private `duties.yaml` ([DUTIES.md](DUTIES.md)).
+After every `sync_content` on the server (so after each `publish` and each deploy) the
+site posts what is new, changed or gone since the bot was last told, with the same token,
+to `BMO_NOTIFY_URL` with `bmo-notify` changed to `bmo-duties`. For another address set
+`BMO_DUTIES_URL` (`deploy setenv BMO_DUTIES_URL`, then put `deploy/` on the server again,
+since the variable reaches the container through `compose.yaml`). The sync prints one
+line about it, in numbers only: `Duties: told about 3 new, 1 changed.`
+
 **E-mail to educators.** The site writes to educators about their role: an accepted
 application, a new version of the kit, a hand-in taken off the site
 ([desk/mail.py](../desk/mail.py)). It needs a mail server: any provider's SMTP details.

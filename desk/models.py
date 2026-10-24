@@ -376,3 +376,22 @@ class Notification(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class ToldDuty(models.Model):
+    """One dated duty of a course, as the owner's bot last heard of it (desk/duties.py).
+
+    Not the duties themselves: those are the owner's `duties.yaml` beside a course's
+    course.yaml, which the site shows nowhere. This is what was sent, so that the next
+    sync sends only what is new, changed or gone. Not in the admin either."""
+
+    key = models.CharField(max_length=200, unique=True)  # <course>/<id>, as for progress
+    course = models.SlugField(max_length=64)
+    sent = models.JSONField()  # the item as the bot received it, without `change`
+    told_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["key"]
+
+    def __str__(self):
+        return self.key

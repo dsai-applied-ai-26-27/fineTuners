@@ -83,7 +83,10 @@ def copy(source, target):
         shutil.rmtree(target)
     target.parent.mkdir(parents=True, exist_ok=True)
     if source.is_dir():
-        shutil.copytree(source, target, ignore=shutil.ignore_patterns("__pycache__", "source"))
+        # Never raw material, and never a course's duties (ingest/duties.py): both are the
+        # owner's, and the kit is public.
+        ignore = shutil.ignore_patterns("__pycache__", "source", "duties.yaml")
+        shutil.copytree(source, target, ignore=ignore)
     else:
         shutil.copyfile(source, target)
 

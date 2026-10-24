@@ -11,9 +11,13 @@ is saved to their account.
 
 - Read [docs/AUTHORING.md](docs/AUTHORING.md) first, then the page for each content type you
   will write under [docs/content-types/](docs/content-types/).
-- Create and edit files **only** under the course's own folder: its `content/` and its
-  `course.yaml`. The folder is `courses/<course>/`, or `courses/semester-N/<course>/`
-  where courses are grouped by semester.
+- Create and edit files **only** under the course's own folder: its `content/`, its
+  `course.yaml` and its `duties.yaml`. The folder is `courses/<course>/`, or
+  `courses/semester-N/<course>/` where courses are grouped by semester.
+- Whenever you write or update a course from its source material, bring its
+  `duties.yaml` up to date in the same session: every dated lab, test, exam term,
+  project defence, seminar, presentation and homework deadline. Read
+  [docs/DUTIES.md](docs/DUTIES.md) for the format and the rules.
 - The course's `source/` is read-only raw material.
 - `courses/` is a git repository of its own (the content repository, see
   [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#course-files-and-the-educator-kit)). Commit there
@@ -92,8 +96,8 @@ accounts/    the pieces around signing in that are ours (the rest is django-alla
 desk/        what people send in (Ask or report, applications to write a course), who
              writes which course (educators) and what they hand in for it, the owner's
              switches for a course, notifications (the bell), the announcements the
-             owner writes in the admin, and the message to the owner's bot when
-             something arrives
+             owner writes in the admin, the message to the owner's bot when
+             something arrives, and the courses' duties sent to the same bot
 editor/      changing a course on the site, for the people who write it: forms filled
              from the course's files, a preview, and a save that goes through
              desk/handins.py like a hand-in. Its one model holds uploaded images until
@@ -142,6 +146,11 @@ To sign in locally press "Development sign-in" on the landing page.
   `course.yaml` (`enabled`, `has_educator`) and are overridden by the owner's switches in
   the admin. Ask `desk.switches`, never the course row alone, and list courses with
   `catalog.mine.catalogue(request)`, which leaves out those not open.
+- A course's `duties.yaml` (beside `course.yaml`, docs/DUTIES.md) is the owner's alone:
+  no page shows it, and only the owner's bot is told of it (`desk/duties.py`). Keep it
+  out of `content/`, out of `ingest/schemas.py` and out of everything `export_authoring`
+  copies (AUTHORING.md, content-types/, schemas/, the example course, the kit's rules):
+  the kit is public, and a course's files travel to its educators.
 - What a person sent is theirs. A notification to the owner's bot says that something
   arrived and never who sent it or what it says; an educator sees a request about their
   course without the sender. Keep both that way: the privacy page promises it.

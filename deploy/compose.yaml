@@ -39,6 +39,9 @@ services:
       # application arrives (desk/notify.py). Empty: they are stored and nobody is told.
       BMO_NOTIFY_URL: ${BMO_NOTIFY_URL:-}
       BMO_NOTIFY_TOKEN: ${BMO_NOTIFY_TOKEN:-}
+      # Optional: where the bot takes the courses' duties (desk/duties.py). Empty: the
+      # address above with bmo-notify changed to bmo-duties.
+      BMO_DUTIES_URL: ${BMO_DUTIES_URL:-}
       # Optional: a mail server, for e-mail to educators (desk/mail.py). Without a host
       # the site writes to nobody.
       DSAI_EMAIL_HOST: ${DSAI_EMAIL_HOST:-}

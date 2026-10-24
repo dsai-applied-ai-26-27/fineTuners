@@ -14,7 +14,7 @@ from django.utils import timezone
 
 from catalog.models import Course
 
-from . import live, mathcheck, store
+from . import duties, live, mathcheck, store
 from .assets import Assets
 from .build import Builder
 from .discover import clashes, content_hash, discover
@@ -28,8 +28,11 @@ def sync_course(course_dir, *, check_only=False, force=False):
     course_dir = Path(course_dir)
     slug = course_dir.name
     report = Report(course=slug)
+    # The owner's own list of dated duties, beside course.yaml (ingest/duties.py). The site
+    # shows it nowhere; it is checked here like any file of the course.
+    dated = duties.read(course_dir, report)
     digest = content_hash(course_dir)
-    if not check_only and not force:
+    if not check_only and not force and report.ok:
         # A file can be saved again without changing (an edit undone, a restored copy). The
         # bytes still match, so there is nothing to import, but record that they were
         # compared: the "files changed" notice on the site goes by this time.
@@ -62,6 +65,8 @@ def sync_course(course_dir, *, check_only=False, force=False):
     if note:
         report.notes.append(note)
     report.counts = plan.counts()
+    if dated:
+        report.counts["duties"] = len(dated)
 
     if not report.ok:
         report.status = "failed"

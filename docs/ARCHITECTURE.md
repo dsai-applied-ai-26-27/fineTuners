@@ -476,6 +476,18 @@ keeps the privacy page true. Failures that may pass (no answer, a 5xx) are tried
 more; a refusal is final. Without `BMO_NOTIFY_URL` and `BMO_NOTIFY_TOKEN` nothing is
 sent, and the address must be https because the token travels in a header.
 
+**The courses' duties** ([desk/duties.py](../desk/duties.py)). Each course may have a
+`duties.yaml` beside its `course.yaml`: the owner's own dated labs, tests, exams and the
+like ([DUTIES.md](DUTIES.md)). It is private, so it is outside `content/` and travels
+nowhere a course travels (downloads, hand-ins, the editor, the history, the kit), and no
+page renders it. [ingest/duties.py](../ingest/duties.py) is its format, checked by
+`sync_course` like any file of the course but kept out of `ingest/schemas.py`, which the
+public kit copies. After a real `sync_content`, `duties.push()` compares every course's
+duties with `ToldDuty` (what the bot was last told, one row per duty) and posts what is
+new, changed or gone, in batches of at most 50, through `notify.deliver`. A row changes
+only once the bot took its batch, so what was not delivered goes with the next sync. It
+waits for the answer instead of using a thread: a command ends, and its threads with it.
+
 **In the admin** ([desk/admin.py](../desk/admin.py)). Requests and applications are
 listed and answered there; what the person wrote is read-only. Accepting an application
 (an action on the list, or the status on its page) calls `decide()`. The switches are
