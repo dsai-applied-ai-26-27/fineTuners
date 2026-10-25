@@ -84,27 +84,29 @@ def _dispatch(payload):
     threading.Thread(target=deliver, args=(payload,), daemon=True).start()
 
 
-def deliver(payload, sleep=time.sleep):
-    """Post `payload` to the bot. True if it was accepted."""
+def deliver(payload, sleep=time.sleep, *, url=None, what="a notification"):
+    """Post `payload` to the bot (at `url`, by default its address for notifications).
+    True if it was accepted. desk/duties.py sends its lists this way too."""
     body = json.dumps(payload).encode()
+    url = url or settings.BMO_NOTIFY_URL
     for attempt in range(1 + len(RETRY_AFTER)):
         if attempt:
             sleep(RETRY_AFTER[attempt - 1])
-        status = _post(body)
+        status = _post(body, url)
         if status == 200:
             return True
         if status in (400, 403, 429):
-            logger.warning("BMO refused a notification (%s); not retried", status)
+            logger.warning("BMO refused %s (%s); not retried", what, status)
             return False
         # None (no answer) or a 5xx: worth another try, with the same dedupe_key.
-    logger.warning("BMO did not take a notification after %s tries", 1 + len(RETRY_AFTER))
+    logger.warning("BMO did not take %s after %s tries", what, 1 + len(RETRY_AFTER))
     return False
 
 
-def _post(body):
+def _post(body, url):
     """One HTTP POST. Returns the status code, or None if there was no answer."""
     request = urllib.request.Request(  # noqa: S310 (the address is the owner's own setting)
-        settings.BMO_NOTIFY_URL,
+        url,
         data=body,
         method="POST",
         headers={"Content-Type": "application/json", "X-BMO-Token": settings.BMO_NOTIFY_TOKEN},

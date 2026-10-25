@@ -149,7 +149,7 @@ class DeliverTests(SimpleTestCase):
         answer = mock.MagicMock()
         answer.__enter__.return_value.status = 200
         with mock.patch("desk.notify.urllib.request.urlopen", return_value=answer) as urlopen:
-            self.assertEqual(notify._post(b"{}"), 200)
+            self.assertEqual(notify._post(b"{}", "https://bot.example.test/hook"), 200)
         request = urlopen.call_args.args[0]
         self.assertEqual(request.full_url, "https://bot.example.test/hook")
         self.assertEqual(request.get_method(), "POST")
@@ -163,4 +163,4 @@ class DeliverTests(SimpleTestCase):
                 self.subTest(failure=failure),
                 mock.patch("desk.notify.urllib.request.urlopen", side_effect=failure),
             ):
-                self.assertIsNone(notify._post(b"{}"))
+                self.assertIsNone(notify._post(b"{}", "https://bot.example.test/hook"))

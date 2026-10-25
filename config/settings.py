@@ -219,6 +219,9 @@ ACADEMIC_YEAR_STARTS = int(os.environ.get("DSAI_ACADEMIC_YEAR_STARTS", "10"))
 # so like every server address it is kept out of the repository. Empty: no messages.
 BMO_NOTIFY_URL = os.environ.get("BMO_NOTIFY_URL", "")
 BMO_NOTIFY_TOKEN = os.environ.get("BMO_NOTIFY_TOKEN", "")
+# Where the bot takes the courses' duties (desk/duties.py), with the same token. Empty:
+# BMO_NOTIFY_URL with `bmo-notify` changed to `bmo-duties`.
+BMO_DUTIES_URL = os.environ.get("BMO_DUTIES_URL", "")
 
 # The educator kit: the public repository every educator clones, with the instructions
 # for their AI assistant, the format and the tools, and no course content. Its address is

@@ -63,7 +63,10 @@ def load_yaml(text, *, file, report, line_offset=0):
     if root is None:
         return loaded
     _walk(root, (), text, file, report, loaded, line_offset)
-    loaded.data = yaml.load(text, Loader=yaml.SafeLoader)  # noqa: S506 - SafeLoader
+    try:
+        loaded.data = yaml.load(text, Loader=yaml.SafeLoader)  # noqa: S506 - SafeLoader
+    except ValueError:
+        return None  # a date that cannot exist, such as 2026-02-30; _walk said where
     return loaded
 
 
@@ -102,6 +105,17 @@ def _walk(node, path, text, file, report, loaded, offset):
         loaded.text_lines[path] = line + 1 if node.style in ("|", ">") else line
         if node.style is None:
             loaded.raw[path] = node.value
+        if node.tag == "tag:yaml.org,2002:timestamp":
+            try:
+                yaml.constructor.SafeConstructor().construct_yaml_timestamp(node)
+            except ValueError:
+                report.error(
+                    file,
+                    f"`{node.value}` is not a date that exists",
+                    line=line,
+                    where=_dotted(path),
+                    hint="check the day and the month",
+                )
         if node.style == '"':
             raw = text[node.start_mark.index : node.end_mark.index]
             if "\\" in raw:

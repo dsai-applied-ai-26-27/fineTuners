@@ -14,6 +14,7 @@ import sys
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
+from desk import duties
 from ingest.sync import sync_all
 
 
@@ -58,7 +59,18 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.WARNING(text))
             else:
                 self.stdout.write(text)
-        return sum(1 for report in reports if report.errors)
+        failed = {report.course for report in reports if report.errors}
+        # The courses' duties, to the owner's bot (desk/duties.py): only after a real sync,
+        # and only where the bot is set up, which is on the server.
+        told = None if check else duties.push(only)
+        if told is not None:
+            self.stdout.write(f"Duties: {told}.")
+            for slug in sorted(set(told.skipped) - failed):
+                self.stdout.write(
+                    self.style.ERROR(f"{slug}: duties.yaml has errors; the bot was not told.")
+                )
+                failed.add(slug)
+        return len(failed)
 
     def watch(self, only, check):
         # A development dependency (pyproject.toml), absent from the production image.

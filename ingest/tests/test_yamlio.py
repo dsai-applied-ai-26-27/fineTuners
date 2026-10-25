@@ -58,6 +58,12 @@ class YamlTests(SimpleTestCase):
         self.load("a:\n  <<: {b: 1}\n")
         self.assertTrue(any("merge keys" in e.message for e in self.report.errors))
 
+    def test_a_date_that_cannot_exist_is_an_error_and_not_a_crash(self):
+        self.assertIsNone(self.load("title: Midterm\ndate: 2026-02-30\n"))
+        (error,) = self.report.errors
+        self.assertEqual((error.line, error.where), (2, "date"))
+        self.assertIn("2026-02-30", error.message)
+
     def test_front_matter_split(self):
         front, body, line = split_front_matter("---\ntitle: X\n---\n\n## Heading\n")
         self.assertEqual(front, "title: X")

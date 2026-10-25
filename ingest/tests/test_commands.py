@@ -595,6 +595,15 @@ class PublishCommandTests(CourseTestCase):
         self.assertIn("Published", text)
         self.assertFalse(Course.objects.exists(), "publishing must not touch the local database")
 
+    def test_the_owners_duties_go_with_the_course(self):
+        (self.course / "duties.yaml").write_text(
+            "duties:\n  - id: lab-1\n    kind: lab\n    title: Lab 1\n    due: 2026-11-04\n",
+            encoding="utf-8",
+        )
+        with mock.patch(self.SEND, return_value=0) as send:
+            run("publish", "--to", "me@server.test")
+        self.assertIn("example/duties.yaml", self.names(send.call_args.args[1]))
+
     def test_invalid_content_is_never_sent(self):
         self.edit("content/decks/least-squares.yaml", "topic: lsq", "topic: nope")
         out = StringIO()

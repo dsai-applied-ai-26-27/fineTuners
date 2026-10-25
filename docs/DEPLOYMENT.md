@@ -108,8 +108,9 @@ uv run --env-file .env python manage.py publish
 
 1. validates every course under `courses/`, exactly like `sync_content --check`. Any error
    stops it and nothing is sent;
-2. packs each course's `course.yaml` and `content/` folder into one archive. `source/` is
-   never included;
+2. packs each course's `course.yaml`, `content/` folder and, where there is one, its
+   private `duties.yaml` ([DUTIES.md](DUTIES.md)) into one archive. `source/` is never
+   included;
 3. pipes the archive over SSH to `deploy content` on the server, which
    - validates the new files again with the code that is live there,
    - only then replaces `~/dsai-vault/courses/`,
@@ -397,6 +398,15 @@ the server too ([What a deploy cannot change](#what-a-deploy-cannot-change)). Wi
 two values everything still works: requests are stored and shown in the admin, nobody is
 told, and the log says so once at start-up. A message never contains a name, a phone
 number or what was written.
+
+The same bot is told of the **courses' duties**: the dated labs, tests, exams and the like
+that the owner keeps in each course's private `duties.yaml` ([DUTIES.md](DUTIES.md)).
+After every `sync_content` on the server (so after each `publish` and each deploy) the
+site posts what is new, changed or gone since the bot was last told, with the same token,
+to `BMO_NOTIFY_URL` with `bmo-notify` changed to `bmo-duties`. For another address set
+`BMO_DUTIES_URL` (`deploy setenv BMO_DUTIES_URL`, then put `deploy/` on the server again,
+since the variable reaches the container through `compose.yaml`). The sync prints one
+line about it, in numbers only: `Duties: told about 3 new, 1 changed.`
 
 **E-mail to educators.** The site writes to educators about their role: an accepted
 application, a new version of the kit, a hand-in taken off the site
