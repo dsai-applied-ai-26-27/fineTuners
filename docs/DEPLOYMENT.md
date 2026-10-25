@@ -108,8 +108,9 @@ uv run --env-file .env python manage.py publish
 
 1. validates every course under `courses/`, exactly like `sync_content --check`. Any error
    stops it and nothing is sent;
-2. packs each course's `course.yaml` and `content/` folder into one archive. `source/` is
-   never included;
+2. packs each course's `course.yaml`, `content/` folder and, where there is one, its
+   private `duties.yaml` ([DUTIES.md](DUTIES.md)) into one archive. `source/` is never
+   included;
 3. pipes the archive over SSH to `deploy content` on the server, which
    - validates the new files again with the code that is live there,
    - only then replaces `~/dsai-vault/courses/`,

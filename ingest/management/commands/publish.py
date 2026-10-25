@@ -4,8 +4,9 @@
     manage.py publish --dry-run   validate and pack, but send nothing
 
 Nobody writes to the live database directly, not even this command. It sends *files*: every
-course's `course.yaml` and `content/` folder, packed into one archive and piped over SSH to
-the server's deploy script. The server validates them again with the same code, replaces
+course's `course.yaml`, `content/` folder and `duties.yaml` (the owner's own, which the
+server tells only the owner's bot of, desk/duties.py), packed into one archive and piped
+over SSH to the server's deploy script. The server validates them again with the same code, replaces
 its copy, and runs `sync_content` there. Raw material under `source/` never leaves this
 computer.
 
@@ -21,6 +22,7 @@ import tarfile
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
+from ingest import duties
 from ingest.discover import clashes, find_courses
 from ingest.management.commands.sync_content import safe_streams
 from ingest.sync import sync_course
@@ -46,6 +48,7 @@ def pack(courses):
             # The note import_course leaves: which hand-in from the site these files
             # include. The server lets go of its own copy of that hand-in when it sees it.
             paths += [p for p in [folder / MERGED] if p.is_file()]
+            paths += [p for p in [folder / duties.FILE] if p.is_file()]
             for path in paths:
                 info = archive.gettarinfo(path, f"{slug}/{path.relative_to(folder).as_posix()}")
                 # Whoever unpacks it owns the files; nothing about this computer is kept.
