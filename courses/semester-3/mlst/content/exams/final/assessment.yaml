@@ -1,0 +1,241 @@
+# Ids are permanent: people's progress is keyed by them.
+title: Final exam
+kind: final
+format: |-
+  Half theory, half code.
+
+  **Section A** is theory, answered in writing. The previous year's paper had five "explain"
+  questions, (a) to (e). **Section B** is code on paper. Its question 1 mixes reading a
+  dataset, writing a small function and explaining a given snippet; its question 2 asks for
+  scikit-learn and Keras code written from a verbal specification.
+
+  Point values and the time allowed are not known: the one real paper was reported by a
+  student, not copied from the sheet.
+
+weights:
+  - topic: sequences
+    weight: 5
+    note: |-
+      The last code question on all three papers is a Keras sequence model: three SimpleRNN
+      layers with BatchNormalization (previous year's paper, 2d), Conv1D + GRU (sample 1,
+      2d), WaveNet (sample 2, 2c).
+  - topic: ensembles
+    weight: 5
+    note: |-
+      On all three papers: bagging (previous year's paper, 2a), soft voting (sample 1, 2a),
+      gradient boosting with early stopping (sample 2, 2b). Also a Section A candidate.
+  - topic: svm
+    weight: 4
+    note: |-
+      Two questions on the real paper: the hard-margin SVM and its dual in Section A (d),
+      and a linear SVM regressor in 2b.
+  - topic: evaluation
+    weight: 4
+    note: |-
+      Thresholding in Section A (e) and the StratifiedKFold loop to explain in 1c of the
+      real paper; cross-validated confusion matrix in sample 2, 1c.
+  - topic: linear
+    weight: 4
+    note: |-
+      ERM with the normal equation and gradient descent in Section A (b); polynomial
+      regression in sample 1, 2b; the manual SGD loop to explain in sample 2, 1b.
+  - topic: preprocessing
+    weight: 4
+    note: |-
+      Encoding of categorical variables in Section A (a); the ColumnTransformer pipeline in
+      sample 1, 1b; grid search in sample 1, 2c. Scaling is inside 2b of the real paper.
+  - topic: framing
+    weight: 3
+    note: |-
+      Question 1 opens here on the real paper: the four pandas calls (1a) and a split
+      function (1b). StratifiedShuffleSplit in sample 1, 1a.
+  - topic: regularization
+    weight: 3
+    note: |-
+      Not on the real paper. The early-stopping loop to explain in sample 1, 1c; Ridge,
+      Lasso and ElasticNet in sample 2, 1a.
+  - topic: classifiers
+    weight: 3
+    note: |-
+      Gower distance in Section A (c), which is the k-NN question, and the classifier
+      vocabulary of Section A (e).
+  - topic: dimred
+    weight: 2
+    note: |-
+      One task: PCA keeping 95% of the variance in 2c of the real paper.
+  - topic: nlp
+    weight: 2
+    note: |-
+      One task: the encoder-decoder in sample 2, 2a.
+  - topic: trees
+    weight: 2
+    note: |-
+      Never its own question. Trees arrive inside bagging, random forests and grid search.
+
+plan:
+  intro: |-
+    The night-before plan this course's exam kit was built around: five short blocks of
+    cards, then sleep. **Write each answer on paper before you reveal it. That is the whole
+    method.** Stand up for three minutes between blocks: water, a walk, a window, and nothing
+    with a feed in it.
+
+    Sleep is not the thing to cut to fit this in. Memory consolidates overnight, and a tired
+    brain forgets the code it revised at 3 am. If it is already late, pick two blocks, not
+    five.
+  phases:
+    - label: Block 1
+      minutes: 10
+      title: The code skeletons
+      why: |-
+        Every answer starts as one of these shapes. If you can write them cold you can start
+        any Section B answer, even when unsure of the details.
+      tasks:
+        - tag: Cards
+          text: |-
+            Run the skeletons, each one written out before the reveal.
+          links: ["deck:skeletons"]
+    - label: Block 2
+      minutes: 18
+      title: The previous year's Section B
+      why: |-
+        The exact tasks of the one real paper there is. Its shapes come back with different
+        models.
+      tasks:
+        - tag: Cards
+          text: |-
+            The seven tasks in paper order, 1a to 2d.
+          links: ["deck:past-section-b"]
+        - tag: Practice
+          text: |-
+            If there is time, do the Section B questions of the paper itself with the
+            solutions closed.
+          links: ["paper:final/past-2024-25"]
+    - label: Block 3
+      minutes: 22
+      title: 'Section A: the explain questions'
+      why: |-
+        Bullet answers: say the words in bold and you have the marks. The five marked key
+        were on the real paper; the other seven are the kit's picks for what could replace
+        them.
+      tasks:
+        - tag: Cards
+          text: |-
+            The five from the real paper first, then the rest.
+          links: ["deck:section-a?filter=key", "deck:section-a"]
+    - label: Block 4
+      minutes: 22
+      title: Other likely code tasks
+      why: |-
+        Task types from colleagues' variants and the labs: the same shapes as Section B with
+        other models.
+      tasks:
+        - tag: Cards
+          text: |-
+            Eleven tasks, each written from the verbal spec.
+          links: ["deck:code-tasks"]
+        - tag: Practice
+          text: |-
+            The same tasks arranged as two papers, if you would rather sit them.
+          links: ["paper:final/sample-1", "paper:final/sample-2"]
+    - label: Block 5
+      minutes: 12
+      title: Arguments that cost marks
+      why: |-
+        Short cards, one argument each. These are the single keywords a marker looks for:
+        `probability=True`, `include_bias=False`, `return_sequences=True`.
+      tasks:
+        - tag: Cards
+          text: |-
+            Twelve cards. Say why the argument is needed, not only its name.
+          links: ["deck:arguments"]
+    - label: Then
+      minutes: 5
+      title: One pass over the misses, and sleep
+      why: |-
+        Only the cards you could not answer. Do not restart the whole thing: nothing else
+        tonight will beat sleeping.
+      tasks:
+        - tag: Cards
+          text: |-
+            The cards you missed, once.
+          links: ["cards?filter=missed"]
+    - label: Morning of
+      minutes: 5
+      title: Warm up, then walk in
+      why: |-
+        Six cards to get the shapes back into your hands. Run them on the way in, not the
+        night before.
+      tasks:
+        - tag: Cards
+          text: |-
+            The morning warm-up.
+          links: ["deck:morning-warm-up"]
+    - label: Ten minutes before
+      minutes: 10
+      title: The panic sheet
+      why: |-
+        Skeletons first. If you can write those six, you can start every Section B answer.
+      tasks:
+        - tag: Read
+          text: |-
+            Skeletons, layers, the arguments table, Section A in one line each.
+          links: ["guide:panic-sheet"]
+  skip: |-
+    **The memory palace.** It is built in three sittings over three days and rehearsed for a
+    week ([](guide:memory-palace)). The night before is too late to install it, and
+    half-placed images give a false sense of coverage. Its notes are still good reading:
+    the twelve topic guides hold the same material without the scenes.
+
+predictions:
+  - q: |-
+      Build a Keras sequence model from a verbal specification: which layers, how many
+      units, `return_sequences`, a `TimeDistributed(Dense(10))` output, then compile and fit.
+    why: |-
+      The last code question on all three papers (previous year's paper 2d, sample 1 2d,
+      sample 2 2c), each time with a different architecture.
+    likelihood: high
+    refs: ["card:lastb-2d", "card:task-09", "card:task-10", "guide:11-sequences"]
+  - q: |-
+      Train an ensemble in scikit-learn from a verbal specification: bagging with a given
+      number of trees and sample size, a soft voting classifier, or gradient boosting with
+      early stopping.
+    why: |-
+      One on each paper: bagging (previous year's paper 2a), soft voting (sample 1 2a),
+      gradient boosting with `staged_predict` (sample 2 2b).
+    likelihood: high
+    refs: ["card:lastb-2a", "card:task-07", "card:task-08", "guide:09-ensembles"]
+  - q: |-
+      Explain what a given code snippet does and why each line is there: a manual
+      cross-validation loop, the early-stopping loop around SGDRegressor, or a manual SGD
+      loop with a learning schedule.
+    why: |-
+      Question 1 has an "explain the code" part on every paper: 1c on the real paper and on
+      sample 1, 1b on sample 2.
+    likelihood: high
+    refs: ["card:lastb-1c", "card:task-05", "card:arg-03", "problems:lab-drills#drill-01"]
+  - q: |-
+      Section A: explain a concept in a structured written answer. On the real paper:
+      encoding categorical variables, ERM, Gower distance, the hard-margin SVM and its dual,
+      score-based and probabilistic classifiers with thresholding.
+    why: |-
+      All five Section A questions of the real paper were of this kind. Whether the same
+      five return is not known.
+    likelihood: high
+    refs: ["deck:section-a?filter=key", "paper:final/past-2024-25"]
+  - q: |-
+      An end-to-end task on a named dataset: split, scale, fit a stated model, print one
+      metric on the test set.
+    why: |-
+      2b and 2c of the real paper (California Housing with a linear SVM regressor, MNIST
+      with PCA and a random forest).
+    likelihood: medium
+    refs: ["card:skel-07", "card:lastb-2b", "card:lastb-2c"]
+  - q: |-
+      Section A on a topic the real paper did not ask: bias and variance, resampling,
+      ensembles, the kernel trick, generative against discriminant models, decision trees,
+      k-NN.
+    why: |-
+      The kit prepared these seven as the likely replacements. There is no paper showing
+      them, so this is a guess with reasons, not evidence.
+    likelihood: medium
+    refs: ["deck:section-a"]

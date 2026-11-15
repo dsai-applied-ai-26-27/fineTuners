@@ -1,0 +1,254 @@
+title: Forward kinematics practice
+topic: kinematics
+instructions: |-
+  The twelve numerical exercises that close lecture 3, as set, with solutions written here
+  and checked numerically. Lengths in metres, angles in degrees, standard DH throughout.
+  For every transformation name its source and destination frames, and check the rotation
+  block, the last row and the meaning of the resulting origin. Round to four decimals.
+
+questions:
+  - id: fk-p1
+    title: Point, direction and inverse
+    q: |-
+      A camera frame $\{1\}$ has origin $(0.30, 0.10, 0.20)$ in the base frame and
+      orientation $\boldsymbol{R}^0_1 = \boldsymbol{R}_z(90^\circ)$. A point has
+      $\boldsymbol{p}^1 = (0.20, 0, 0.10)$ and a unit direction $\boldsymbol{v}^1 = (1, 0, 0)$.
+      Construct $\boldsymbol{T}^0_1$, calculate $\boldsymbol{p}^0$ and $\boldsymbol{v}^0$,
+      find $\boldsymbol{T}^1_0$ and recover the point. Why does translation affect only one
+      of the two conversions?
+    steps:
+      - do: |-
+          $$\boldsymbol{T}^0_1 = \begin{bmatrix} 0 & -1 & 0 & 0.30 \\ 1 & 0 & 0 & 0.10 \\ 0 & 0 & 1 & 0.20 \\ 0 & 0 & 0 & 1 \end{bmatrix}$$
+        why: |-
+          The columns of $\boldsymbol{R}_z(90^\circ)$, then the origin.
+      - do: |-
+          $\boldsymbol{p}^0 = \boldsymbol{R}\boldsymbol{p}^1 + \boldsymbol{d} = (0, 0.20, 0.10) + (0.30, 0.10, 0.20) = (0.30, 0.30, 0.30)$.
+        why: |-
+          A point uses final coordinate 1.
+      - do: |-
+          $\boldsymbol{v}^0 = \boldsymbol{R}\boldsymbol{v}^1 = (0, 1, 0)$.
+        why: |-
+          A direction uses final coordinate 0, so the translation drops out.
+      - do: |-
+          $-\boldsymbol{R}^\top\boldsymbol{d} = -(0.10, -0.30, 0.20) = (-0.10, 0.30, -0.20)$, so
+          $$\boldsymbol{T}^1_0 = \begin{bmatrix} 0 & 1 & 0 & -0.10 \\ -1 & 0 & 0 & 0.30 \\ 0 & 0 & 1 & -0.20 \\ 0 & 0 & 0 & 1 \end{bmatrix},$$
+          and $\boldsymbol{T}^1_0[0.30, 0.30, 0.30, 1]^\top = [0.20, 0, 0.10, 1]^\top$.
+    answer: |-
+      $\boldsymbol{p}^0 = (0.30, 0.30, 0.30)$, $\boldsymbol{v}^0 = (0, 1, 0)$. A point has a
+      location, so the origin shift matters; a direction has none, so only the rotation
+      acts.
+
+  - id: fk-p2
+    title: A two-step frame chain
+    q: |-
+      $$\boldsymbol{T}^0_1 = \begin{bmatrix} 0 & -1 & 0 & 0.50 \\ 1 & 0 & 0 & 0.10 \\ 0 & 0 & 1 & 0.20 \\ 0 & 0 & 0 & 1 \end{bmatrix}, \qquad \boldsymbol{T}^1_2 = \begin{bmatrix} 1 & 0 & 0 & 0.20 \\ 0 & 0 & -1 & 0.10 \\ 0 & 1 & 0 & 0.30 \\ 0 & 0 & 0 & 1 \end{bmatrix}$$
+      Compute $\boldsymbol{T}^0_2$ and the base coordinates of $\boldsymbol{p}^2 = (0.10, 0.05, 0.20)$.
+      Verify by going through frame $\{1\}$.
+    steps:
+      - do: |-
+          $$\boldsymbol{T}^0_2 = \boldsymbol{T}^0_1\boldsymbol{T}^1_2 = \begin{bmatrix} 0 & 0 & 1 & 0.40 \\ 1 & 0 & 0 & 0.30 \\ 0 & 1 & 0 & 0.50 \\ 0 & 0 & 0 & 1 \end{bmatrix}$$
+        why: |-
+          Origin: $\boldsymbol{d}^0_1 + \boldsymbol{R}^0_1\boldsymbol{d}^1_2 = (0.50, 0.10, 0.20) + (-0.10, 0.20, 0.30)$.
+      - do: |-
+          $\boldsymbol{p}^0 = \boldsymbol{T}^0_2\tilde{\boldsymbol{p}}^2 = (0.60, 0.40, 0.55)$.
+      - do: |-
+          Check: $\boldsymbol{p}^1 = \boldsymbol{T}^1_2\tilde{\boldsymbol{p}}^2 = (0.30, -0.10, 0.35)$, then
+          $\boldsymbol{T}^0_1\tilde{\boldsymbol{p}}^1 = (0.60, 0.40, 0.55)$.
+    answer: |-
+      $\boldsymbol{p}^0 = (0.60, 0.40, 0.55)$ m.
+
+  - id: fk-p3
+    title: The same translation in two frames
+    q: |-
+      A tool has orientation $\boldsymbol{R}_z(90^\circ)$ and origin $(0.40, 0.20, 0.10)$.
+      Separately, displace it $0.15$ along local $\boldsymbol{n}$ and $0.15$ along global $x$.
+      Write each product and both final poses.
+    steps:
+      - do: |-
+          Local: $\boldsymbol{T}_{new} = \boldsymbol{T}\,\boldsymbol{T}_{trans}(0.15, 0, 0)$, origin
+          $\boldsymbol{d} + \boldsymbol{R}(0.15, 0, 0) = (0.40, 0.35, 0.10)$.
+        why: |-
+          A current-frame command multiplies on the right; local $\boldsymbol{n}$ points along global $y$.
+      - do: |-
+          Global: $\boldsymbol{T}_{new} = \boldsymbol{T}_{trans}(0.15, 0, 0)\,\boldsymbol{T}$, origin
+          $(0.55, 0.20, 0.10)$.
+        why: |-
+          A fixed-frame command multiplies on the left.
+    answer: |-
+      Both keep orientation $\boldsymbol{R}_z(90^\circ)$; origins $(0.40, 0.35, 0.10)$ and
+      $(0.55, 0.20, 0.10)$. Same distance, different direction.
+
+  - id: fk-p4
+    title: Rotation about different centres
+    q: |-
+      A tool has orientation $\boldsymbol{I}$ and origin $(0.40, 0.20, 0.10)$. Rotate it
+      $90^\circ$ about an axis parallel to global $z$ through (a) the world origin, (b) the
+      initial tool origin. Give both $\boldsymbol{U}$ and both poses $\boldsymbol{U}\boldsymbol{T}$.
+    parts:
+      - q: |-
+          Axis through the world origin.
+        solution: |-
+          $\boldsymbol{U} = \boldsymbol{T}_z(90^\circ)$. The pose becomes orientation
+          $\boldsymbol{R}_z(90^\circ)$ with origin $\boldsymbol{R}_z(90^\circ)(0.40, 0.20, 0.10) = (-0.20, 0.40, 0.10)$.
+      - q: |-
+          Axis through the tool origin $\boldsymbol{c} = (0.40, 0.20, 0.10)$.
+        solution: |-
+          $\boldsymbol{U}_c = [\boldsymbol{Q}\ \ (\boldsymbol{I} - \boldsymbol{Q})\boldsymbol{c};\ \boldsymbol{0}^\top\ 1]$ with
+          $(\boldsymbol{I} - \boldsymbol{Q})\boldsymbol{c} = (0.60, -0.20, 0)$. The pose becomes
+          orientation $\boldsymbol{R}_z(90^\circ)$ with the origin unchanged at $(0.40, 0.20, 0.10)$.
+    answer: |-
+      Same final orientation; the position moves in (a) and stays in (b).
+
+  - id: fk-p5
+    title: Completing a gripper frame
+    q: |-
+      $\boldsymbol{n} = (0, 1, 0)$, $\boldsymbol{a} = (1, 0, 0)$, $\boldsymbol{d} = (0.25, -0.10, 0.40)$,
+      all global. Find the unique $\boldsymbol{s}$ completing a right-handed frame, build
+      $\boldsymbol{T}$, check $\det\boldsymbol{R}$, and transform the local point
+      $(0.10, 0.02, 0.05)$. Why is flipping $\boldsymbol{s}$ invalid?
+    steps:
+      - do: |-
+          $\boldsymbol{s} = \boldsymbol{a} \times \boldsymbol{n} = (0, 0, 1)$.
+        why: |-
+          From $\boldsymbol{n} \times \boldsymbol{s} = \boldsymbol{a}$ by cyclic permutation.
+      - do: |-
+          $$\boldsymbol{T} = \begin{bmatrix} 0 & 0 & 1 & 0.25 \\ 1 & 0 & 0 & -0.10 \\ 0 & 1 & 0 & 0.40 \\ 0 & 0 & 0 & 1 \end{bmatrix}, \qquad \det\boldsymbol{R} = +1 .$$
+      - do: |-
+          $0.10\boldsymbol{n} + 0.02\boldsymbol{s} + 0.05\boldsymbol{a} + \boldsymbol{d} = (0.30, 0.00, 0.42)$.
+      - do: |-
+          With $-\boldsymbol{s}$ the columns are still orthonormal but $\det = -1$: a
+          reflection (left-handed frame), not a rotation.
+    answer: |-
+      $\boldsymbol{s} = (0, 0, 1)$; the point is at $(0.30, 0, 0.42)$ m.
+
+  - id: fk-p6
+    title: One DH row with twist
+    q: |-
+      $\theta_i = 30^\circ$, $d_i = 0.15$, $\ell_i = 0.25$, $\alpha_i = -90^\circ$. Compute
+      $\boldsymbol{A}_i$, the three new axis directions in frame $\{i-1\}$, and the
+      coordinates in $\{i-1\}$ of the point $(0.10, 0.04, 0.02)$ of frame $\{i\}$.
+    steps:
+      - do: |-
+          $$\boldsymbol{A}_i = \begin{bmatrix} 0.8660 & 0 & -0.5 & 0.2165 \\ 0.5 & 0 & 0.8660 & 0.125 \\ 0 & -1 & 0 & 0.15 \\ 0 & 0 & 0 & 1 \end{bmatrix}$$
+        why: |-
+          $c_\alpha = 0$, $s_\alpha = -1$ in the standard matrix.
+      - do: |-
+          $\boldsymbol{x}_i = (0.8660, 0.5, 0)$, $\boldsymbol{y}_i = (0, 0, -1)$, $\boldsymbol{z}_i = (-0.5, 0.8660, 0)$.
+        why: |-
+          The columns.
+      - do: |-
+          $\boldsymbol{p}^{i-1} = (0.2931, 0.1923, 0.11)$.
+    answer: |-
+      $(0.2931, 0.1923, 0.1100)$ m.
+
+  - id: fk-p7
+    title: A joint-angle offset
+    q: |-
+      $\theta_i = q_i + 90^\circ$, $d_i = 0.12$, $\ell_i = 0.20$, $\alpha_i = 0$. Find
+      $\boldsymbol{A}_i$ at $q_i = 0$ and at $q_i = -90^\circ$, the local origin and the
+      direction of $x_i$ in each. Why does a zero reading not mean aligned first axes?
+    steps:
+      - do: |-
+          $q_i = 0$: $\theta_i = 90^\circ$, origin $(\ell\cos\theta, \ell\sin\theta, d) = (0, 0.20, 0.12)$,
+          $\boldsymbol{x}_i = (0, 1, 0)$.
+      - do: |-
+          $q_i = -90^\circ$: $\theta_i = 0$, origin $(0.20, 0, 0.12)$, $\boldsymbol{x}_i = (1, 0, 0)$.
+    answer: |-
+      The joint reading is measured from an offset of $90^\circ$; the axes align only when
+      $\theta_i = 0$, i.e. at $q_i = -90^\circ$.
+
+  - id: fk-p8
+    title: Planar 2R at two configurations
+    q: |-
+      $l_1 = 0.60$, $l_2 = 0.40$. Find $\boldsymbol{A}_1$, $\boldsymbol{A}_2$,
+      $\boldsymbol{T}^0_2$, the TCP and $\phi$ for (a) $q_1 = 30^\circ$, $q_2 = -60^\circ$,
+      (b) $q_1 = 90^\circ$, $q_2 = -90^\circ$.
+    parts:
+      - q: |-
+          $q_1 = 30^\circ$, $q_2 = -60^\circ$.
+        solution: |-
+          $\boldsymbol{A}_1$ has origin $(0.5196, 0.30, 0)$, $\boldsymbol{A}_2$ origin
+          $(0.20, -0.3464, 0)$ in frame $\{1\}$.
+          $x = 0.6\cos30^\circ + 0.4\cos(-30^\circ) = 0.8660$,
+          $y = 0.6\sin30^\circ + 0.4\sin(-30^\circ) = 0.10$, $\phi = -30^\circ$, so
+          $$\boldsymbol{T}^0_2 = \begin{bmatrix} 0.8660 & 0.5 & 0 & 0.8660 \\ -0.5 & 0.8660 & 0 & 0.10 \\ 0 & 0 & 1 & 0 \\ 0 & 0 & 0 & 1 \end{bmatrix}.$$
+      - q: |-
+          $q_1 = 90^\circ$, $q_2 = -90^\circ$.
+        solution: |-
+          Link 1 points along $y$ to $(0, 0.60)$, link 2 back along $x$: TCP $(0.40, 0.60, 0)$,
+          $\phi = 0$, and $\boldsymbol{T}^0_2$ has rotation $\boldsymbol{I}$.
+    answer: |-
+      (a) $(0.8660, 0.10)$, $\phi = -30^\circ$; (b) $(0.40, 0.60)$, $\phi = 0$.
+
+  - id: fk-p9
+    title: A rotated and displaced tool
+    q: |-
+      Planar 2R with $l_1 = 0.40$, $l_2 = 0.30$, $q_1 = 30^\circ$, $q_2 = 60^\circ$, and
+      $\boldsymbol{T}^2_E = \boldsymbol{T}_{trans}(0.10, 0, 0.05)\,\boldsymbol{T}_x(90^\circ)$.
+      Compute $\boldsymbol{T}^0_E$, the TCP and $\boldsymbol{n}, \boldsymbol{s}, \boldsymbol{a}$.
+    steps:
+      - do: |-
+          $\boldsymbol{T}^0_2$: rotation $\boldsymbol{R}_z(90^\circ)$, origin
+          $(0.4\cos30^\circ, 0.4\sin30^\circ + 0.3, 0) = (0.3464, 0.50, 0)$.
+      - do: |-
+          The tool offset $(0.10, 0, 0.05)$ in frame $\{2\}$ is $(0, 0.10, 0.05)$ globally, so
+          the TCP is at $(0.3464, 0.60, 0.05)$.
+      - do: |-
+          $\boldsymbol{R}^0_E = \boldsymbol{R}_z(90^\circ)\boldsymbol{R}_x(90^\circ)$:
+          $\boldsymbol{n} = (0, 1, 0)$, $\boldsymbol{s} = (0, 0, 1)$, $\boldsymbol{a} = (1, 0, 0)$.
+    answer: |-
+      TCP $(0.3464, 0.60, 0.05)$ m; the approach is along global $x$, not $z_2$, because the
+      tool frame is rotated $90^\circ$ about $x_2$ relative to the last DH frame.
+
+  - id: fk-p10
+    title: A revolute-prismatic arm
+    q: |-
+      For (3.14) with $L = 0.45$, $h = 0.12$, $q_1 = 60^\circ$: the pose at $q_2 = 0.08$ and at
+      $q_2 = 0.23$, the displacement between them, and what stays unchanged.
+    steps:
+      - do: |-
+          Both: rotation $\boldsymbol{R}_z(60^\circ)$, $x = 0.225$, $y = 0.3897$.
+      - do: |-
+          $z = 0.20$ at $q_2 = 0.08$ and $z = 0.35$ at $q_2 = 0.23$.
+    answer: |-
+      The TCP moves $(0, 0, 0.15)$ m; orientation and the horizontal position are unchanged.
+
+  - id: fk-p11
+    title: A spatial two-joint chain
+    q: |-
+      Standard DH: link 1 revolute, $(q_1, 0.20, 0, 90^\circ)$; link 2 revolute,
+      $(q_2, 0, 0.30, 0)$. At $q_1 = 90^\circ$, $q_2 = 30^\circ$ compute both matrices and
+      $\boldsymbol{T}^0_2$, the position of $O_2$, and the direction of the second joint axis
+      in the base frame.
+    steps:
+      - do: |-
+          $$\boldsymbol{A}_1 = \begin{bmatrix} 0 & 0 & 1 & 0 \\ 1 & 0 & 0 & 0 \\ 0 & 1 & 0 & 0.20 \\ 0 & 0 & 0 & 1 \end{bmatrix}, \qquad \boldsymbol{A}_2 = \begin{bmatrix} 0.8660 & -0.5 & 0 & 0.2598 \\ 0.5 & 0.8660 & 0 & 0.15 \\ 0 & 0 & 1 & 0 \\ 0 & 0 & 0 & 1 \end{bmatrix}$$
+      - do: |-
+          $$\boldsymbol{T}^0_2 = \begin{bmatrix} 0 & 0 & 1 & 0 \\ 0.8660 & -0.5 & 0 & 0.2598 \\ 0.5 & 0.8660 & 0 & 0.35 \\ 0 & 0 & 0 & 1 \end{bmatrix}$$
+      - do: |-
+          The second joint axis is $z_1$, the third column of $\boldsymbol{A}_1$: $(1, 0, 0)$.
+          Joint 1's axis is $z_0 = (0, 0, 1)$: perpendicular, because $\alpha_1 = 90^\circ$.
+    answer: |-
+      $O_2 = (0, 0.2598, 0.35)$ m; the second joint axis points along global $x$.
+
+  - id: fk-p12
+    title: Base and tool calibration together
+    q: |-
+      Planar 2R, $l_1 = l_2 = 0.30$, $q_1 = 0$, $q_2 = 90^\circ$, with
+      $\boldsymbol{T}^G_0 = \boldsymbol{T}_{trans}(1.00, -0.20, 0.50)\,\boldsymbol{T}_z(90^\circ)$ and
+      $\boldsymbol{T}^2_E = \boldsymbol{T}_{trans}(0.10, 0, 0)$. Find the TCP pose in $\{G\}$,
+      the world coordinates of $\boldsymbol{p}^E = (0, 0.05, 0)$, and recover $\boldsymbol{p}^E$.
+    steps:
+      - do: |-
+          In the DH base: $\boldsymbol{T}^0_2$ has rotation $\boldsymbol{R}_z(90^\circ)$ and origin
+          $(0.30, 0.30, 0)$; the tool offset along $x_2$ (global $y$) puts the TCP at $(0.30, 0.40, 0)$.
+      - do: |-
+          $$\boldsymbol{T}^G_E = \boldsymbol{T}^G_0\boldsymbol{T}^0_2\boldsymbol{T}^2_E = \begin{bmatrix} -1 & 0 & 0 & 0.60 \\ 0 & -1 & 0 & 0.10 \\ 0 & 0 & 1 & 0.50 \\ 0 & 0 & 0 & 1 \end{bmatrix}$$
+        why: |-
+          Base calibration on the left, tool on the right.
+      - do: |-
+          $\boldsymbol{p}^G = \boldsymbol{T}^G_E\tilde{\boldsymbol{p}}^E = (0.60, 0.05, 0.50)$, and
+          $(\boldsymbol{T}^G_E)^{-1}$ returns $(0, 0.05, 0)$.
+    answer: |-
+      TCP at $(0.60, 0.10, 0.50)$ m with orientation $\boldsymbol{R}_z(180^\circ)$; the point is at
+      $(0.60, 0.05, 0.50)$ m.

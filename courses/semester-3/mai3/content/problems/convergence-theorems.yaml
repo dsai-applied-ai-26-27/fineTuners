@@ -1,0 +1,391 @@
+title: The Lebesgue integral and the convergence theorems
+topic: measure
+instructions: |-
+  Problems 1 to 3 are problems 6 to 8 of last year's measure theory homework (2025-26,
+  homework 2), the ones held back until the convergence theorems were covered. Problem 9
+  of that sheet, the integral of $1/\sqrt{xy}$ on the unit square, needs integration on a
+  product of measure spaces, which lecture 2 does not reach; it is left out.
+
+  Problems 4 to 13 are written here in the style of the lecture 2 tutorial. Their answers
+  were checked numerically.
+
+  Write the hypotheses of the theorem you use in full before the conclusion. Last year's
+  sheet did not accept solutions without explanations, and the tutorial's solutions are
+  written the same way.
+
+questions:
+  - id: ct-p1
+    title: A limit that does not pass through the integral
+    points: 2
+    q: |-
+      Let $f_n = \frac{1}{n} \chi_{[0,n]}$ and $f = 0$, with Lebesgue measure $m$ on
+      $\mathbb{R}$. Show that $(f_n)$ converges to $f$, but that
+
+      $$\int f \, dm \ne \lim_{n\to\infty} \int f_n \, dm .$$
+
+      Explain why this does not contradict the Monotone Convergence Theorem.
+    steps:
+      - do: |-
+          **Convergence.** For every $x$, $0 \le f_n(x) \le \frac1n$, so $f_n(x) \to 0$.
+          In fact $\sup_x \lvert f_n(x) - 0 \rvert = \frac1n \to 0$: the convergence is
+          uniform.
+        why: |-
+          $f_n$ is $\frac1n$ on $[0,n]$ and $0$ elsewhere.
+      - do: |-
+          **The integrals.** By 3.7 (or 3.4 and 3.20),
+          $\int f_n \, dm = \frac1n \, m([0,n]) = \frac1n \cdot n = 1$ for every $n$, so
+          $\lim_n \int f_n \, dm = 1$, while $\int f \, dm = 0$.
+        why: |-
+          $f_n$ is a simple function with one non-zero value on a set of measure $n$.
+      - do: |-
+          **No contradiction.** The Monotone Convergence Theorem needs
+          $0 \le f_1 \le f_2 \le \dots$. Here the sequence is not increasing: at $x = 0$,
+          $f_1(0) = 1 > \frac12 = f_2(0)$. The hypothesis fails, so the theorem says
+          nothing.
+        why: |-
+          One point where the sequence decreases is enough to break "increasing".
+    answer: |-
+      $\int f_n \, dm = 1$ for all $n$ but $\int f \, dm = 0$. MCT does not apply because
+      $(f_n)$ is not increasing.
+    solution: |-
+      Worth adding in an exam: the Dominated Convergence Theorem does not apply either.
+      Any $g$ with $g \ge f_n$ for all $n$ satisfies $g(x) \ge \frac1n$ for every
+      $n \ge x$, so $g(x) \ge \frac{1}{\lceil x \rceil}$, which is at least
+      $\frac{1}{x+1}$, and $\int_{[0,\infty)} \frac{dx}{x+1} = \infty$. And the Bounded
+      Convergence Theorem fails because $m(\mathbb{R}) = \infty$. Uniform convergence
+      alone does not move a limit through an integral over a set of infinite measure.
+    source: |-
+      2025-26 homework 2, problem 6 (Kalabušić, Šabanac). The extracted sheet has lost
+      the "$\ne$" sign; the sentence "show … but that" requires it.
+
+  - id: ct-p2
+    title: Domination by an elementary inequality
+    points: 3
+    q: |-
+      Let $\alpha > 1$ and $t \ge 0$. Prove that
+
+      $$0 \le \frac{t}{1 + t^\alpha} \le 1$$
+
+      and deduce that
+
+      $$\lim_{n\to\infty} \int_{[0,2]} \frac{nx \sin x}{1 + (nx)^\alpha} \, dm = 0 .$$
+    steps:
+      - do: |-
+          **The inequality.** $\frac{t}{1+t^\alpha} \ge 0$ since numerator and denominator
+          are non-negative and the denominator is positive. For the upper bound: if
+          $0 \le t \le 1$, then $t \le 1 \le 1 + t^\alpha$. If $t > 1$, then
+          $t < t^\alpha < 1 + t^\alpha$ because $\alpha > 1$. Either way
+          $t \le 1 + t^\alpha$.
+        why: |-
+          Dividing $t \le 1 + t^\alpha$ by the positive $1 + t^\alpha$ gives the claim.
+      - do: |-
+          **Measurability and a bound.** $f_n(x) = \frac{nx\sin x}{1 + (nx)^\alpha}$ is
+          continuous on $[0,2]$, hence Borel measurable (2.41). With $t = nx \ge 0$,
+          $$\lvert f_n(x) \rvert = \frac{t}{1+t^\alpha}\,\lvert \sin x \rvert \le 1 \cdot 1 = 1 .$$
+        why: |-
+          The inequality from the first step, and $\lvert \sin x \rvert \le 1$.
+      - do: |-
+          **Pointwise limit.** At $x = 0$, $f_n(0) = 0$. For $x \in (0, 2]$,
+          $$0 \le \frac{nx}{1 + (nx)^\alpha} \le \frac{nx}{(nx)^\alpha} = (nx)^{1-\alpha} \to 0$$
+          because $1 - \alpha < 0$. So $f_n(x) \to 0$ for every $x \in [0,2]$.
+        why: |-
+          Dropping the $1$ in the denominator makes the fraction larger.
+      - do: |-
+          **Bounded Convergence Theorem (3.26).** $m([0,2]) = 2 < \infty$,
+          $\lvert f_n \rvert \le 1$ for all $n$ and $x$, and $f_n \to 0$ pointwise. Hence
+          $\lim_n \int_{[0,2]} f_n \, dm = \int_{[0,2]} 0 \, dm = 0$.
+        why: |-
+          All three hypotheses of 3.26 are shown above; the Dominated Convergence Theorem
+          with $g = 1$ on $[0,2]$ works equally well.
+    answer: |-
+      The limit is $0$.
+    source: |-
+      2025-26 homework 2, problem 7 (Kalabušić, Šabanac).
+
+  - id: ct-p3
+    title: A binomial bound for domination
+    points: 2
+    q: |-
+      Let $n \ge 2$ and $x \ge 0$. Prove that $(1 + x/n)^n \ge \frac14 x^2$, deduce that
+      $x \mapsto (1 + x/n)^{-n}$ is Lebesgue integrable over $[1, \infty)$, and that
+
+      $$\lim_{n\to\infty} \int_{[1,\infty)} \Big( 1 + \frac{x}{n} \Big)^{-n} dm = e^{-1} .$$
+    steps:
+      - do: |-
+          **The bound.** By the binomial theorem all terms of $(1 + x/n)^n$ are
+          non-negative for $x \ge 0$, so it is at least its $k = 2$ term:
+          $$\Big(1 + \frac{x}{n}\Big)^n \ge \binom{n}{2} \frac{x^2}{n^2} = \frac{n-1}{2n}\, x^2 \ge \frac14 x^2 ,$$
+          since $\frac{n-1}{2n} = \frac12 - \frac{1}{2n} \ge \frac14$ for $n \ge 2$.
+        why: |-
+          Keep one term of the expansion, the one with $x^2$, because $x^{-2}$ is
+          integrable on $[1,\infty)$ and $x^{-1}$ is not.
+      - do: |-
+          **Integrability.** On $[1, \infty)$, $0 < (1 + x/n)^{-n} \le \frac{4}{x^2} =: g(x)$,
+          and $\int_{[1,\infty)} g \, dm = \lim_N \int_1^N \frac{4}{x^2} dx = \lim_N \big(4 - \frac4N\big) = 4 < \infty$
+          (monotone convergence with $g\chi_{[1,N)}$ and 3.34, as in tutorial example 2).
+          So each $f_n$ is integrable.
+        why: |-
+          A measurable function between $0$ and an integrable $g$ is integrable (3.8).
+      - do: |-
+          **Pointwise limit.** $(1 + x/n)^n \to e^x$, so $(1 + x/n)^{-n} \to e^{-x}$ for
+          every $x \ge 1$.
+        why: |-
+          The standard limit $\left(1 + \frac{x}{n}\right)^n \to e^x$.
+      - do: |-
+          **Dominated Convergence Theorem (3.31)** with the same $g$ for all $n \ge 2$:
+          $$\lim_{n\to\infty} \int_{[1,\infty)} \Big(1 + \frac{x}{n}\Big)^{-n} dm = \int_{[1,\infty)} e^{-x} \, dm = \lim_N \big( e^{-1} - e^{-N} \big) = e^{-1} .$$
+        why: |-
+          Dropping the term $n = 1$ does not change a limit. The last integral is again
+          a cut-off and 3.34.
+    answer: |-
+      $e^{-1}$.
+    source: |-
+      2025-26 homework 2, problem 8 (Kalabušić, Šabanac).
+
+  - id: ct-p4
+    title: An unbounded function on (0, 1]
+    points: 2
+    q: |-
+      Compute $\displaystyle \int_{(0,1]} x^{-1/3} \, d\lambda(x)$, justifying every step.
+    steps:
+      - do: |-
+          Let $f(x) = x^{-1/3}$ and $f_n = f\chi_{[1/n, 1]}$. $f$ is continuous on
+          $(0,1]$, hence Borel measurable, so each $f_n$ is measurable.
+        why: |-
+          $f$ is unbounded near $0$, so 3.34 cannot be used on $(0,1]$ directly.
+      - do: |-
+          $0 \le f_1 \le f_2 \le \dots$ because $f \ge 0$ and $[1/n, 1] \subset [1/(n+1), 1]$.
+          For every $x \in (0,1]$, $x \ge 1/n$ for large $n$, so $f_n(x) = f(x)$
+          eventually. By the Monotone Convergence Theorem,
+          $\int_{(0,1]} f \, d\lambda = \lim_n \int f_n \, d\lambda$.
+        why: |-
+          The three hypotheses of 3.11: measurable, non-negative and increasing,
+          converging to $f$.
+      - do: |-
+          On $[1/n, 1]$, $f$ is continuous and bounded (by $n^{1/3}$), so by 3.34
+          $$\int f_n \, d\lambda = \int_{1/n}^{1} x^{-1/3} \, dx = \Big[ \tfrac32 x^{2/3} \Big]_{1/n}^{1} = \frac32 - \frac32 n^{-2/3} .$$
+        why: |-
+          On the bounded piece, Lebesgue equals Riemann.
+      - do: |-
+          $n^{-2/3} \to 0$, so $\int_{(0,1]} x^{-1/3} \, d\lambda = \frac32$.
+    answer: |-
+      $\frac32$.
+
+  - id: ct-p5
+    title: An unbounded domain
+    points: 2
+    q: |-
+      Compute $\displaystyle \int_{[0,\infty)} x^2 e^{-x} \, d\lambda(x)$, justifying every
+      step.
+    steps:
+      - do: |-
+          $f(x) = x^2e^{-x} \ge 0$ is continuous. Let $f_n = f\chi_{[0,n)}$: measurable,
+          $0 \le f_1 \le f_2 \le \dots$, and $f_n(x) = f(x)$ once $n > x$. By 3.11,
+          $\int_{[0,\infty)} f \, d\lambda = \lim_n \int_{[0,n)} f \, d\lambda$.
+        why: |-
+          The same cut-off as tutorial example 2.
+      - do: |-
+          $f$ is continuous and bounded on $[0,n]$, so 3.34 applies, and $\{n\}$ has
+          measure $0$. Integrating by parts twice,
+          $$\int_0^n x^2 e^{-x} \, dx = \Big[ -(x^2 + 2x + 2) e^{-x} \Big]_0^n = 2 - (n^2 + 2n + 2) e^{-n} .$$
+        why: |-
+          Check by differentiating: $\frac{d}{dx}\big[-(x^2+2x+2)e^{-x}\big] = x^2 e^{-x}$.
+      - do: |-
+          $(n^2 + 2n + 2)e^{-n} \to 0$, so the integral is $2$.
+        why: |-
+          The exponential beats every polynomial.
+    answer: |-
+      $2$.
+
+  - id: ct-p6
+    title: Powers of x on [0, 1]
+    points: 2
+    q: |-
+      Compute $\displaystyle \lim_{n\to\infty} \int_{[0,1]} x^n \, d\lambda(x)$ with a
+      convergence theorem, and name the point where "almost every" matters.
+    steps:
+      - do: |-
+          **Pointwise limit.** For $0 \le x < 1$, $x^n \to 0$. At $x = 1$, $x^n = 1$. So
+          $f_n \to f = \chi_{\{1\}}$ pointwise on $[0,1]$.
+        why: |-
+          The limit is not continuous, but it is measurable (2.48).
+      - do: |-
+          **Bounded Convergence Theorem.** $\lambda([0,1]) = 1 < \infty$, and
+          $\lvert x^n \rvert \le 1$ on $[0,1]$ for every $n$. So
+          $\lim_n \int_{[0,1]} x^n \, d\lambda = \int \chi_{\{1\}} \, d\lambda = \lambda(\{1\}) = 0$.
+        why: |-
+          3.26 with $c = 1$, then 3.4.
+      - do: |-
+          The single point $x = 1$, where the limit is $1$, has measure $0$, so $f = 0$
+          almost everywhere and the integral does not see it.
+    answer: |-
+      $0$. Directly: $\int_0^1 x^n dx = \frac{1}{n+1} \to 0$.
+
+  - id: ct-p7
+    title: Domination with a binomial bound
+    points: 3
+    q: |-
+      Compute
+      $$\lim_{n\to\infty} \int_{(0,\infty)} \Big(1 + \frac{x}{n}\Big)^{-n} \sin\frac{x}{n} \, d\lambda(x) .$$
+    steps:
+      - do: |-
+          **Pointwise limit.** For fixed $x > 0$, $\sin(x/n) \to 0$ and
+          $(1 + x/n)^{-n} \to e^{-x}$, so $f_n(x) \to 0$.
+        why: |-
+          A product of a convergent sequence and one tending to $0$.
+      - do: |-
+          **Domination.** For $n \ge 2$ and $x \ge 0$, keep the first three binomial terms:
+          $$\Big(1 + \frac{x}{n}\Big)^n \ge 1 + x + \frac{n-1}{2n} x^2 \ge 1 + x + \frac{x^2}{4} = \Big(1 + \frac{x}{2}\Big)^2 .$$
+          With $\lvert \sin \rvert \le 1$:
+          $\lvert f_n(x) \rvert \le \big(1 + \frac x2\big)^{-2} =: g(x)$.
+        why: |-
+          The bound must not depend on $n$. A plain $e^{-x}$ does not work: $(1 + x/n)^{-n}$
+          is **larger** than $e^{-x}$.
+      - do: |-
+          **$g$ is integrable.** By a cut-off and 3.34,
+          $\int_{(0,\infty)} g \, d\lambda = \lim_N \Big[ -\frac{2}{1 + x/2} \Big]_0^N = 2 < \infty$.
+      - do: |-
+          **Dominated Convergence Theorem.** All hypotheses hold for $n \ge 2$, so the
+          limit is $\int_{(0,\infty)} 0 \, d\lambda = 0$.
+    answer: |-
+      $0$.
+
+  - id: ct-p8
+    title: Escaping height
+    points: 3
+    q: |-
+      Let $f_n = n\chi_{(0,1/n)}$ on $\mathbb{R}$ with Lebesgue measure.
+    parts:
+      - q: |-
+          Find the pointwise limit $f$ and compare $\lim_n \int f_n \, d\lambda$ with
+          $\int f \, d\lambda$.
+        solution: |-
+          For $x \le 0$, $f_n(x) = 0$. For $x > 0$, $x \notin (0, 1/n)$ once $n > 1/x$, so
+          $f_n(x) = 0$ eventually. Thus $f = 0$ and $\int f \, d\lambda = 0$, while
+          $\int f_n \, d\lambda = n \cdot \lambda((0,1/n)) = 1$ for all $n$.
+
+          **Answer:** $\lim_n \int f_n = 1 \ne 0 = \int f$.
+      - q: |-
+          For each of the Monotone, Dominated and Bounded Convergence Theorems, name a
+          hypothesis that fails.
+        solution: |-
+          - **Monotone:** not increasing. At $x = 0.6$, $f_1(0.6) = 1$ but $f_2(0.6) = 0$.
+          - **Bounded:** no constant bounds all $f_n$ (their maxima are $n$), and also
+            $\lambda(\mathbb{R}) = \infty$.
+          - **Dominated:** any $g \ge f_n$ for all $n$ must satisfy $g(x) \ge n$ whenever
+            $x < 1/n$. For $0 < x < \frac12$, take the largest $n$ with $x < 1/n$; then
+            $n > \frac1x - 1 \ge \frac{1}{2x}$, so $g(x) \ge \frac{1}{2x}$ on
+            $(0, \frac12)$, and $\int_{(0,1/2)} \frac{dx}{2x} = \infty$. No integrable
+            dominating function exists.
+
+  - id: ct-p9
+    title: Lower Lebesgue sums of x
+    points: 2
+    q: |-
+      Let $f(x) = x$ on $X = [0,1]$ with the Borel sets and $\lambda$. For the partition
+      $P_n$ of $[0,1]$ into $[0, \frac1n), [\frac1n, \frac2n), \dots, [\frac{n-1}{n}, 1]$,
+      compute $\mathcal{L}(f, P_n)$. What does this say about $\int f \, d\lambda$?
+    steps:
+      - do: |-
+          On the $k$-th piece $[\frac{k-1}{n}, \frac{k}{n})$ (the last one closed), the
+          infimum of $f$ is $\frac{k-1}{n}$ and the measure is $\frac1n$.
+      - do: |-
+          $$\mathcal{L}(f, P_n) = \sum_{k=1}^{n} \frac1n \cdot \frac{k-1}{n} = \frac{1}{n^2} \cdot \frac{(n-1)n}{2} = \frac{n-1}{2n} .$$
+        why: |-
+          $0 + 1 + \dots + (n-1) = \frac{(n-1)n}{2}$.
+      - do: |-
+          $\int f \, d\lambda$ is the supremum of all lower Lebesgue sums, so it is at
+          least $\sup_n \frac{n-1}{2n} = \frac12$. By 3.34 it equals
+          $\int_0^1 x \, dx = \frac12$.
+    answer: |-
+      $\mathcal{L}(f, P_n) = \frac{n-1}{2n}$, increasing to $\frac12 = \int f \, d\lambda$.
+
+  - id: ct-p10
+    title: Integrals of simple functions
+    points: 2
+    q: |-
+      Compute with Lebesgue measure on $\mathbb{R}$:
+    parts:
+      - q: |-
+          $\int \big( 3\chi_{[0,2)} + \chi_{[1,4)} \big) d\lambda$
+        solution: |-
+          Disjoint form: $3$ on $[0,1)$, $4$ on $[1,2)$, $1$ on $[2,4)$. By 3.7,
+          $3 \cdot 1 + 4 \cdot 1 + 1 \cdot 2 = 9$. (Additivity gives the same:
+          $3 \cdot 2 + 1 \cdot 3 = 9$.)
+      - q: |-
+          $\int \big( \chi_{\mathbb{Q} \cap [0,5]} + 2\chi_{[0,1]} \big) d\lambda$
+        solution: |-
+          By additivity (3.16) and 3.4: $\lambda(\mathbb{Q} \cap [0,5]) + 2\lambda([0,1]) = 0 + 2 = 2$.
+          The rationals are countable, so they have measure $0$.
+    answer: |-
+      (a) $9$, (b) $2$.
+
+  - id: ct-p11
+    type: tf
+    title: When is the integral defined?
+    points: 1
+    q: |-
+      $\displaystyle \int_{\mathbb{R}} \sin x \, d\lambda(x)$ is defined.
+    correct: false
+    solution: |-
+      False. $\sin^+$ is at least $\frac12$ on each interval $[\frac{\pi}{6} + 2k\pi, \frac{5\pi}{6} + 2k\pi]$,
+      infinitely many intervals of length $\frac{2\pi}{3}$, so $\int \sin^+ \, d\lambda = \infty$, and
+      likewise $\int \sin^- \, d\lambda = \infty$. Definition 3.18 needs at least one of
+      them finite.
+
+  - id: ct-p12
+    type: tf
+    title: An integral equal to minus infinity
+    points: 1
+    q: |-
+      $\displaystyle \int_{[0,\infty)} (-1) \, d\lambda$ is defined.
+    correct: true
+    solution: |-
+      True. With $f = -\chi_{[0,\infty)}$: $\int f^+ \, d\lambda = 0$ is finite, so 3.18
+      applies, and $\int f \, d\lambda = 0 - \lambda([0,\infty)) = -\infty$. Defined does
+      not mean finite.
+
+  - id: ct-p13
+    type: multi
+    title: Measurable for a small σ-algebra
+    points: 2
+    q: |-
+      Let $\mathcal{S} = \{\varnothing, (-\infty, 0), [0, \infty), \mathbb{R}\}$. Which
+      functions $\mathbb{R} \to \mathbb{R}$ are $\mathcal{S}$-measurable?
+    choices:
+      - text: $f(x) = 1$ for $x \ge 0$ and $f(x) = -1$ for $x < 0$
+        correct: true
+        why: Constant on each of the two pieces.
+      - text: $f(x) = x^2$
+        why: Not constant on $[0,\infty)$. For example $f^{-1}((1,\infty))$ contains $2$ but not $0$.
+      - text: $\chi_{[0,\infty)}$
+        correct: true
+        why: $[0,\infty) \in \mathcal{S}$.
+      - text: $\chi_{[1,\infty)}$
+        why: $\chi_E$ is measurable only when $E \in \mathcal{S}$, and $[1,\infty)$ is not.
+      - text: $f(x) = 7$
+        correct: true
+        why: Constant functions are measurable for every σ-algebra.
+
+  - id: ct-p14
+    title: A spike that stays bounded
+    points: 2
+    q: |-
+      Compute $\displaystyle \lim_{n\to\infty} \int_{[0,1]} n x e^{-nx} \, d\lambda(x)$
+      with a convergence theorem.
+    steps:
+      - do: |-
+          **Pointwise limit.** At $x = 0$ the value is $0$. For $x > 0$,
+          $nxe^{-nx} = t e^{-t}$ with $t = nx \to \infty$, so it tends to $0$.
+      - do: |-
+          **A uniform bound.** $h(t) = te^{-t}$ has $h'(t) = (1-t)e^{-t}$, so its maximum on
+          $[0,\infty)$ is $h(1) = e^{-1}$. Hence $0 \le f_n(x) \le e^{-1}$ for all $n$, $x$.
+        why: |-
+          The peak moves to $x = 1/n$ but never grows, unlike $n\chi_{(0,1/n)}$.
+      - do: |-
+          **Bounded Convergence Theorem.** $\lambda([0,1]) < \infty$ and $c = e^{-1}$, so
+          the limit is $\int_{[0,1]} 0 \, d\lambda = 0$.
+        why: |-
+          Monotone convergence is not available: the sequence is not increasing in $n$.
+    answer: |-
+      $0$. Directly: $\int_0^1 nxe^{-nx} dx = \frac{1}{n}\big(1 - (n+1)e^{-n}\big) \to 0$.

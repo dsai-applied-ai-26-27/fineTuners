@@ -1,0 +1,251 @@
+title: 'Collaborative filtering I: method and evaluation'
+topic: cf
+lecture: 02-collaborative-filtering-i
+description: The CF method, Pearson and cosine, and the evaluation measures. The cards marked key are what the first test asks.
+
+cards:
+  - id: cf1-idea
+    q: |-
+      What is the collaborative filtering idea?
+    a: |-
+      Predict the opinion the user will have of the items, and recommend the best, from the
+      user's previous likings and the opinions of other like-minded users.
+
+  - id: cf1-networked
+    q: |-
+      Can CF work on a PC that is not networked?
+    a: |-
+      No. It needs the ratings of many other users, so it needs a network and a server
+      (or several). There is no stand-alone CF application.
+
+  - id: cf1-ingredients
+    q: |-
+      What are the ingredients of a CF system?
+    a: |-
+      Users and items; each user's ratings (explicit or implicit); the active user; a
+      similarity metric; a method for selecting neighbours; a method for predicting the
+      missing ratings.
+
+  - id: cf1-five-steps
+    hy: true
+    q: |-
+      Give the five steps of user-based collaborative filtering.
+    a: |-
+      1. Identify the target user's ratings.
+      2. Find the most similar users (neighbour formation).
+      3. Identify the products those users rated.
+      4. Predict the target user's rating for each.
+      5. Recommend the top-$N$ by predicted rating.
+
+  - id: cf1-1nn-wrong
+    q: |-
+      Why can 1-nearest-neighbour CF easily be wrong?
+    a: |-
+      A single neighbour decides. The nearest user may be atypical, for example the only one
+      who rated that product positively.
+
+  - id: cf1-notation
+    q: |-
+      What do $I_u$, $U_i$, $I_{uv}$ and $N_j(u)$ denote?
+    a: |-
+      $I_u$: items rated by $u$. $U_i$: users who rated $i$. $I_{uv} = I_u \cap I_v$: items
+      rated by both $u$ and $v$. $N_j(u)$: neighbours of $u$ who rated $j$.
+
+  - id: cf1-prediction
+    hy: true
+    q: |-
+      Write the mean-centred user-based prediction formula.
+    a: |-
+      $$r^*_{uj} = \bar r_u + K \sum_{v \in N_j(u)} w_{uv}(r_{vj} - \bar r_v), \qquad K = \frac{1}{\sum_{v \in N_j(u)} |w_{uv}|}$$
+    note: |-
+      $K$ uses absolute values, so negative neighbours still count in the normaliser.
+
+  - id: cf1-mean-centring
+    q: |-
+      Why subtract each neighbour's mean rating?
+    a: |-
+      Users use the scale differently. A 4 from someone who rates everything 5 is below
+      their average; deviations from each user's mean make generous and strict raters
+      comparable.
+
+  - id: cf1-worked
+    hy: true
+    q: |-
+      $\bar r_u = 3.2$. Neighbours rated $j$ with $4, 3, 5$; their means are $4, 3.5, 3$;
+      similarities $0.5, 0.5, 0.8$. Predict $r^*_{uj}$.
+    a: |-
+      $3.2 + \frac{0.5(0) + 0.5(-0.5) + 0.8(2)}{1.8} = 3.2 + \frac{1.35}{1.8} = 3.95$.
+
+  - id: cf1-pearson
+    hy: true
+    q: |-
+      Write the Pearson correlation of users $u$ and $v$.
+    a: |-
+      $$w_{uv} = \frac{\sum_{j \in I_{uv}} (r_{uj} - \bar r_u)(r_{vj} - \bar r_v)}{\sqrt{\sum_{j \in I_{uv}} (r_{uj} - \bar r_u)^2}\sqrt{\sum_{j \in I_{uv}} (r_{vj} - \bar r_v)^2}}$$
+    note: |-
+      The lecture takes $\bar r_u$ over all of $I_u$; standard libraries over $I_{uv}$ only,
+      which gives different values.
+
+  - id: cf1-cosine
+    q: |-
+      Write the cosine similarity of users $u$ and $v$.
+    a: |-
+      $$w_{uv} = \frac{\sum_{j \in I_{uv}} r_{uj} r_{vj}}{\sqrt{\sum_{j \in I_u} r_{uj}^2}\sqrt{\sum_{j \in I_v} r_{vj}^2}}$$
+
+  - id: cf1-pearson-vs-cosine
+    hy: true
+    q: |-
+      User 2's ratings are user 1's plus 1; user 3's are user 1's mirrored. What do Pearson
+      and cosine say?
+    a: |-
+      Pearson: $1$ for users 1 and 2, $-1$ for users 1 and 3. Cosine: $0.99$ and $0.76$.
+      Cosine works on raw, all-positive ratings, so it sees even the opposite user as fairly
+      similar; Pearson works on deviations from the mean.
+
+  - id: cf1-negative-weight
+    q: |-
+      What does a negatively correlated neighbour who rated an item below their mean say
+      about the target user?
+    a: |-
+      That the target user will probably like it: $w_{uv} < 0$ times
+      $(r_{vj} - \bar r_v) < 0$ is a positive contribution.
+
+  - id: cf1-vote
+    hy: true
+    q: |-
+      How does neighbourhood-based classification predict a rating?
+    a: |-
+      Each neighbour votes for the rating it gave, with weight $w_{uv}$:
+      $\mathrm{vote}(j, r) = \sum_{v} \delta(r_{vj} = r)\,w_{uv}$. The prediction is the
+      rating with the largest vote.
+    note: |-
+      Slide example: ratings $4, 4, 5$ with weights $0.3, 0.4, 0.8$. Votes $0.7$ for 4 and
+      $0.8$ for 5, so 5.
+
+  - id: cf1-regression-vs-classification
+    q: |-
+      When is regression and when is classification the better way to predict ratings?
+    a: |-
+      Regression for a continuous (ordered) scale; classification is the only choice when the
+      values are discrete and cannot be ordered. Most CF systems use regression.
+
+  - id: cf1-provider-goals
+    q: |-
+      What does a recommender do for the service provider?
+    a: |-
+      Sells more items, sells more diverse items, increases user satisfaction and fidelity,
+      and builds a profile of what the user wants.
+
+  - id: cf1-long-tail
+    hy: true
+    q: |-
+      What is the long tail, and why does a recommender help sell it?
+    a: |-
+      The market for many low-volume non-hits, which can rival or exceed the market for
+      hits. A recommender surfaces niche items to the few users whose neighbours liked them.
+
+  - id: cf1-user-functions
+    q: |-
+      Name the primary functions of a recommender for the user.
+    a: |-
+      Find some good items, find all good items, annotation in context, recommend a
+      sequence, recommend a bundle, just browsing.
+
+  - id: cf1-three-evaluations
+    hy: true
+    q: |-
+      What are the three kinds of accuracy evaluation?
+    a: |-
+      1. The exact rating value (MAE, RMSE).
+      2. Relevant or not (precision, recall, F1).
+      3. The ranking (NDCG, ARHR).
+
+  - id: cf1-mae-rmse
+    hy: true
+    q: |-
+      Define MAE and RMSE. Which is larger?
+    a: |-
+      $\mathrm{MAE} = \frac{1}{|R_{test}|}\sum |\hat r_{ui} - r_{ui}|$,
+      $\mathrm{RMSE} = \sqrt{\frac{1}{|R_{test}|}\sum (\hat r_{ui} - r_{ui})^2}$.
+      RMSE is never below MAE; it grows with the spread of the errors.
+
+  - id: cf1-mae-heavy-users
+    hy: true
+    q: |-
+      Some users have far more test ratings than others. What goes wrong with MAE, and how is
+      it fixed?
+    a: |-
+      Every rating counts equally, so heavy users dominate. Compute the MAE per user, then
+      average over users.
+
+  - id: cf1-nmae
+    q: |-
+      What is NMAE for?
+    a: |-
+      MAE divided by the rating range $r_{max} - r_{min}$, so that data sets with different
+      rating scales can be compared.
+
+  - id: cf1-precision-recall
+    hy: true
+    q: |-
+      Define precision and recall for a recommendation list.
+    a: |-
+      Precision: relevant items selected / items selected. Recall: relevant items selected /
+      relevant items.
+
+  - id: cf1-incomplete
+    q: |-
+      Some recommended items are unrated. How are precision and recall computed?
+    a: |-
+      By convention unrated items count as irrelevant, which gives the lowest estimates.
+
+  - id: cf1-f1
+    q: |-
+      Define $F_1$, and compute it for $P = 4/7$, $R = 4/9$.
+    a: |-
+      $F_1 = \frac{2PR}{P + R}$, the harmonic mean of precision and recall. Here
+      $\frac{2 \cdot 16/63}{64/63} = 0.5$.
+
+  - id: cf1-pr-curve
+    q: |-
+      On a precision-recall curve, why does precision not fall to 0 at recall 1?
+    a: |-
+      Retrieving every item gives precision equal to the share of relevant items among the
+      rated test items, which is high because observed ratings are skewed upwards (0.7 on
+      the slide).
+
+  - id: cf1-pr-problems
+    q: |-
+      Name problems with precision and recall in recommenders.
+    a: |-
+      Relevance must be known (hard for millions of items, recall hardest); unrated items
+      are unknown; optimising precision recommends already-consumed items; measured
+      precision is very low (around 10%); the system runs out of novel recommendations.
+
+  - id: cf1-ndcg
+    hy: true
+    q: |-
+      Write NDCG@$k$ for one user and say what $Z_k$ does.
+    a: |-
+      $$\mathrm{NDCG}@k = Z_k \sum_{m=1}^{k} \frac{2^{R(m)} - 1}{\log_2(1 + m)}$$
+      $Z_k$ normalises so that a perfect ranking scores 1.
+
+  - id: cf1-arhr
+    q: |-
+      What is ARHR?
+    a: |-
+      With one held-out item $i_u$ per user, the average of $1/\mathrm{rank}(i_u, L(u))$,
+      counting 0 when the item is not in the list.
+
+  - id: cf1-beyond
+    q: |-
+      Name measures beyond precision.
+    a: |-
+      Novelty, coverage, learning rate, confidence, user satisfaction, site performance.
+
+  - id: cf1-precision-or-recall
+    q: |-
+      Is precision more important than recall in a recommender?
+    a: |-
+      Usually yes for "find some good items", because users look only at a short top list.
+      Recall matters for "find all good items".

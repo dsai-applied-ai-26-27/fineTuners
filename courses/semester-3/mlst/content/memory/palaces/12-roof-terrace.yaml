@@ -1,0 +1,171 @@
+# Ids are permanent: people's progress is keyed by them.
+title: 'Room 12 · Roof Terrace: NLP: embeddings, seq2seq, attention'
+topic: nlp
+encodes: |-
+  Out in the open, where sequences become language and the model learns where to look. 6 stops, one exam-ready code pattern or idea at each.
+intro: |-
+  Room 12 of 12 on the walk from the front door to the roof: your own roof terrace, or whatever you substituted for it. Put each scene on the object itself, in this order: the chimney, the phrasebook, the deckchair, the two telescopes, the terrace railing, the spotlight. The method is in [](guide:memory-palace).
+
+loci:
+  - id: s12-1
+    place: 'The chimney'
+    image: |-
+      **The chimney that shreds text into characters.** Text is fed into a chimney and comes out the other side as a stream of numbered tiles — one tile per **character**, each with an ID. The tiles are then cut into overlapping windows, shuffled, and stacked in batches.
+    means: |-
+      **Character tokenising and windowed datasets.**
+
+      ```python
+      tokenizer = keras.preprocessing.text.Tokenizer(char_level=True)
+      tokenizer.fit_on_texts(shakespeare_text)
+      max_id = len(tokenizer.word_index)          # number of distinct characters
+
+      dataset = tf.data.Dataset.from_tensor_slices(encoded)
+      dataset = dataset.window(n_steps + 1, shift=1, drop_remainder=True)
+      dataset = dataset.flat_map(lambda w: w.batch(n_steps + 1))
+      dataset = dataset.shuffle(10000).batch(batch_size)
+      dataset = dataset.map(lambda X, Y: (tf.one_hot(X, depth=max_id), Y))
+      dataset = dataset.prefetch(1)
+      ```
+
+      - `char_level=True` (structural): Character-level tokenising. Leave it out for word-level.
+      - `shift=1, drop_remainder=True` (structural): Windows overlap by all but one step; incomplete final windows are discarded so every batch has the same shape.
+    refs: ["guide:12-nlp"]
+
+  - id: s12-2
+    place: 'The phrasebook'
+    image: |-
+      **A phrasebook that replaces every word with a coordinate.** On the table lies a phrasebook. Look up any word and instead of a definition you get a short list of **numbers** — a position in meaning-space, where similar words sit close together. Blank pages are marked so the reader skips them.
+    means: |-
+      **Embeddings and sentiment analysis.**
+
+      ```python
+      embed_size = 128
+      model = keras.models.Sequential([
+          keras.layers.Embedding(vocab_size, embed_size,
+                                 mask_zero=True, input_shape=[None]),
+          keras.layers.GRU(128, return_sequences=True),
+          keras.layers.GRU(128),
+          keras.layers.Dense(1, activation="sigmoid")
+      ])
+      model.compile(loss="binary_crossentropy", optimizer="adam", metrics=["accuracy"])
+      history = model.fit(train_set, epochs=5)
+      ```
+
+      - `Embedding(vocab_size, embed_size)` (structural): Rows = vocabulary size, columns = dimensions of the learned vector. Replaces one-hot with something dense and trainable.
+      - `mask_zero=True` (structural): Token 0 is padding; tell the downstream layers to ignore it.
+      - `second GRU has NO return_sequences` (structural): Deliberate: the last recurrent layer collapses the sequence into ONE vector, which the Dense(1, sigmoid) turns into a single sentiment probability.
+      - `Dense(1, activation="sigmoid")` (structural): Binary output ⇒ 1 unit + sigmoid + binary_crossentropy. Multi-class ⇒ n units + softmax + (sparse_)categorical_crossentropy.
+    refs: ["guide:12-nlp"]
+
+  - id: s12-3
+    place: 'The deckchair'
+    image: |-
+      **The deckchair that refuses to be moved between rounds.** A deckchair keeps its exact position from one batch to the next — the batches must arrive **in order**, not shuffled — and a caretaker walks out at the start of every epoch to **reset it** to the origin.
+    means: |-
+      **Stateful RNNs.**
+
+      ```python
+      model = keras.models.Sequential([
+          keras.layers.GRU(128, return_sequences=True, stateful=True, dropout=0.2,
+                           batch_input_shape=[batch_size, None, max_id]),
+          keras.layers.GRU(128, return_sequences=True, stateful=True, dropout=0.2),
+          keras.layers.TimeDistributed(keras.layers.Dense(max_id, activation="softmax"))
+      ])
+
+      class ResetStatesCallback(keras.callbacks.Callback):
+          def on_epoch_begin(self, epoch, logs):
+              self.model.reset_states()
+
+      model.compile(loss="sparse_categorical_crossentropy", optimizer="adam")
+      history = model.fit(dataset, epochs=50, callbacks=[ResetStatesCallback()])
+      ```
+
+      - `stateful=True` (structural): Carry the hidden state from one batch to the next, so the model can learn patterns longer than one window.
+      - `batch_input_shape=[batch_size, None, max_id]` (structural): Stateful layers need a FIXED batch size, so input_shape is not enough — the full batch shape must be declared.
+      - `callbacks=[ResetStatesCallback()]` (structural): Without a reset at each epoch the state leaks across epochs and the model sees a false continuation.
+      - `loss="sparse_categorical_crossentropy"` (structural): Multi-class targets given as integer IDs. Use "categorical_crossentropy" if the targets are one-hot.
+    refs: ["guide:12-nlp"]
+
+  - id: s12-4
+    place: 'The two telescopes'
+    image: |-
+      **One telescope reads, hands over its notes, the other writes.** Two telescopes stand on the terrace. The first reads the whole foreign sentence and then hands over **only its final state** — a compressed summary in two envelopes. The second telescope is **started up from those envelopes** and writes the translation one word at a time.
+    means: |-
+      **Encoder-decoder.** A **sequence-to-sequence** model. The lab's full version uses `tfa.seq2seq.BasicDecoder` with a `TrainingSampler` and an `LSTMCell(512)`, but the examinable idea is the state handoff above.
+
+      ```python
+      import numpy as np
+      from tensorflow import keras
+
+      encoder_inputs = keras.layers.Input(shape=[None], dtype=np.int32)
+      decoder_inputs = keras.layers.Input(shape=[None], dtype=np.int32)
+
+      embeddings = keras.layers.Embedding(vocab_size, embed_size)
+      encoder_embeddings = embeddings(encoder_inputs)
+      decoder_embeddings = embeddings(decoder_inputs)
+
+      # ENCODER: returns its final states
+      encoder = keras.layers.LSTM(128, return_state=True)
+      encoder_outputs, state_h, state_c = encoder(encoder_embeddings)
+      encoder_state = [state_h, state_c]
+
+      # DECODER: initialised WITH those states
+      decoder_lstm = keras.layers.LSTM(128, return_sequences=True)
+      decoder_outputs = decoder_lstm(decoder_embeddings,
+                                     initial_state=encoder_state)
+
+      Y_proba = keras.layers.Dense(vocab_size, activation="softmax")(decoder_outputs)
+
+      model = keras.models.Model(inputs=[encoder_inputs, decoder_inputs],
+                                 outputs=[Y_proba])
+      ```
+
+      - `return_state=True` (structural): Returns (output, state_h, state_c) for an LSTM — THREE values. A GRU returns two, because it has a single state. Not the same thing as return_sequences.
+      - `initial_state=encoder_state` (structural): The handoff. This single argument is what makes it an encoder–decoder rather than two unrelated LSTMs.
+      - `keras.models.Model(inputs=[...], outputs=[...])` (structural): The Functional API: needed whenever the graph is not a straight line — multiple inputs, shared layers, skip connections.
+      - `Dense(vocab_size, activation="softmax")` (structural): One output unit per possible word; softmax makes it a distribution over the vocabulary.
+    refs: ["guide:12-nlp"]
+
+  - id: s12-5
+    place: 'The terrace railing'
+    image: |-
+      **A railing you can walk in both directions.** The railing runs the full width of the terrace and you may walk it **left to right and right to left at the same time**, then staple the two reports together. Only allowed when the whole sentence is already there — you cannot walk backwards through words you have not written yet.
+    means: |-
+      **Bidirectional layers.** **Bidirectional** runs two copies of the layer, forwards and backwards, and concatenates their outputs — so the output width doubles. Fine for an **encoder**, impossible for a **decoder**, which generates left to right and must not see the future.
+
+      ```python
+      model = keras.models.Sequential([
+          keras.layers.GRU(10, return_sequences=True, input_shape=[None, 10]),
+          keras.layers.Bidirectional(keras.layers.GRU(10, return_sequences=True))
+      ])
+      ```
+    refs: ["guide:12-nlp"]
+
+  - id: s12-6
+    place: 'The spotlight'
+    image: |-
+      **A spotlight that picks which word to stare at.** A spotlight on the terrace swings to whichever source word matters right now, instead of forcing everything through one small envelope. In the writing telescope the spotlight has a **shade on its right side** so it cannot illuminate words not yet written. And because a spotlight has no sense of order, every word is first given a numbered badge made of sine and cosine waves.
+    means: |-
+      **Attention and positional encoding.** Attention lets every output position look directly at every encoder output, removing the bottleneck of a single fixed-size state. Because attention is **order-blind**, a **PositionalEncoding** layer adds sin/cos signals of different frequencies to the embeddings so position is recoverable. `MultiHeadAttention` runs several attention heads in parallel over projections of the input (implemented in the lab with `Conv1D(kernel_size=1, use_bias=False)` as the linear projections).
+
+      ```python
+      # self-attention in the encoder
+      Z = encoder_in
+      for N in range(6):
+          Z = keras.layers.Attention(use_scale=True)([Z, Z])
+      encoder_outputs = Z
+
+      # decoder: masked self-attention, then cross-attention to the encoder
+      Z = decoder_in
+      for N in range(6):
+          Z = keras.layers.Attention(use_scale=True, causal=True)([Z, Z])
+          Z = keras.layers.Attention(use_scale=True)([Z, encoder_outputs])
+
+      outputs = keras.layers.TimeDistributed(
+          keras.layers.Dense(vocab_size, activation="softmax"))(Z)
+      ```
+
+      - `Attention()([Q, V])` (structural): Called on a LIST. [Z, Z] is self-attention; [Z, encoder_outputs] is cross-attention from decoder to encoder.
+      - `use_scale=True` (dial): Learn a scaling factor for the similarity scores.
+      - `causal=True` (structural): Masks future positions. Decoder self-attention only — the same 'no peeking' rule as causal padding in WaveNet.
+    refs: ["guide:12-nlp"]

@@ -1,0 +1,147 @@
+title: Mock final 1
+kind: mock
+duration: 45
+marking:
+  negative: 0.5
+instructions: |-
+  Forty-five minutes, closed book. Section A is choice questions: a wrong answer costs half a
+  point, a blank costs nothing. Section B is written: do it on paper, then mark yourself
+  against the solutions.
+
+questions:
+  - id: mock-q1
+    type: mcq
+    title: A1
+    topic: features
+    points: 2
+    q: |-
+      Which statement about PCA and Fisher's discriminant is correct?
+    choices:
+      - text: Both use the class labels.
+        why: PCA never looks at the labels.
+      - text: PCA maximises class separability; Fisher maximises retained variance.
+        why: It is the other way round.
+      - text: PCA is unsupervised and keeps variance; Fisher is supervised and keeps separability.
+        correct: true
+      - text: Fisher can always provide as many directions as there are measurements.
+        why: Fisher gives at most $K - 1$ directions for $K$ classes.
+
+  - id: mock-q2
+    type: mcq
+    title: A2
+    topic: distance
+    points: 2
+    q: |-
+      The unit contours of the Mahalanobis distance to a class are
+    choices:
+      - text: circles centred on the class mean.
+        why: That is Euclidean distance.
+      - text: diamonds centred on the class mean.
+        why: That is Manhattan distance.
+      - text: the covariance ellipses of the class.
+        correct: true
+        why: Mahalanobis distance measures displacement in standard-deviation units.
+      - text: squares aligned with the axes.
+        why: That is the maximum-coordinate distance.
+
+  - id: mock-q3
+    type: multi
+    title: A3
+    topic: distance
+    points: 3
+    q: |-
+      Which of these stop a two-class minimum-distance boundary from being a single straight
+      line? Select all that apply.
+    choices:
+      - text: Using the nearest neighbour instead of the mean as prototype.
+        correct: true
+      - text: The two classes having different covariances, with Euclidean distance.
+        why: MED ignores the covariances; the $x^\top x$ terms still cancel.
+      - text: Using Mahalanobis distance with different covariances.
+        correct: true
+        why: The quadratic terms no longer cancel.
+      - text: Using Manhattan distance.
+        correct: true
+
+  - id: mock-q4
+    type: tf
+    title: A4
+    topic: distance
+    points: 1
+    q: |-
+      Nearest-neighbour classification is always at least as accurate as a mean-prototype
+      classifier.
+    correct: false
+    solution: |-
+      False. A single mislabelled point or outlier owns a region under NN. For compact
+      classes with occasional outliers the mean prototype can be more accurate.
+
+  - id: mock-q5
+    type: tf
+    title: A5
+    topic: features
+    points: 1
+    q: |-
+      For two classes, Fisher's direction is unchanged if both covariance matrices are
+      multiplied by the same positive constant.
+    correct: true
+    solution: |-
+      True. $\Sigma_W^{-1}$ is then scaled by a positive constant, which changes the length
+      of $\Sigma_W^{-1}(\mu_1 - \mu_2)$ and not its direction.
+
+  - id: mock-q6
+    title: B1. Fisher's direction
+    topic: features
+    points: 12
+    q: |-
+      $\mu_1 = (0, 0)^\top$, $\Sigma_1 = \begin{pmatrix} 2 & 0 \\ 0 & 1 \end{pmatrix}$ and
+      $\mu_2 = (3, 2)^\top$, $\Sigma_2 = \begin{pmatrix} 1 & 0 \\ 0 & 1 \end{pmatrix}$.
+    parts:
+      - q: |-
+          Compute Fisher's direction in simplest integer form.
+        points: 6
+        solution: |-
+          $\Sigma_W = \begin{pmatrix} 3 & 0 \\ 0 & 2 \end{pmatrix}$, so
+          $\Sigma_W^{-1} = \begin{pmatrix} 1/3 & 0 \\ 0 & 1/2 \end{pmatrix}$ and
+
+          $$w \propto \Sigma_W^{-1}(\mu_2 - \mu_1) = \begin{pmatrix} 1/3 & 0 \\ 0 & 1/2 \end{pmatrix} \begin{pmatrix} 3 \\ 2 \end{pmatrix} = \begin{pmatrix} 1 \\ 1 \end{pmatrix}$$
+      - q: |-
+          Give the projected means and variances for that $w$.
+        points: 4
+        solution: |-
+          Means: $w^\top \mu_1 = 0$ and $w^\top \mu_2 = 5$.
+
+          Variances: $w^\top \Sigma_1 w = 2 + 1 = 3$ and $w^\top \Sigma_2 w = 1 + 1 = 2$.
+      - q: |-
+          The mean difference is $(3, 2)^\top$ but Fisher's direction is $(1, 1)^\top$. Explain
+          the change in one sentence.
+        points: 2
+        solution: |-
+          The classes are wider along the first axis, so $\Sigma_W^{-1}$ turns the direction
+          away from it, giving up some gap between the means in exchange for less spread.
+    answer: |-
+      $w = (1, 1)^\top$; projected means $0$ and $5$; variances $3$ and $2$.
+
+  - id: mock-q7
+    title: B2. Three classes
+    topic: distance
+    points: 9
+    q: |-
+      A minimum Euclidean distance classifier has class means $\mu_A = (0, 0)$,
+      $\mu_B = (6, 0)$ and $\mu_C = (0, 6)$. Find the pairwise boundaries and the point where
+      they meet, and describe the decision regions.
+    solution: |-
+      From $2x^\top(\mu_j - \mu_i) = \lVert \mu_j \rVert^2 - \lVert \mu_i \rVert^2$:
+
+      - A and B: $12x_1 = 36$, so $x_1 = 3$.
+      - A and C: $12x_2 = 36$, so $x_2 = 3$.
+      - B and C: $\mu_C - \mu_B = (-6, 6)$ and $36 - 36 = 0$, so $x_2 = x_1$.
+
+      They meet at $(3, 3)$, which is equidistant from the three means.
+
+      The boundary is three rays from $(3, 3)$: straight down along $x_1 = 3$ (between A and
+      B), straight left along $x_2 = 3$ (between A and C), and up to the right along
+      $x_2 = x_1$ (between B and C). A owns the lower-left region, B the region to the right
+      and below the diagonal, C the region above it.
+    answer: |-
+      $x_1 = 3$, $x_2 = 3$, $x_2 = x_1$; triple point $(3, 3)$.

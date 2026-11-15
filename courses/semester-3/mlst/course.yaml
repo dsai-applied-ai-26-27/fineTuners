@@ -1,0 +1,55 @@
+# One file per course. Field reference: docs/content-types/course.md
+# Written from two exam kits of the 2025-26 run, "MLST Night Before" and "MLST Memory
+# Palace", themselves built from the MLST theory and code guides, lectures 1 to 7 and
+# labs 1 to 10.
+title: "Machine Learning: Supervised Techniques"
+code: "MLST"
+year: "2025-26"
+# series: <folder of the first year>   only when this is another year of that course
+semester: 3               # semester of the programme, e.g. 5; groups the dashboard
+status: active          # active | archived
+enabled: true           # false: students do not see the course until it is opened in the admin
+has_educator: false     # true: someone is writing it, so its page does not ask for an educator
+hue: 340                # course colour, 0-359 on the hue wheel
+order: 6
+description: Supervised learning in scikit-learn and Keras, from framing and preprocessing through linear models, SVMs, trees and ensembles to sequence models, with the theory answers and code patterns of a half-theory, half-code exam.
+
+# The twelve units of the exam kit, in its order: everything around a linear model (1 to
+# 4), judging and choosing a model (5, 6), the model families (7 to 10), deep learning on
+# sequences (11, 12). Ids are permanent.
+topics:
+  - id: framing
+    title: Framing a problem and a first look at the data
+    short: Framing
+  - id: preprocessing
+    title: Preprocessing pipelines
+    short: Preprocessing
+  - id: linear
+    title: Linear regression and gradient descent
+    short: Linear models
+  - id: regularization
+    title: Regularization and early stopping
+    short: Regularization
+  - id: evaluation
+    title: Evaluation, metrics and resampling
+    short: Evaluation
+  - id: classifiers
+    title: Classification models
+    short: Classifiers
+  - id: trees
+    title: Decision trees (CART)
+    short: Trees
+  - id: svm
+    title: Support vector machines
+    short: SVM
+  - id: ensembles
+    title: Ensembles
+  - id: dimred
+    title: Dimensionality reduction
+    short: Dim. reduction
+  - id: sequences
+    title: 'Sequences: RNNs and 1D CNNs'
+    short: Sequences
+  - id: nlp
+    title: 'NLP: embeddings, seq2seq and attention'
+    short: NLP

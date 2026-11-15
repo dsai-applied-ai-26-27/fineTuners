@@ -1,0 +1,55 @@
+# Mnemonics that are not tied to one flashcard. The six pillars and the AI Act tiers have
+# their hooks on the cards themselves.
+hooks:
+  - id: h-nist-functions
+    for: The four functions of the NIST AI RMF, in order
+    kind: phrase
+    topic: regulation
+    hook: |-
+      One **G** over three **M**s: draw the **Map**, take the **Measure**, then **Manage**.
+    explain: |-
+      **Govern** sits above the others and spans the organisation. Below it the order is
+      the order of work: **Map** the context and impacts, **Measure** the risks, **Manage**
+      them.
+    refs: ["card:regulation-nist"]
+
+  - id: h-oversight-distance
+    for: The three modes of human oversight
+    kind: image
+    topic: pillars
+    hook: |-
+      A person stepping back from a conveyor belt: hands on every parcel, then watching
+      the belt with a stop button, then standing at the factory door deciding whether the
+      belt runs at all.
+    explain: |-
+      Hands on every parcel is **human-in-the-loop** (approves each decision). Watching
+      with a stop button is **human-on-the-loop** (monitors, can intervene). At the door is
+      **human-in-command** (decides whether and how the system is used).
+    refs: ["card:pillars-oversight-modes"]
+
+  - id: h-checklist-order
+    for: The eight headings of the impact assessment checklist
+    kind: story
+    topic: practice
+    hook: |-
+      Why build it, could we not, what goes in, who gets hurt, can we explain it, who can
+      stop it, what if it breaks, how do they complain.
+    explain: |-
+      **Purpose**, **alternatives**, **data**, **fairness**, **explainability**,
+      **oversight**, **safety and security**, **redress**: the questions follow a system
+      from the decision to build it to the complaint after it has acted.
+    refs: ["card:practice-checklist"]
+
+  - id: h-fairness-conditioning
+    for: Which fairness metric conditions on what
+    kind: phrase
+    topic: pillars
+    hook: |-
+      Parity looks at nobody's truth. Opportunity starts from the truth. Predictive starts
+      from the prediction.
+    explain: |-
+      **Demographic parity** compares $P(\hat Y = 1)$ across groups and never uses $Y$.
+      **Equal opportunity** conditions on the truth $Y = 1$ and asks about the prediction.
+      **Predictive parity** conditions on the prediction $\hat Y = 1$ and asks about the
+      truth.
+    refs: ["card:pillars-demographic-parity", "card:pillars-equal-opportunity", "card:pillars-predictive-parity"]

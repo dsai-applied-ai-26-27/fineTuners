@@ -1,0 +1,263 @@
+title: 'Test 1: what to know'
+topic: cf
+description: For the first test (13 November). Everything Practice Test 1 asks, plus the slide points most likely on the real test. Cards marked key are the practice test's own topics.
+
+cards:
+  - id: t1-explicit-biased
+    hy: true
+    topic: intro
+    q: |-
+      Are a user's explicit ratings a representative sample of how they would rate the whole
+      catalogue?
+    a: |-
+      No. Users choose what to consume and rate, mostly items they expected to like, so
+      observed ratings are skewed high and missing not at random.
+
+  - id: t1-peak-end
+    hy: true
+    topic: decision
+    q: |-
+      What does the peak-end rule say about how a user rates an experience?
+    a: |-
+      The remembered experience, and so the rating, is set by its best (or worst) moment and
+      by how it ended, not by its average. Same peak, better ending: rated higher.
+
+  - id: t1-mf-size
+    hy: true
+    q: |-
+      How many numbers does matrix factorization store for $10^6$ users, $10^4$ items and
+      $k = 20$ factors?
+    a: |-
+      $(10^6 + 10^4) \cdot 20 \approx 2 \times 10^7$, instead of $10^6 \cdot 10^4 = 10^{10}$
+      cells of the full rating matrix.
+
+  - id: t1-unrated-items
+    hy: true
+    topic: evaluation
+    q: |-
+      A recommender has a low error on the held-out test ratings. Do we know its accuracy on
+      items users never rated?
+    a: |-
+      No. The test set comes from the observed, biased ratings; unrated items are never
+      measured.
+
+  - id: t1-mean-centred
+    hy: true
+    q: |-
+      Write the mean-centred prediction, including $K$.
+    a: |-
+      $$r^*_{uj} = \bar r_u + K \sum_{v \in N_j(u)} w_{uv}(r_{vj} - \bar r_v), \qquad K = \frac{1}{\sum_{v} |w_{uv}|}$$
+    note: |-
+      $K$ sums **absolute** weights. Forgetting the absolute values is the classic wrong
+      answer.
+
+  - id: t1-negative-neighbour
+    hy: true
+    q: |-
+      $\bar r_u = 3$. Neighbours: $w = 0.8$, rated 5, mean 4; $w = 0.4$, rated 2, mean 3;
+      $w = -0.5$, rated 1, mean 2. Predict.
+    a: |-
+      $0.8(1) + 0.4(-1) + (-0.5)(-1) = 0.9$; $K = 1/1.7$. So $3 + 0.53 = 3.53$.
+    note: |-
+      The negative neighbour rated below their mean, which pushes the prediction up.
+
+  - id: t1-worked-395
+    q: |-
+      $\bar r_u = 3.2$; neighbours rated $4, 3, 5$, means $4, 3.5, 3$, similarities
+      $0.5, 0.5, 0.8$. Predict.
+    a: |-
+      $3.2 + \frac{0 - 0.25 + 1.6}{1.8} = 3.95$ (the lecture's example).
+
+  - id: t1-pearson-cosine-shift
+    hy: true
+    q: |-
+      $v$'s ratings are $u$'s plus 1 on every co-rated item ($u$ not constant). Pearson? Cosine?
+    a: |-
+      Pearson $= 1$ (same deviations from the mean). Cosine $< 1$ (the raw vectors $r_u$ and
+      $r_u + 1$ are not parallel).
+
+  - id: t1-vote
+    q: |-
+      Neighbours rated $4, 4, 5$ with similarities $0.3, 0.4, 0.8$. What does the
+      classification (voting) approach predict, and why?
+    a: |-
+      5: vote for 4 is $0.3 + 0.4 = 0.7$, vote for 5 is $0.8$. Regression would give a value
+      between 4 and 5 instead.
+
+  - id: t1-mae-heavy
+    hy: true
+    topic: evaluation
+    q: |-
+      Does MAE over all test ratings weigh users equally?
+    a: |-
+      No: every rating counts once, so users with many test ratings dominate. Average the MAE
+      per user first to weigh users equally.
+
+  - id: t1-mae-rmse-order
+    hy: true
+    topic: evaluation
+    q: |-
+      Can MAE be larger than RMSE?
+    a: |-
+      No. RMSE $\geq$ MAE always, equal only when all absolute errors are the same.
+
+  - id: t1-baseline
+    hy: true
+    topic: evaluation
+    q: |-
+      A rule always predicts 4. True ratings: 5 (35%), 4 (35%), 3 (15%), 2 (10%), 1 (5%).
+      MAE, and the lesson?
+    a: |-
+      $0.35 + 0 + 0.15 + 0.20 + 0.15 = 0.85$. Observed ratings are skewed high, so a
+      recommender's MAE must be compared with such a trivial baseline.
+
+  - id: t1-precision-recall
+    topic: evaluation
+    q: |-
+      Precision, recall and F1 of a list?
+    a: |-
+      $P = \frac{|\text{hit}|}{|\text{list}|}$, $R = \frac{|\text{hit}|}{|\text{relevant}|}$,
+      $F_1 = \frac{2PR}{P + R}$.
+
+  - id: t1-ceilings
+    hy: true
+    topic: evaluation
+    q: |-
+      Top-5 lists, 25% of ratings in test, all test items relevant. Users with 40 ratings and
+      users with 8: highest precision and recall?
+    a: |-
+      40 ratings: 10 relevant, so $P \leq 1$, $R \leq 0.5$, $F_1 \leq 0.667$.
+      8 ratings: 2 relevant, so $P \leq 0.4$, $R \leq 1$, $F_1 \leq 0.571$.
+    note: |-
+      Compare a measured F1 with its ceiling. A top-2 list would lift the second ceiling for
+      precision to 1.
+
+  - id: t1-f1-small
+    topic: evaluation
+    q: |-
+      Why is F1 so small in the Sarwar et al. top-10 evaluation?
+    a: |-
+      Its ceiling is low: MovieLens users have about 21 test items (recall at most $10/21$),
+      e-commerce users about 3 (precision at most $3/10$).
+
+  - id: t1-pr-curve
+    topic: evaluation
+    q: |-
+      Why does precision stay around 0.7 at recall 1?
+    a: |-
+      Retrieving everything gives the share of relevant items among the rated test items,
+      high because observed ratings are skewed upwards.
+
+  - id: t1-ndcg
+    hy: true
+    topic: evaluation
+    q: |-
+      2 relevant items, placed at ranks 2 and 3 of a top-3 list. NDCG@3?
+    a: |-
+      DCG $= \frac{1}{\log_2 3} + \frac{1}{\log_2 4} = 1.131$; ideal $= 1 + 0.631 = 1.631$;
+      NDCG $= 0.69$.
+
+  - id: t1-support-confidence
+    hy: true
+    q: |-
+      10 transactions; $X$ in 5, $Y$ in 6, both in 4. $S(X \to Y)$, $C(X \to Y)$,
+      $C(Y \to X)$?
+    a: |-
+      $S = 0.4$; $C(X \to Y) = 4/5 = 0.8$; $C(Y \to X) = 4/6 = 0.67$.
+
+  - id: t1-support-le-confidence
+    hy: true
+    q: |-
+      Can the support of $X \to Y$ exceed its confidence?
+    a: |-
+      No. $S = n(X,Y)/N$ and $C = n(X,Y)/n(X)$ with $n(X) \leq N$, so $C \geq S$.
+
+  - id: t1-significance
+    hy: true
+    q: |-
+      Significance weighting with $\gamma = 25$: Pearson $0.95$ on 4 co-rated items, $0.70$ on
+      40, $0.80$ on 20?
+    a: |-
+      $\frac{4}{25}0.95 = 0.152$, $0.70$, $\frac{20}{25}0.80 = 0.64$. Ranking flips from
+      $v_1 > v_3 > v_2$ to $v_2 > v_3 > v_1$.
+
+  - id: t1-shrinkage
+    hy: true
+    q: |-
+      Shrinkage with $\beta = 10$ on the same three neighbours?
+    a: |-
+      $\frac{4}{14}0.95 = 0.271$, $\frac{40}{50}0.70 = 0.56$, $\frac{20}{30}0.80 = 0.533$:
+      $v_2 > v_3 > v_1$.
+
+  - id: t1-half-kept
+    hy: true
+    q: |-
+      When does shrinkage keep half the similarity? When does significance weighting keep all
+      of it?
+    a: |-
+      Shrinkage: at $|I_{uv}| = \beta$. Significance weighting: from $|I_{uv}| = \gamma$ on.
+
+  - id: t1-beta-inequality
+    hy: true
+    q: |-
+      For which $\beta$ does $v_3$ ($0.80$, 20 items) stay above $v_2$ ($0.70$, 40 items)
+      under shrinkage?
+    a: |-
+      $\frac{20}{20+\beta}0.8 > \frac{40}{40+\beta}0.7 \Rightarrow 16(40+\beta) > 28(20+\beta)
+      \Rightarrow \beta < 20/3 \approx 6.67$.
+
+  - id: t1-bayes-1nn
+    hy: true
+    topic: classification
+    q: |-
+      $\Pr(Y = 1 \mid x_0) = 0.65$, unlimited data. Error at $x_0$ of Bayes and of 1-NN?
+    a: |-
+      Bayes $\min(p, 1-p) = 0.35$; 1-NN $2p(1-p) = 0.455$.
+
+  - id: t1-cover-hart
+    topic: classification
+    q: |-
+      What is the Cover and Hart bound?
+    a: |-
+      Asymptotically, 1-NN's error is less than twice the Bayes error rate.
+
+  - id: t1-bayes-error-zero
+    topic: classification
+    q: |-
+      When is the Bayes error zero, and can a training error below it be good news?
+    a: |-
+      Zero only when the classes never overlap. A training error below the Bayes error means
+      overfitting: no classifier beats it on new data.
+
+  - id: t1-sparsity
+    q: |-
+      Sparsity of 100,000 ratings by 943 users on 1,682 movies?
+    a: |-
+      $1 - \frac{100{,}000}{943 \cdot 1682} = 0.937$.
+
+  - id: t1-neighbour-selection
+    q: |-
+      Two ways to select neighbours, and one drawback each?
+    a: |-
+      Fixed $k$: too large brings in dissimilar users. Similarity threshold: as data grows,
+      too many neighbours (and different neighbourhoods in different places).
+
+  - id: t1-complexity
+    q: |-
+      Complexity of naive user-based CF, and in practice?
+    a: |-
+      $O(m \cdot n)$ worst case; about $O(m + n)$ in practice, because profiles are sparse.
+
+  - id: t1-popular
+    q: |-
+      CF on popular against unpopular items?
+    a: |-
+      Popular: easy to predict, little value. Unpopular: risky (few neighbours), most value.
+
+  - id: t1-memory-model
+    q: |-
+      Memory-based against model-based CF?
+    a: |-
+      Memory-based stores ratings and predicts from neighbours at query time (lazy, like
+      k-NN). Model-based builds a model first and predicts
+      $E[r_{uj}] = \sum_r r \cdot P(r_{uj} = r \mid \text{user's ratings})$.

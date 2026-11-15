@@ -1,0 +1,159 @@
+title: Fisher directions and MED boundaries
+instructions: |-
+  Four problems in the shapes the past paper uses. Work each one on paper first. Opening the
+  solution before you have written something is the one way to waste this page.
+
+questions:
+  - id: fb-p1
+    title: Fisher direction, clean integers
+    topic: features
+    points: 10
+    q: |-
+      Two classes have means $\mu_1 = (0, 0)^\top$ and $\mu_2 = (4, 2)^\top$ and share the
+      covariance $\Sigma_1 = \Sigma_2 = \begin{pmatrix} 2 & 1 \\ 1 & 2 \end{pmatrix}$.
+    parts:
+      - q: |-
+          Find Fisher's direction in simplest integer form.
+        points: 4
+        solution: |-
+          $\Sigma_W = \Sigma_1 + \Sigma_2 = \begin{pmatrix} 4 & 2 \\ 2 & 4 \end{pmatrix}$,
+          $\det \Sigma_W = 12$, so
+          $\Sigma_W^{-1} = \dfrac{1}{12} \begin{pmatrix} 4 & -2 \\ -2 & 4 \end{pmatrix}$.
+
+          $$w \propto \Sigma_W^{-1}(\mu_2 - \mu_1) = \frac{1}{12} \begin{pmatrix} 4 & -2 \\ -2 & 4 \end{pmatrix} \begin{pmatrix} 4 \\ 2 \end{pmatrix} = \frac{1}{12} \begin{pmatrix} 12 \\ 0 \end{pmatrix}$$
+
+          So $w = (1, 0)^\top$. Fisher discards the second measurement entirely.
+      - q: |-
+          Give the projected means and variances.
+        points: 3
+        solution: |-
+          With $w = (1, 0)^\top$: $w^\top \mu_1 = 0$ and $w^\top \mu_2 = 4$. The variance is
+          $w^\top \Sigma w = 2$ for both classes.
+
+          Separation in units of spread: $4 / \sqrt{2} \approx 2.83$.
+      - q: |-
+          Compare with the plain mean-difference direction.
+        points: 3
+        solution: |-
+          The unit mean-difference direction is $f = (2, 1)^\top / \sqrt{5}$. It gives
+          $f^\top \mu_2 = 10 / \sqrt{5} \approx 4.47$, a **bigger** gap than Fisher's $4$.
+
+          But $f^\top \Sigma f = \tfrac{14}{5} = 2.8$, so the separation is
+          $4.47 / \sqrt{2.8} \approx 2.67$, which is less than $2.83$.
+
+          Fisher wins by trading gap for tightness.
+    answer: |-
+      $w = (1, 0)^\top$; projected means $0$ and $4$, variance $2$ each; separation $2.83$
+      against $2.67$ for the mean difference.
+    source: |-
+      Written as practice for the final; not from a past paper.
+
+  - id: fb-p2
+    title: Fisher direction, projected means and variances
+    topic: features
+    points: 12
+    q: |-
+      $\mu_A = (1, 1)^\top$, $\Sigma_A = \begin{pmatrix} 1 & 0 \\ 0 & 2 \end{pmatrix}$ and
+      $\mu_B = (3, 2)^\top$, $\Sigma_B = \begin{pmatrix} 4 & 2 \\ 2 & 4 \end{pmatrix}$.
+
+      Compute Fisher's direction in simplest integer form, then the projected means and
+      variances.
+    steps:
+      - do: |-
+          $\Sigma_W = \begin{pmatrix} 5 & 2 \\ 2 & 6 \end{pmatrix}$, $\det \Sigma_W = 26$,
+          $\Sigma_W^{-1} = \dfrac{1}{26} \begin{pmatrix} 6 & -2 \\ -2 & 5 \end{pmatrix}$
+        why: |-
+          Add the covariances, then invert the $2 \times 2$ matrix.
+      - do: |-
+          $w \propto \dfrac{1}{26} \begin{pmatrix} 6 & -2 \\ -2 & 5 \end{pmatrix} \begin{pmatrix} 2 \\ 1 \end{pmatrix} = \dfrac{1}{26} \begin{pmatrix} 10 \\ 1 \end{pmatrix}$,
+          so $w = (10, 1)^\top$
+        why: |-
+          Multiply by $\mu_B - \mu_A = (2, 1)^\top$ and drop the scalar.
+      - do: |-
+          Projected means: $w^\top \mu_A = 10 + 1 = 11$ and $w^\top \mu_B = 30 + 2 = 32$
+        why: |-
+          One $w$ for a mean.
+      - do: |-
+          Projected variances: $w^\top \Sigma_A w = 100 \cdot 1 + 1 \cdot 2 = 102$, and
+          $\Sigma_B w = (42, 24)^\top$ gives $w^\top \Sigma_B w = 420 + 24 = 444$
+        why: |-
+          Two $w$'s for a variance.
+      - do: |-
+          Normalised, with $\hat w = w / \sqrt{101}$: means $1.094$ and $3.184$, variances
+          $\tfrac{102}{101} = 1.010$ and $\tfrac{444}{101} = 4.396$
+        why: |-
+          The unnormalised numbers carry an arbitrary scale. State which convention you use;
+          either is accepted, mixing them is not.
+    answer: |-
+      $w = (10, 1)^\top$. Unnormalised: means $11$ and $32$, variances $102$ and $444$.
+    source: |-
+      This is question 2 of the past paper with the standard pair of classes from the course.
+
+  - id: fb-p3
+    title: MED line for two classes
+    topic: distance
+    points: 8
+    q: |-
+      $\mu_A = (1, 1)^\top$ and $\mu_B = (3, 2)^\top$. Derive the MED boundary and state its
+      geometry.
+    solution: |-
+      Set the squared distances equal and expand:
+
+      $$x^\top x - 2x^\top \mu_A + \mu_A^\top \mu_A = x^\top x - 2x^\top \mu_B + \mu_B^\top \mu_B$$
+
+      The $x^\top x$ terms cancel, leaving
+      $2x^\top(\mu_B - \mu_A) = \lVert \mu_B \rVert^2 - \lVert \mu_A \rVert^2$.
+
+      With $\mu_B - \mu_A = (2, 1)^\top$ and $13 - 2 = 11$:
+
+      $$4x_1 + 2x_2 = 11 \quad\Longleftrightarrow\quad 2x_1 + x_2 = 5.5$$
+
+      Geometry: the perpendicular bisector of the segment from $(1, 1)$ to $(3, 2)$. It
+      passes through the midpoint $(2, 1.5)$ and has normal $(2, 1)$. Two more points on it:
+      $(1, 3.5)$ and $(2.75, 0)$.
+    answer: |-
+      $2x_1 + x_2 = 5.5$
+
+  - id: fb-p4
+    title: Three-class MED boundary
+    topic: distance
+    points: 10
+    q: |-
+      $\mu_A = (0, 0)$, $\mu_B = (4, 0)$, $\mu_C = (2, 4)$. Find the three pairwise MED
+      bisectors, the point where they meet, and describe the boundary.
+    solution: |-
+      Apply $2x^\top(\mu_j - \mu_i) = \lVert \mu_j \rVert^2 - \lVert \mu_i \rVert^2$ to each
+      pair.
+
+      - A and B: $8x_1 = 16$, so $x_1 = 2$.
+      - A and C: $4x_1 + 8x_2 = 20$, so $x_1 + 2x_2 = 5$.
+      - B and C: $-4x_1 + 8x_2 = 4$, so $-x_1 + 2x_2 = 1$.
+
+      Putting $x_1 = 2$ into the second gives $x_2 = 1.5$, and the third checks:
+      $-2 + 3 = 1$. The three lines meet at $(2, 1.5)$, the point equidistant from all three
+      means.
+
+      The boundary is the three rays leaving $(2, 1.5)$. The remainder of each line is not a
+      boundary, because the third class is closer there.
+    answer: |-
+      Bisectors $x_1 = 2$, $x_1 + 2x_2 = 5$, $-x_1 + 2x_2 = 1$; triple point $(2, 1.5)$; a
+      piecewise-linear Voronoi partition.
+
+  - id: fb-p5
+    type: mcq
+    title: Which change keeps the boundary straight?
+    topic: distance
+    points: 2
+    q: |-
+      A two-class MED classifier has a straight boundary. Which **one** change keeps it a
+      single straight line?
+    choices:
+      - text: Adding a third class.
+        why: Three classes give a piecewise-linear Voronoi partition.
+      - text: Replacing the mean prototype with the nearest neighbour.
+        why: Every training point then owns a Voronoi cell.
+      - text: Giving the two classes different covariances.
+        correct: true
+        why: MED never looks at the covariances, so the boundary does not move.
+      - text: Replacing Euclidean distance with Manhattan distance.
+        why: L1 contours are diamonds, and the boundary becomes piecewise linear with tie regions.

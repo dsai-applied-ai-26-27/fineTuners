@@ -1,0 +1,169 @@
+sections:
+  - title: Randomness
+    topic: randomized
+    rows:
+      - id: f-lcg
+        name: Linear congruential generator
+        formula: |-
+          $$X_{n+1} = (aX_n + c) \bmod m$$
+        note: |-
+          Fast but statistically weak and predictable. The Mersenne Twister has period
+          $2^{19937} - 1$.
+      - id: f-expected-time
+        name: Expected running time
+        formula: |-
+          $$E[T] = \sum_i P_i T_i$$
+        note: |-
+          Over execution paths $i$ with probability $P_i$ and running time $T_i$.
+      - id: f-linearity
+        name: Linearity of expectation
+        formula: |-
+          $$E[X + Y] = E[X] + E[Y]$$
+        note: |-
+          Holds whether or not $X$ and $Y$ are independent.
+      - id: f-monte-carlo-pi
+        name: Monte Carlo estimate of π
+        formula: |-
+          $$\frac{N_{\text{circle}}}{N_{\text{total}}} \approx \frac{\pi}{4} \quad\Rightarrow\quad \pi \approx 4\,\frac{N_{\text{circle}}}{N_{\text{total}}}$$
+        note: |-
+          Uniform points in a square with an inscribed circle.
+
+  - title: Graph search
+    topic: graph-search
+    rows:
+      - id: f-bfs-dfs
+        name: BFS and DFS
+        formula: |-
+          $$\text{Time } O(V + E), \qquad \text{Space } O(V)$$
+        note: |-
+          With adjacency lists. BFS is optimal in unweighted graphs; DFS is not optimal.
+      - id: f-ids
+        name: Iterative deepening
+        formula: |-
+          $$\text{Time } O(b^d), \qquad \text{Space } O(bd)$$
+        note: |-
+          $b$ branching factor, $d$ depth of the shallowest solution.
+      - id: f-bds
+        name: Bidirectional search
+        formula: |-
+          $$\text{Time and space } O\!\left(b^{d/2}\right)$$
+        note: |-
+          Two frontiers of depth $d/2$ instead of one of depth $d$.
+      - id: f-ucs
+        name: Uniform cost search
+        formula: |-
+          $$\text{Time } O(E \log V), \qquad \text{Space } O(V)$$
+        note: |-
+          With a priority queue; needs non-negative costs.
+      - id: f-astar
+        name: A* evaluation
+        formula: |-
+          $$f(n) = g(n) + h(n)$$
+        note: |-
+          Cost so far plus estimated cost to go. Optimal if $h$ never overestimates.
+      - id: f-tree-edges
+        name: Edges of a tree
+        formula: |-
+          $$\lvert E \rvert = n - 1$$
+        note: |-
+          For a tree, or a spanning tree, on $n$ vertices.
+
+  - title: Shortest paths and spanning trees
+    topic: graph-algorithms
+    rows:
+      - id: f-dijkstra
+        name: Dijkstra
+        formula: |-
+          $$O((V + E)\log V) \text{ with a priority queue}, \qquad O(V^2) \text{ with a matrix}$$
+        note: |-
+          Non-negative weights only.
+      - id: f-bellman-ford
+        name: Bellman-Ford
+        formula: |-
+          $$O(V \cdot E), \qquad V - 1 \text{ rounds, plus one to detect a negative cycle}$$
+        note: |-
+          Allows negative weights.
+      - id: f-prim
+        name: Prim
+        formula: |-
+          $$O((V + E)\log V) \text{ with a priority queue}, \qquad O(V^2) \text{ with a matrix}$$
+        note: |-
+          Good for dense graphs.
+      - id: f-kruskal
+        name: Kruskal
+        formula: |-
+          $$O(E \log E)$$
+        note: |-
+          Sorting dominates; Union-Find detects cycles. Good for sparse graphs.
+
+  - title: Trees
+    topic: multiway-trees
+    rows:
+      - id: f-btree-keys
+        name: B-tree of order m
+        formula: |-
+          $$\lceil m/2 \rceil - 1 \;\le\; \text{keys} \;\le\; m - 1, \qquad \lceil m/2 \rceil \;\le\; \text{children} \;\le\; m$$
+        note: |-
+          For internal nodes other than the root; the root has at least 2 children unless it
+          is a leaf. A node with $k$ children holds $k - 1$ keys.
+      - id: f-segment-tree
+        name: Segment tree
+        formula: |-
+          $$\text{build } O(n), \qquad \text{query } O(\log n), \qquad \text{update } O(\log n)$$
+      - id: f-trie-suffix
+        name: Trie and suffix tree search
+        formula: |-
+          $$O(m)$$
+        note: |-
+          $m$ the length of the query or pattern, independent of how much is stored.
+
+  - title: Dynamic programming
+    topic: dp
+    rows:
+      - id: f-dp-stairs
+        name: Climbing stairs
+        formula: |-
+          $$\text{ways}(n) = \text{ways}(n-1) + \text{ways}(n-2), \quad \text{ways}(0) = \text{ways}(1) = 1$$
+      - id: f-dp-coin
+        name: Coin change, counting
+        formula: |-
+          $$dp[i][j] = dp[i-1][j] + dp[i][j - c_i], \quad dp[i][0] = 1$$
+      - id: f-dp-lis
+        name: Longest increasing subsequence
+        formula: |-
+          $$dp[i] = \max_{j < i,\ a[j] < a[i]} \big(dp[j] + 1\big), \quad dp[i] \ge 1$$
+        note: |-
+          Answer $\max_i dp[i]$, time $O(n^2)$.
+      - id: f-dp-knapsack
+        name: 0/1 knapsack
+        formula: |-
+          $$dp[i][w] = \max\big(dp[i-1][w],\ dp[i-1][w - w_i] + v_i\big)$$
+        note: |-
+          The second option only when $w \ge w_i$. Answer $dp[n][W]$.
+
+  - title: Metaheuristics
+    topic: swarm
+    rows:
+      - id: f-pso
+        name: Particle swarm update
+        formula: |-
+          $$v_i \leftarrow Wv_i + c_1r_1(P_{best,i} - x_i) + c_2r_2(g_{best} - x_i), \qquad x_i \leftarrow x_i + v_i$$
+        note: |-
+          $W$ inertia weight, $c_1, c_2$ acceleration coefficients, $r_1, r_2$ random numbers.
+      - id: f-aco
+        name: Ant colony pheromone update
+        formula: |-
+          $$\tau_{xy} \leftarrow (1 - \rho)\,\tau_{xy} + \sum_k \Delta\tau^k_{xy}$$
+        note: |-
+          $\rho \in (0, 1]$ the evaporation coefficient, $\Delta\tau^k_{xy}$ the pheromone ant $k$
+          deposits.
+
+  - title: Networks
+    topic: social-graphs
+    rows:
+      - id: f-power-law
+        name: Power-law degree distribution
+        formula: |-
+          $$p(x) = c\,x^{-\alpha}, \qquad \log p(x) = \log c - \alpha \log x$$
+        note: |-
+          A straight line of slope $-\alpha$ on a log-log plot.

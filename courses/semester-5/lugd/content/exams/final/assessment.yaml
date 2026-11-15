@@ -1,0 +1,51 @@
+title: Written exam
+kind: final
+format: |-
+  Written, 40 of the course's 100 points, with a minimum of 20 to pass. The introduction
+  lecture describes its content as "questions like those asked during the lectures (see
+  slides) and like the exercises in the labs" (slide 13).
+
+  Duration, number of questions and date are not announced yet. The seminar (10 points,
+  minimum 5) and the project (40, minimum 20) have their own minimums, so the exam cannot
+  be compensated elsewhere.
+
+predictions:
+  - q: |-
+      What is information overload, and how may it be tamed? Is having more choices always
+      good?
+    why: |-
+      Questions 1 to 3 on the closing slide of lecture 1, which is the kind of question
+      the exam is said to ask.
+    likelihood: high
+    refs: ["card:intro-overload", "card:intro-overload-tamed", "card:intro-more-choice"]
+  - q: |-
+      How would you define a recommender system? How are user preferences typically
+      modelled, and what are "implicit" preferences?
+    why: |-
+      Questions 4 to 6 on the closing slide of lecture 1.
+    likelihood: high
+    refs: ["card:intro-rs-definition", "card:intro-preference-models", "card:intro-implicit"]
+  - q: |-
+      What is the basic idea of collaborative filtering? Predict a missing rating from a
+      small rating table with given similarities.
+    why: |-
+      Question 7 on the closing slide, and the two worked slides (item-to-item and
+      user-to-user) are the only computations of the lecture, so they are the natural lab
+      exercise.
+    likelihood: high
+    refs: ["card:intro-cf-idea", "card:intro-item-cf-compute", "problems:cf-practice#cf-p1", "problems:cf-practice#cf-p2"]
+  - q: |-
+      How are recommendations selected? Can a recommendation be made more or less
+      appealing when it is presented, and how?
+    why: |-
+      Questions 8 and 9 on the closing slide; anchoring and the attraction effect take up
+      four slides.
+    likelihood: high
+    refs: ["card:intro-selection", "card:intro-presentation", "card:intro-anchoring", "card:intro-attraction"]
+  - q: |-
+      List some important properties of a good recommendation set, and the trade-offs
+      between them.
+    why: |-
+      Question 10 on the closing slide.
+    likelihood: high
+    refs: ["card:intro-good-set", "card:intro-tradeoffs", "card:intro-diversity"]

@@ -1,0 +1,124 @@
+title: Introduction to pattern recognition
+topic: intro
+lecture: 01-introduction
+description: Vocabulary and the processing chain from lecture 1.
+
+cards:
+  - id: intro-pattern-class
+    cloze: |-
+      A **pattern** is an object, process or event that {{can be given a name}}. A
+      **pattern class** is a set of patterns {{sharing common attributes}}, usually
+      originating from {{the same source}}.
+
+  - id: intro-classification
+    q: |-
+      Define classification in one sentence, and say what a classifier is.
+    a: |-
+      Classification is the assignment of a physical object or event to one of several
+      prespecified categories. A classifier is a machine that performs it.
+    note: |-
+      Slide 29. The words "prespecified categories" matter: when the categories are not
+      given in advance the task is clustering.
+
+  - id: intro-classical-model
+    hy: true
+    q: |-
+      Draw the classical model of a pattern recognition system and say what each part does.
+    a: |-
+      Raw data → **feature extractor** → feature vector $x = (x_1, \dots, x_d)$ →
+      **classifier** → category.
+
+      The feature extractor turns raw data into features. The classifier receives $x$ and
+      assigns it to one of $c$ categories.
+    note: |-
+      Slide 47. The full chain on slide 40 adds sensing and pre-processing before, and
+      post-processing after.
+
+  - id: intro-chain
+    q: |-
+      Name the five stages of a pattern recognition system in real life, in order.
+    a: |-
+      1. Data acquisition and sensing
+      2. Pre-processing (noise removal, isolating the pattern from the background)
+      3. Feature extraction
+      4. Classification
+      5. Post-processing (confidence in the decision)
+
+  - id: intro-learning-kinds
+    hy: true
+    q: |-
+      Supervised, unsupervised and reinforcement learning: what does the teacher provide in
+      each?
+    a: |-
+      **Supervised:** a category label (or cost) for every training pattern.
+
+      **Unsupervised:** nothing. The system forms clusters by a similarity criterion.
+
+      **Reinforcement:** no desired category, only feedback on whether a decision was right
+      or wrong.
+
+  - id: intro-phases
+    cloze: |-
+      A recognition system works in two phases. In {{training}} it is shown several examples
+      of each class and builds a {{model}} of each class. In {{classifying}} the model is
+      applied to new patterns.
+
+  - id: intro-good-features
+    q: |-
+      What should the ideal feature extractor produce, and what do we settle for in practice?
+    a: |-
+      Ideally the same feature vector for all patterns of one class and different vectors for
+      different classes. In practice: within-class variability that is small relative to
+      between-class variability.
+    note: |-
+      Slide 56. This is the idea Fisher's criterion later turns into a ratio.
+    hook: |-
+      Tight inside, far apart.
+
+  - id: intro-overfitting
+    hy: true
+    q: |-
+      In the fish example a complex boundary separates the training samples perfectly. Why
+      is that not the best classifier?
+    a: |-
+      It has fitted the particular training samples, noise included, and will fail to
+      generalise to new data. This is overfitting.
+    note: |-
+      Slide 54. The design problem is the trade-off between the complexity of the decision
+      rule and its performance on unknown samples.
+
+  - id: intro-dimensionality
+    q: |-
+      Does adding more features always improve a classifier? Give the rule of thumb from the
+      lecture.
+    a: |-
+      No. The curse of dimensionality: a feature set of size $N$ needs about
+
+      $$n \ge \frac{N(N-1)}{2}$$
+
+      training examples.
+    note: |-
+      Slide 57. Avoid unreliable features and features correlated with ones you already have.
+
+  - id: intro-correlated
+    q: |-
+      Why do correlated or badly scaled features hurt a classifier based on Euclidean distance,
+      and what are two remedies?
+    a: |-
+      Euclidean distance is very sensitive to scale, so a pattern at the extreme of its own
+      class can be closer to another class's template than to its own.
+
+      Remedies: use a metric such as Mahalanobis distance, or extract features that are
+      insensitive to scale and correlation.
+
+  - id: intro-template
+    q: |-
+      Template matching can be scored in two ways. Name them, and say when the method works.
+    a: |-
+      Count the agreements and take the maximum (maximum correlation), or count the
+      disagreements and take the minimum (minimum error).
+
+      It works when variation within a class is additive noise only.
+    note: |-
+      It fails under translation, rotation, shearing, warping, scaling or occlusion
+      (slide 65).

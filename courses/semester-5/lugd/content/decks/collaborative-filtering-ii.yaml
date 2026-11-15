@@ -1,0 +1,222 @@
+title: 'Collaborative filtering II: neighbours, rules, reliability'
+topic: cf
+lecture: 03-collaborative-filtering-ii
+description: Sparsity, neighbourhoods, k-NN, association rules, model-based CF and reliable similarities. The cards marked key are what the first test asks.
+
+cards:
+  - id: cf2-sparsity
+    hy: true
+    q: |-
+      Define sparsity, and give it for 100,000 ratings by 943 users on 1,682 movies.
+    a: |-
+      The share of missing ratings: $1 - \frac{\#\text{ratings}}{\#\text{users} \cdot \#\text{items}}$.
+      Here $1 - \frac{100{,}000}{943 \cdot 1682} = 0.937$.
+
+  - id: cf2-hit-set
+    q: |-
+      What is the hit set, and how are precision and recall computed from it?
+    a: |-
+      The intersection of the top-$N$ list with the user's test items. Precision
+      $= |\text{hit}|/N$, recall $= |\text{hit}|/|\text{test}|$.
+
+  - id: cf2-most-frequent
+    q: |-
+      How does most-frequent-item recommendation work?
+    a: |-
+      Count how many of the target user's neighbours bought each product not already in the
+      user's profile, sort by that count, and return the top $N$. No rating is estimated.
+
+  - id: cf2-f1-small
+    hy: true
+    q: |-
+      Why is F1 so small in the Sarwar et al. top-10 evaluation?
+    a: |-
+      Its ceiling is low. MovieLens users have about 21 test items, so recall is at most
+      $10/21$; e-commerce users about 3, so precision is at most $3/10$.
+
+  - id: cf2-neighbour-selection
+    hy: true
+    q: |-
+      What are the two ways to select neighbours, and the drawback of each?
+    a: |-
+      A fixed $k$: if too large, dissimilar users enter and accuracy drops, especially for
+      users with unusual tastes. A similarity threshold: the same threshold means different
+      neighbourhoods in different places, and as data grows there can be too many neighbours.
+
+  - id: cf2-negative-neighbours
+    cloze: |-
+      With Pearson correlation it is common to discard neighbours with {{negative}} similarity.
+
+  - id: cf2-lazy
+    q: |-
+      Why is 1-NN called lazy or memory-based learning?
+    a: |-
+      Learning only stores the training examples; nothing is generalised until a query
+      arrives, and then the class of the most similar example is returned.
+
+  - id: cf2-knn
+    q: |-
+      How does k-NN classify, and why is $k$ usually odd?
+    a: |-
+      It returns the majority class among the $k$ most similar examples, estimating
+      $P(c \mid d) = c_{N(d)}/k$. An odd $k$ (3 or 5) avoids ties.
+
+  - id: cf2-cover-hart
+    hy: true
+    q: |-
+      What did Cover and Hart (1967) show about nearest neighbours?
+    a: |-
+      Asymptotically (unlimited training data) the error of 1-NN is less than twice the Bayes
+      error rate. So it is 0 if the Bayes rate is 0, and k-NN approaches the Bayes rate as $k$
+      grows with the data.
+
+  - id: cf2-conditional
+    q: |-
+      Define conditional probability and independence.
+    a: |-
+      $P(A \mid B) = P(A \cap B)/P(B)$ for $P(B) > 0$. $A$ and $B$ are independent if
+      $P(A \cap B) = P(A)P(B)$, so $P(A \mid B) = P(A)$.
+
+  - id: cf2-bayes-error-integral
+    q: |-
+      Write the error of a two-class classifier with regions $R_1$ and $R_2$.
+    a: |-
+      $$P(\text{error}) = \int_{R_2} p(x \mid \omega_1)P(\omega_1)\,dx + \int_{R_1} p(x \mid \omega_2)P(\omega_2)\,dx$$
+      Minimal when the boundary is where the two weighted densities cross; the overlap
+      remains as unavoidable error.
+
+  - id: cf2-association-rule
+    q: |-
+      What does an association rule $X \to Y$ mean?
+    a: |-
+      In a collection of transactions, if the products in $X$ are present, those in $Y$ are
+      likely present too. $X$ and $Y$ do not overlap.
+
+  - id: cf2-support-confidence
+    hy: true
+    q: |-
+      Define the support and the confidence of $X \to Y$.
+    a: |-
+      $S = \frac{n(X \text{ and } Y)}{N}$, the frequency of the pattern.
+      $C = \frac{n(X \text{ and } Y)}{n(X)} = \frac{S(X \to Y)}{S(X)}$, the probability of
+      $Y$ given $X$.
+
+  - id: cf2-support-vs-confidence
+    hy: true
+    q: |-
+      Can the support of a rule exceed its confidence? Is $C(X \to Y) = C(Y \to X)$?
+    a: |-
+      No: $n(X) \leq N$, so confidence $\geq$ support. And no in general: the denominators are
+      $n(X)$ and $n(Y)$.
+    note: |-
+      10 transactions, $X$ in 5, $Y$ in 6, both in 4: $S = 0.4$, $C(X \to Y) = 0.8$,
+      $C(Y \to X) = 0.67$.
+
+  - id: cf2-rules-recommend
+    q: |-
+      How are association rules used to recommend?
+    a: |-
+      Build rules with minimum support and confidence (for example Apriori); find the rules
+      whose $X$ is in the user's profile; rank the products on their right-hand sides by the
+      maximal confidence; return the top $N$.
+
+  - id: cf2-rules-vs-cf
+    q: |-
+      How does CF compare with association rules?
+    a: |-
+      With little data all methods perform alike. With more data per user CF does better,
+      because the user's own neighbourhood carries more evidence than global co-occurrence.
+
+  - id: cf2-rec-vs-classification
+    hy: true
+    q: |-
+      How does recommendation differ from classical classification?
+    a: |-
+      The data are sparse; there is no single class to predict; the main problem is choosing
+      which item ratings to predict, and predicting all of them is usually too expensive.
+
+  - id: cf2-lazy-eager
+    q: |-
+      Lazy against eager learning: examples and the difference?
+    a: |-
+      Lazy (k-NN, case-based reasoning) generalises only at query time and can make many local
+      approximations. Eager (neural networks, ID3, Naive Bayes, SVM) builds one global model
+      before any query.
+
+  - id: cf2-model-based
+    q: |-
+      How does model-based CF predict a rating?
+    a: |-
+      As the expected rating given the user's other ratings,
+      $r^*_{uj} = \sum_{r=1}^{5} r \cdot P(r_{uj} = r \mid \{r_{uk}, k \in I_u\})$, with the
+      probabilities from a classifier (for example Naive Bayes) trained on other users.
+
+  - id: cf2-sparse-neighbours
+    q: |-
+      Two users each rated 100 of a million books. How likely is a common book, and why does
+      it matter?
+    a: |-
+      About $0.01$. With few users you may not find a single neighbour; with very many users
+      (10 million) you still find thousands.
+
+  - id: cf2-significance
+    hy: true
+    q: |-
+      Write significance weighting and say what it fixes.
+    a: |-
+      $$w'_{uv} = \frac{\min\{|I_{uv}|, \gamma\}}{\gamma}\, w_{uv}$$
+      Similarities from fewer than $\gamma$ co-rated items are scaled down linearly; from
+      $\gamma$ on they are kept. $\gamma = 50$ was best on MovieLens.
+
+  - id: cf2-shrinkage
+    hy: true
+    q: |-
+      Write shrinkage of a similarity. When is half of it kept?
+    a: |-
+      $$w'_{uv} = \frac{|I_{uv}|}{|I_{uv}| + \beta}\, w_{uv}$$
+      Half is kept at $|I_{uv}| = \beta$. Larger $\beta$ shrinks more, more co-rated items
+      shrink less, and the full value is never kept.
+
+  - id: cf2-shrinkage-why
+    q: |-
+      Why does shrinking towards 0 help?
+    a: |-
+      A weak estimator improves when combined with a null value (prior). The null similarity
+      is 0, and the estimate from few co-rated items is the weakest, so it is shrunk most.
+
+  - id: cf2-variance-items
+    q: |-
+      Did weighting high-variance items more improve the similarity?
+    a: |-
+      No (Herlocker et al.). Using only the items most correlated with the target item did
+      help (Baltrunas and Ricci): similarity then depends on the item being predicted.
+
+  - id: cf2-iuf
+    q: |-
+      What is inverse user frequency?
+    a: |-
+      A weight $\lambda_i = \log(|U|/|U_i|)$ that makes items rated by few users count more
+      in the Pearson correlation (frequency-weighted Pearson). It improved accuracy.
+
+  - id: cf2-popular
+    hy: true
+    q: |-
+      Does CF work better for popular or unpopular items?
+    a: |-
+      Popular items are easier to predict (many neighbours) but the prediction adds little
+      value. Unpopular items are risky (few neighbours) but can bring the most value.
+
+  - id: cf2-complexity
+    hy: true
+    q: |-
+      What is the complexity of naive user-based CF, and in practice?
+    a: |-
+      $O(m \cdot n)$ for $m$ customers and $n$ products in the worst case; about $O(m + n)$ in
+      practice, because each profile holds few products.
+
+  - id: cf2-scaling
+    q: |-
+      Name ways to reduce the cost of CF, and the catch.
+    a: |-
+      Indexing, approximate distances, dropping customers with few purchases or very popular
+      items, partitioning products, dimensionality reduction. All may lower quality.

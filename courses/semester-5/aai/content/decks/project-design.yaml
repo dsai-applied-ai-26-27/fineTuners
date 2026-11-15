@@ -1,0 +1,250 @@
+title: Project design
+topic: design
+lecture: 02-project-design
+description: Week 2 and the seminar guidelines. The parts of a project, the vocabulary, feasibility checks, metrics by task, and what the seminar work is assessed on.
+
+cards:
+  - id: design-eight-parts
+    hy: true
+    q: |-
+      Name the eight parts of an Applied AI project, with the question each answers.
+    a: |-
+      1. Stakeholder: who needs the result?
+      2. Problem: what is difficult today?
+      3. Data: what evidence is available?
+      4. AI task: what output is required?
+      5. Baseline: what is the simple comparison?
+      6. Method: what approach will be tested?
+      7. Evaluation: how will success be measured?
+      8. Risk: where can the system fail?
+    hook: |-
+      Who, what hurts, what evidence, what output; compared with what, done how, measured
+      how, failing where.
+
+  - id: design-two-rules
+    cloze: |-
+      A model is {{one component}}; the project is the complete chain of {{reasoning and
+      evidence}}. Start with the {{problem}}, and plan {{evaluation}} before implementation.
+
+  - id: design-five-elements
+    hy: true
+    q: |-
+      Distinguish domain, problem, AI task, technology and output, using the university
+      documents example.
+    a: |-
+      - **Domain:** the application context. Education.
+      - **Problem:** a real need that exists without AI. Students struggle to find rules in
+        university documents.
+      - **AI task:** the technical input-output problem. Information retrieval and question
+        answering.
+      - **Technology:** the tools that implement the task. Sentence embeddings, vector
+        search, a language model.
+      - **Output:** what the user receives. An answer with cited sources.
+
+  - id: design-topic-test
+    hy: true
+    q: |-
+      What is the topic test?
+    a: |-
+      Remove the words AI, machine learning, chatbot and deep learning from the topic. A
+      meaningful problem must remain.
+    note: |-
+      If nothing remains, the topic names a technology, not a problem.
+
+  - id: design-classify-elements
+    q: |-
+      Label each as domain, problem, AI task or technology: (a) XGBoost, (b) public
+      healthcare, (c) binary classification of tabular records, (d) nurses cannot tell
+      which patients are likely to miss appointments.
+    a: |-
+      (a) technology (b) domain (c) AI task (d) problem
+    note: |-
+      The example is made up here to practise the slide's distinction.
+
+  - id: design-worked-example
+    q: |-
+      For the university document assistant, give the baseline, the method, the evaluation
+      and the main risk.
+    a: |-
+      Baseline: keyword or BM25 search. Method: sentence embeddings with vector search.
+      Evaluation: Recall@k, answer support, latency. Main risk: unsupported or outdated
+      answers.
+    note: |-
+      "Evidence, not interface polish, determines whether the idea works."
+
+  - id: design-narrowing
+    hy: true
+    q: |-
+      "Build a chatbot for students." Why is this not an evaluable topic, and what does a
+      strong topic name?
+    a: |-
+      It names a technology and a vague audience, with nothing to measure or compare. A
+      strong topic names the user, the data, the task, the comparison, the metric and the
+      boundary of the study.
+    note: |-
+      The slide's evaluable version: compare keyword search and semantic retrieval for
+      answering questions from a fixed set of university regulations.
+
+  - id: design-rewrite
+    q: |-
+      Turn "Use AI to recognize images" into an evaluable topic, as the slides do.
+    a: |-
+      Evaluate transfer learning for classifying six categories in a licensed image
+      dataset, including class-level error analysis.
+    note: |-
+      It now has a method under test, a bounded task, a dataset whose use is legitimate,
+      and an analysis beyond one score.
+
+  - id: design-six-areas
+    q: |-
+      Name the six project areas offered in week 2.
+    a: |-
+      Language and document AI; computer vision; predictive analytics; time series and
+      anomalies; recommendation; AI systems and monitoring.
+
+  - id: design-smallest-stack
+    q: |-
+      When is the technology chosen, and how much of it?
+    a: |-
+      After the task is clear. Use the smallest stack that lets you test the project
+      question reliably.
+
+  - id: design-data-check
+    hy: true
+    q: |-
+      Give the six questions of the data check.
+    a: |-
+      - Who created the dataset, and why?
+      - Can we legally and ethically use it?
+      - Are labels, fields and units understood?
+      - Does it represent the intended setting?
+      - Is it large and complete enough?
+      - Could leakage make results look better than reality?
+
+  - id: design-baseline-check
+    hy: true
+    q: |-
+      What is a baseline for, and which simple baselines do the slides name?
+    a: |-
+      It is the simple comparison that shows whether the proposed method is worth its
+      extra complexity. Named: a majority, mean, naive, keyword or popularity baseline, or
+      whatever is done today without the model.
+    note: |-
+      Also ask how much improvement would justify the complexity, and which cost, latency
+      or maintenance trade-off matters.
+
+  - id: design-metric-match
+    hy: true
+    q: |-
+      Give suitable metrics for classification, regression, forecasting, retrieval,
+      recommendation and generative output.
+    a: |-
+      - Classification: precision, recall, F1, confusion matrix.
+      - Regression: MAE, RMSE, error distribution.
+      - Forecasting: MAE or RMSE with a temporal split, against a naive forecast.
+      - Retrieval: Recall@k, precision@k, source relevance.
+      - Recommendation: precision@k, coverage, diversity.
+      - Generative output: correctness, source support, task success.
+    note: |-
+      Match the metric to the consequence of an error.
+
+  - id: design-more-than-one-view
+    q: |-
+      What should a results section report besides the score?
+    a: |-
+      The baseline, examples of errors, and the limitations.
+
+  - id: design-sentence-pattern
+    hy: true
+    cloze: |-
+      For {{target user}}, we will use {{input data}} to support {{a specific task or
+      decision}} by producing {{output}}. We will compare it with {{a baseline}} and
+      evaluate it using {{a metric}}.
+
+  - id: design-peer-review
+    q: |-
+      Which five questions does a peer reviewer ask about a project concept?
+    a: |-
+      - Is the problem clear after one reading?
+      - Is the data realistically available?
+      - Is there a meaningful baseline?
+      - Can success be measured?
+      - What is the single most important improvement?
+
+  - id: design-before-week-3
+    q: |-
+      What has to be ready before week 3?
+    a: |-
+      A revised canvas, one realistic primary dataset and one backup candidate, two
+      reliable sources, and a feasibility explanation of 3 to 5 sentences.
+
+  - id: seminar-components
+    hy: true
+    topic: seminar
+    q: |-
+      Name the five required components of the seminar work, with their scope.
+    a: |-
+      - Topic proposal: 1 to 2 pages.
+      - Literature review: 3 to 5 sources, more if needed.
+      - Prototype or analysis: depends on the topic.
+      - Final report: 8 to 12 pages.
+      - Presentation: concise, with discussion.
+
+  - id: seminar-weights
+    hy: true
+    topic: seminar
+    q: |-
+      Give the six assessment criteria of the seminar work with their weights.
+    a: |-
+      - Problem definition and work plan: 15%.
+      - Literature and existing solutions review: 15%.
+      - Methodology and practical implementation: 25%.
+      - Evaluation and critical analysis: 20%.
+      - Final report: 15%.
+      - Presentation and discussion: 10%.
+    note: |-
+      Methodology plus evaluation is 45%. Submitting code or a presentation is not
+      sufficient: understanding has to be shown.
+
+  - id: seminar-schedule
+    topic: seminar
+    q: |-
+      What is the deliverable at the end of weeks 1 and 2, 3 and 4, 5 and 6, 7 to 10, 11 and
+      12, and 13 to 15?
+    a: |-
+      - 1 and 2: statement of interest or initial topic proposal.
+      - 3 and 4: topic proposal with work plan.
+      - 5 and 6: short interim presentation or consultation.
+      - 7 to 10: working version of the solution and preliminary results.
+      - 11 and 12: draft final report.
+      - 13 to 15: final report, repository or appendices, and presentation.
+
+  - id: seminar-ai-tools
+    hy: true
+    topic: seminar
+    q: |-
+      What are the rules for using AI tools in the seminar work?
+    a: |-
+      - Use is allowed, for ideas, coding help, explanations, summaries, examples and
+        language, but it must be transparent.
+      - You may not submit work you do not understand or cannot explain.
+      - The report states which tools were used and for what purpose.
+      - Results obtained with AI tools must be checked, tested and critically reviewed.
+      - All data sources, papers, libraries and models are cited.
+
+  - id: seminar-good-topic
+    topic: seminar
+    q: |-
+      What makes a good Applied AI topic?
+    a: |-
+      Not ambition. A clear problem, available data or a realistic scenario, a measurable
+      or explainable result, room for critical analysis, and a scope feasible for one
+      semester.
+
+  - id: seminar-literature-review
+    topic: seminar
+    q: |-
+      What does the instructor require of the literature review beyond describing sources?
+    a: |-
+      A critical comparison of alternatives, and a clear explanation of why the selected
+      approach is appropriate, connected to your own work.

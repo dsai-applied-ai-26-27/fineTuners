@@ -1,0 +1,285 @@
+# Ids are permanent: people's progress is keyed by them.
+title: 'First-term exam of the previous year (2024-25)'
+kind: past
+instructions: |-
+  The one real paper there is: the first-term exam ("prvi rok") from the year before this course ran, which the 2025-26 students were given. It is not from 2025-26.
+
+  **Section A** is theory, answered in writing. **Section B** is code. The questions were reported by a student, not copied from the sheet: the sub-parts of Section A and the snippet in B 1 (c) are reconstructions, as each question's source says. Point values and the time allowed did not survive.
+questions:
+  - id: past-aa
+    title: 'A (a) Encoding categorical variables'
+    topic: preprocessing
+    q: |-
+      Explain how categorical variables are represented using vector encodings.
+
+      (One-hot, the indicator function, dummy encoding, and why dummy encoding is preferred for linear regression.)
+    solution: |-
+      A categorical feature with $k$ levels has no meaningful numeric value. Coding the levels as one number would invent an order and distances, so the feature is **encoded as a vector of binary columns**.
+
+      - **One-hot encoding:** $k$ new binary columns, one per category. For an observation $x$, column $j$ holds $\mathbb{I}(x = \text{category}_j)$. Exactly one column is 1 and the rest are 0.
+      - **Indicator function:** $\mathbb{I}(\text{condition})$ returns 1 when the condition is true and 0 otherwise. It generates each column: it turns a test of category membership into a number the model can use.
+      - **Dummy encoding:** $k - 1$ columns. One level is chosen as the reference (baseline) and is represented by all zeros. The information is identical, because the missing level follows by elimination.
+      - **Why dummy encoding for linear regression:** the $k$ one-hot columns always sum to 1, which is exactly the constant intercept column. The columns are therefore **perfectly collinear** (the dummy variable trap), $X^\top X$ is singular, and the normal equation $\theta = (X^\top X)^{-1} X^\top y$ has no unique solution: the coefficients are not identifiable. Dropping one level removes the redundancy, and each coefficient then reads as the difference from the reference level.
+      - Models that do not invert $X^\top X$ (decision trees, random forests, regularised models such as Ridge) cope with one-hot encoding perfectly well.
+    source: |-
+      Section A of the previous year's first-term paper, as the owner reported it. The sub-parts in brackets were completed from study cards, so the wording is close but not guaranteed word for word.
+
+  - id: past-ab
+    title: 'A (b) Empirical risk minimisation'
+    topic: linear
+    q: |-
+      What does it mean to find optimal model parameters using ERM?
+
+      (How it is solved analytically for linear regression, and numerically with gradient descent.)
+    solution: |-
+      - We want the model that minimises the **theoretical risk**, the expected loss over the true data-generating distribution. That distribution is unknown, so it cannot be computed.
+      - **ERM** replaces it with the **empirical risk**: the average loss over the observed training data. "Optimal parameters" are the $\theta$ minimising that average, which is a well-defined optimisation problem.
+      - **(a) Analytically (closed form).** For linear regression with L2 (squared) loss the empirical risk is convex and differentiable in $\theta$. Set its gradient to zero and solve directly: $\theta = (X^\top X)^{-1} X^\top y$, the OLS estimator. Exact and obtained in one step, but it needs $X^\top X$ to be invertible and becomes impractical when the number of features is very large.
+      - **(b) Numerically (iteratively).** Start from a random $\theta$ and repeatedly step in the direction of steepest descent, $\theta \leftarrow \theta - \alpha \nabla_\theta(\text{empirical risk})$, until a stationary point. The **learning rate $\alpha$** matters: too high and the model oversteps and fails to converge; too low and convergence is needlessly slow. Variants differ in how many instances the gradient uses: **batch** (all $m$), **stochastic** (one random instance, needing a decaying learning schedule to settle) and **mini-batch**.
+      - The numerical route is **necessary** when no closed form exists (logistic regression, L1/Lasso, neural networks) or when the dataset is too large for the matrix algebra.
+    source: |-
+      Section A of the previous year's first-term paper, as the owner reported it. The sub-parts in brackets were completed from study cards, so the wording is close but not guaranteed word for word.
+
+  - id: past-ac
+    title: 'A (c) Gower distance'
+    topic: classifiers
+    q: |-
+      Explain the concept of Gower distance.
+
+      (What it is, which feature types it handles, how it is computed, numeric against categorical features, why it beats Euclidean distance.)
+    solution: |-
+      - **What:** a general dissimilarity measure for observations described by **mixed feature types**, giving a single distance in $[0, 1]$.
+      - **Handles:** numerical (continuous), categorical (nominal), binary and ordinal features, in the same dataset.
+      - **How:** for each feature separately, compute a partial dissimilarity between the two observations, scaled to $[0, 1]$. The Gower distance is the **(weighted) average of those per-feature scores**. A feature with a missing value in either observation is skipped and the average renormalised.
+      - **Numerical features:** the absolute difference $\lvert x_i - x_j \rvert$ divided by the observed **range** of that feature.
+      - **Categorical features:** simple matching, 0 if the two observations share the category and 1 if they do not. There is no notion of how far apart two categories are.
+      - **Why it beats Euclidean distance:** Euclidean distance is defined only for numerical features and assumes a common, meaningful scale. Real datasets mix types, and one-hot encoding categories before applying Euclidean distance distorts the geometry. It also lets a large-range feature such as income dominate a small-range one such as age unless you standardise first. Gower normalises **every** feature to $[0, 1]$ by construction, so all features contribute comparably and no separate scaling step is needed.
+    source: |-
+      Section A of the previous year's first-term paper, as the owner reported it. The sub-parts in brackets were completed from study cards, so the wording is close but not guaranteed word for word.
+
+  - id: past-ad
+    title: 'A (d) Hard-margin SVM and its dual'
+    topic: svm
+    q: |-
+      Explain the hard-margin SVM optimization problem and its dual formulation.
+
+      (Primal, Lagrange multipliers, constructing the dual, why the dual is useful.)
+    solution: |-
+      **Primal.**
+
+      $$\min_{w,\, b}\ \tfrac12 \lVert w \rVert^2 \qquad \text{subject to} \qquad y_i (w^\top x_i + b) \ge 1 \ \text{ for every training instance } i$$
+
+      The margin width is $2 / \lVert w \rVert$, so shrinking $\lVert w \rVert$ widens the margin; the constraints force every point onto the correct side, at least one margin away. It is a convex quadratic program with linear constraints, so any local optimum is global.
+
+      **Lagrange multipliers.** Introduce one multiplier $\alpha_i \ge 0$ per constraint:
+
+      $$L(w, b, \alpha) = \tfrac12 \lVert w \rVert^2 - \sum_i \alpha_i \big[ y_i (w^\top x_i + b) - 1 \big]$$
+
+      Setting the partial derivatives to zero gives the stationarity conditions
+
+      $$w = \sum_i \alpha_i y_i x_i \qquad \text{and} \qquad \sum_i \alpha_i y_i = 0 .$$
+
+      **Constructing the dual.** Substitute those two results back into $L$ to eliminate $w$ and $b$. What remains depends only on the multipliers:
+
+      $$\max_{\alpha}\ \sum_i \alpha_i - \tfrac12 \sum_i \sum_j \alpha_i \alpha_j\, y_i y_j\, x_i^\top x_j \qquad \text{subject to} \qquad \alpha_i \ge 0,\ \ \sum_i \alpha_i y_i = 0$$
+
+      By KKT complementary slackness $\alpha_i > 0$ only for points lying exactly on the margin, the **support vectors**, so $w$ is a weighted sum of just those points.
+
+      **Why the dual is useful.**
+
+      1. The training data enters **only through inner products** $x_i^\top x_j$, which can be replaced by a kernel $K(x_i, x_j)$ to get non-linear boundaries without ever computing the high-dimensional feature map: the **kernel trick**.
+      2. The number of variables is the number of **instances** $m$ rather than features $d$, which is far cheaper when $d \gg m$.
+      3. The solution is **sparse**: most $\alpha_i$ are zero, so prediction only touches the support vectors.
+      4. The constraints become simple bounds, which specialised QP solvers handle efficiently.
+    source: |-
+      Section A of the previous year's first-term paper, as the owner reported it. The sub-parts in brackets were completed from study cards, so the wording is close but not guaranteed word for word.
+
+  - id: past-ae
+    title: 'A (e) Score-based and probabilistic classifiers'
+    topic: evaluation
+    q: |-
+      Explain the main concepts of classification models with a focus on score-based classifiers, probabilistic classifiers and thresholding.
+    solution: |-
+      - A classifier assigns categorical class labels, and its raw output comes in three forms: **hard labels**, **scores** or **probabilities**. Continuous outputs are preferred because they are more informative and easier to optimise.
+      - **Score-based classifier:** outputs a real-valued score $f(x)$ with no probabilistic interpretation; larger means more confidence in the positive class. The label is obtained by thresholding, $\hat y = \mathbb{I}(f(x) > c)$, with $c = 0$ as the standard choice, since the boundary is where the model is undecided. Examples: the SVM decision function, `SGDClassifier.decision_function`.
+      - **Probabilistic classifier:** outputs an estimate of the posterior $P(y = 1 \mid x) \in [0, 1]$. In the binary case the label is $\mathbb{I}(p > 0.5)$; in the multi-class case you take the class with the highest predicted probability (argmax). Examples: logistic regression, Naive Bayes, `RandomForestClassifier.predict_proba`.
+      - **Thresholding:** the standard thresholds (0 for scores, 0.5 for probabilities) implicitly assume balanced classes and symmetric misclassification costs. Real problems rarely satisfy either.
+      - **Why you move the threshold:** when a false negative is much more costly than a false positive (a missed diagnosis, undetected fraud) you **lower** the threshold to raise **recall** at the cost of precision. When false alarms are expensive, you **raise** it to raise **precision** at the cost of recall. Sweeping the threshold traces the ROC and precision-recall curves, and the operating point is then chosen from a requirement such as "the lowest threshold reaching 90% precision".
+    source: |-
+      Section A of the previous year's first-term paper, as the owner reported it. The sub-parts in brackets were completed from study cards, so the wording is close but not guaranteed word for word.
+
+  - id: past-1a
+    title: 'B 1 (a) Reading a dataset'
+    topic: framing
+    q: |-
+      What kind of information about a dataset can be obtained using the `info()`, `head()`, `describe()` and `value_counts()` methods?
+    solution: |-
+      - **info()** — technical summary: number of rows and columns, the dtype of every column, and the count of non-null values, so it shows where the missing data is and how much memory it uses.
+      - **head(n)** — the first n rows, so you can see what an actual observation looks like and check the columns are what you expect.
+      - **describe()** — descriptive statistics for the numerical columns: count, mean, std, min, max and the 25/50/75% quartiles, which shows spread, skew and suspicious values.
+      - **value_counts()** — called on one column, how many times each distinct value occurs. This is how you check whether a categorical feature or the target is imbalanced.
+
+      Four questions: what shape and type is it, what does a row look like, what is the spread, how imbalanced are the categories.
+    source: |-
+      Section B of the previous year's first-term paper, as the owner reported it.
+
+  - id: past-1b
+    title: 'B 1 (b) A train/test split function'
+    topic: framing
+    q: |-
+      Create a function that takes a DataFrame and a split ratio and returns a training set and a test set (for example 0.2 gives an 80/20 split).
+    solution: |-
+      ```python
+      import numpy as np
+
+      def split_train_test(df, test_ratio, random_state=42):
+          np.random.seed(random_state)
+          shuffled_indices = np.random.permutation(len(df))
+          test_set_size = int(len(df) * test_ratio)
+          test_indices  = shuffled_indices[:test_set_size]
+          train_indices = shuffled_indices[test_set_size:]
+          return df.iloc[train_indices], df.iloc[test_indices]
+
+      train_set, test_set = split_train_test(housing, 0.2)
+      ```
+
+      Shuffle the positions, cut off the first ratio×n as test, select with .iloc[]. Seed it so the split is reproducible. If they let you use sklearn, it is train_test_split(df, test_size=0.2, random_state=42).
+    source: |-
+      Section B of the previous year's first-term paper, as the owner reported it.
+
+  - id: past-1c
+    title: 'B 1 (c) Explain the code'
+    topic: evaluation
+    q: |-
+      Explain the following code.
+
+      ```python
+      skfolds = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
+      for train_index, test_index in skfolds.split(X_train, y_train_5):
+          clone_clf = clone(sgd_clf)
+          X_train_folds = X_train[train_index]
+          y_train_folds = y_train_5[train_index]
+          X_test_fold   = X_train[test_index]
+          y_test_fold   = y_train_5[test_index]
+          clone_clf.fit(X_train_folds, y_train_folds)
+          y_pred = clone_clf.predict(X_test_fold)
+          n_correct = sum(y_pred == y_test_fold)
+          print(n_correct / len(y_pred))
+      ```
+    solution: |-
+      - It is a **manual implementation of stratified 3-fold cross-validation** — exactly what `cross_val_score(sgd_clf, X_train, y_train_5, cv=3, scoring="accuracy")` does internally.
+      - **StratifiedKFold(n_splits=3, shuffle=True, random_state=42)** splits the training set into 3 folds while keeping the class proportions of each fold equal to those of the whole set — important because y_train_5 is very imbalanced (only ~10% are 5s).
+      - **split()** yields index arrays; each iteration uses 2 folds for training and holds 1 out for testing, rotating so every fold is the test fold exactly once.
+      - **clone(sgd_clf)** makes a fresh, *untrained* copy with the same hyperparameters, so fold 2's model has not already learned from fold 1's data. Without it you would keep training one model and the scores would be meaningless.
+      - Each iteration prints **n_correct / len(y_pred)** — the accuracy on that fold. Averaging the three gives a more stable estimate of generalisation error than one train/test split.
+
+      If asked to 'explain what it represents': name it (manual stratified k-fold CV), then say what each of stratified, clone and the printed ratio is for.
+    source: |-
+      The paper's exact snippet was not kept. This is the course-notebook version, which the paper's code was based on.
+
+  - id: past-2a
+    title: 'B 2 (a) Bagging'
+    topic: ensembles
+    q: |-
+      Train a BaggingClassifier with 500 decision trees, each trained on 100 instances sampled with replacement.
+    solution: |-
+      ```python
+      from sklearn.ensemble import BaggingClassifier
+      from sklearn.tree import DecisionTreeClassifier
+
+      bag_clf = BaggingClassifier(
+          DecisionTreeClassifier(), n_estimators=500,
+          max_samples=100, bootstrap=True, n_jobs=-1, random_state=42)
+
+      bag_clf.fit(X_train, y_train)
+      y_pred = bag_clf.predict(X_test)
+      ```
+
+      500 → n_estimators. 100 instances → max_samples. With replacement → bootstrap=True (False would be pasting). Add oob_score=True if they ask for out-of-bag evaluation.
+    source: |-
+      Section B of the previous year's first-term paper, as the owner reported it.
+
+  - id: past-2b
+    title: 'B 2 (b) Linear SVM regression on California Housing'
+    topic: svm
+    q: |-
+      California Housing: split 80:20, apply StandardScaler, train a linear SVM regression model, print the test MSE.
+    solution: |-
+      ```python
+      from sklearn.datasets import fetch_california_housing
+      from sklearn.model_selection import train_test_split
+      from sklearn.preprocessing import StandardScaler
+      from sklearn.svm import LinearSVR
+      from sklearn.metrics import mean_squared_error
+
+      housing = fetch_california_housing()
+      X = housing["data"]
+      y = housing["target"]
+
+      X_train, X_test, y_train, y_test = train_test_split(
+          X, y, test_size=0.2, random_state=42)
+
+      scaler = StandardScaler()
+      X_train_scaled = scaler.fit_transform(X_train)
+      X_test_scaled  = scaler.transform(X_test)
+
+      svm_reg = LinearSVR(random_state=42)
+      svm_reg.fit(X_train_scaled, y_train)
+
+      y_pred = svm_reg.predict(X_test_scaled)
+      print("Test MSE:", mean_squared_error(y_test, y_pred))
+      ```
+
+      Regression + linear SVM = LinearSVR (SVC/LinearSVC are classifiers). Scale before an SVM — it is distance-based. fit_transform on train, transform on test.
+    source: |-
+      Section B of the previous year's first-term paper, as the owner reported it.
+
+  - id: past-2c
+    title: 'B 2 (c) PCA and a random forest on MNIST'
+    topic: dimred
+    q: |-
+      MNIST: apply PCA keeping 95% of the variance, train a Random Forest, evaluate it on the test set.
+    solution: |-
+      ```python
+      from sklearn.decomposition import PCA
+      from sklearn.ensemble import RandomForestClassifier
+      from sklearn.metrics import accuracy_score
+
+      pca = PCA(n_components=0.95)
+      X_train_reduced = pca.fit_transform(X_train)
+      X_test_reduced  = pca.transform(X_test)
+
+      rnd_clf = RandomForestClassifier(n_estimators=100, random_state=42)
+      rnd_clf.fit(X_train_reduced, y_train)
+
+      y_pred = rnd_clf.predict(X_test_reduced)
+      print("Test accuracy:", accuracy_score(y_test, y_pred))
+      ```
+
+      n_components=0.95 as a FLOAT means 'keep 95% of the variance and work out the number of dimensions yourself'. An int would mean that many dimensions. Fit the PCA on train only, then transform the test set.
+    source: |-
+      Section B of the previous year's first-term paper, as the owner reported it.
+
+  - id: past-2d
+    title: 'B 2 (d) A deep sequence-to-sequence RNN'
+    topic: sequences
+    q: |-
+      Build a deep RNN with three SimpleRNN layers of 20 units, a BatchNormalization layer between every pair of layers, `input_shape = [None, 1]`, and a TimeDistributed Dense(10) output layer. It is a sequence-to-sequence model. Compile with MSE loss, the Adam optimizer and accuracy as a metric, and train for 20 epochs.
+    solution: |-
+      ```python
+      model = keras.models.Sequential([
+          keras.layers.SimpleRNN(20, return_sequences=True, input_shape=[None, 1]),
+          keras.layers.BatchNormalization(),
+          keras.layers.SimpleRNN(20, return_sequences=True),
+          keras.layers.BatchNormalization(),
+          keras.layers.SimpleRNN(20, return_sequences=True),
+          keras.layers.TimeDistributed(keras.layers.Dense(10))
+      ])
+
+      model.compile(loss="mse", optimizer="adam", metrics=["accuracy"])
+      history = model.fit(X_train, Y_train, epochs=20)
+      ```
+
+      Three RNN layers → two BatchNormalization layers between the pairs. 'Sequence-to-sequence' is the phrase that forces return_sequences=True on ALL three, and only the first takes input_shape.
+    source: |-
+      Section B of the previous year's first-term paper, as the owner reported it.

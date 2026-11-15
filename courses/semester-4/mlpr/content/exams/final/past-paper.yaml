@@ -1,0 +1,243 @@
+title: Final exam, previous term
+kind: past
+duration: 90
+instructions: |-
+  Closed book. Five questions. Show your working; where a sketch is asked for, label the
+  axes and the means.
+
+questions:
+  - id: past-q1
+    title: Fisher and PCA
+    topic: features
+    points: 20
+    q: |-
+      Answer all three parts.
+    parts:
+      - q: |-
+          What is Fisher's criterion and what is it trying to do?
+        points: 7
+        solution: |-
+          Fisher's criterion scores a projection direction $f$ by the ratio of projected
+          between-class spread to projected within-class spread:
+
+          $$J(f) = \frac{f^\top \Sigma_T f}{f^\top \Sigma_W f}, \qquad \Sigma_W = \sum_\kappa \Sigma_\kappa$$
+
+          For two classes the maximiser is $f \propto \Sigma_W^{-1}(\mu_1 - \mu_2)$.
+
+          It is trying to find the direction onto which the data can be projected so that the
+          classes are as separable as possible in one dimension: the class means pushed
+          apart, each class kept tight. Both halves are needed. A large mean gap is worthless
+          if the classes are smeared across it, and a tight projection is worthless if the
+          means coincide.
+      - q: |-
+          What is the difference between PCA and Fisher's?
+        points: 7
+        solution: |-
+          - **Supervision.** PCA is unsupervised and never looks at the labels. Fisher is
+            supervised and is defined only relative to a class structure.
+          - **Objective.** PCA maximises retained variance (it minimises the error of linear
+            reconstruction). Fisher maximises class separability.
+          - **Eigenproblem.** PCA takes the top eigenvectors of the covariance,
+            $\Sigma v_j = \lambda_j v_j$. Fisher solves
+            $\Sigma_W^{-1} \Sigma_T F = F \Lambda$.
+          - **How many features.** PCA can give up to $m$. Fisher gives at most $K - 1$.
+          - **Failure.** PCA's direction of largest variance can be precisely the direction
+            along which the classes overlap. Fisher fails when a mean and a covariance do not
+            describe the classes.
+      - q: |-
+          When do you use Fisher's and when do you use PCA?
+        points: 6
+        solution: |-
+          Use **PCA** when there are no labels; when the goal is compression, denoising or
+          visualisation; and as preprocessing when the dimension is large relative to the
+          number of samples, including to make $\Sigma_W$ invertible before Fisher.
+
+          Use **Fisher** when labels exist and the goal is discrimination, with classes that
+          are reasonably unimodal. Its limits: at most $K - 1$ directions, and it needs an
+          invertible $\Sigma_W$.
+
+  - id: past-q2
+    title: Compute Fisher's direction
+    topic: features
+    points: 20
+    q: |-
+      For $\mu_A = (1, 1)^\top$, $\Sigma_A = \begin{pmatrix} 1 & 0 \\ 0 & 2 \end{pmatrix}$ and
+      $\mu_B = (3, 2)^\top$, $\Sigma_B = \begin{pmatrix} 4 & 2 \\ 2 & 4 \end{pmatrix}$:
+    parts:
+      - q: |-
+          Compute Fisher's direction and write it in its simplest integer form.
+        points: 8
+        solution: |-
+          $\Sigma_W = \begin{pmatrix} 5 & 2 \\ 2 & 6 \end{pmatrix}$, $\det = 26$,
+          $\Sigma_W^{-1} = \dfrac{1}{26} \begin{pmatrix} 6 & -2 \\ -2 & 5 \end{pmatrix}$.
+
+          $$w \propto \frac{1}{26} \begin{pmatrix} 6 & -2 \\ -2 & 5 \end{pmatrix} \begin{pmatrix} 2 \\ 1 \end{pmatrix} = \frac{1}{26} \begin{pmatrix} 10 \\ 1 \end{pmatrix} \quad\Longrightarrow\quad w = \begin{pmatrix} 10 \\ 1 \end{pmatrix}$$
+
+          The factor $\tfrac{1}{26}$ changes length, not direction, and $10$ and $1$ share no
+          common factor.
+      - q: |-
+          Compute the new means and the new variances.
+        points: 7
+        solution: |-
+          | | With $w = (10, 1)^\top$ | With unit $\hat w = w / \sqrt{101}$ |
+          |---|---|---|
+          | Mean of A | $10 + 1 = 11$ | $1.094$ |
+          | Mean of B | $30 + 2 = 32$ | $3.184$ |
+          | Variance of A | $100 \cdot 1 + 1 \cdot 2 = 102$ | $1.010$ |
+          | Variance of B | $10 \cdot 42 + 1 \cdot 24 = 444$ | $4.396$ |
+
+          For B: $\Sigma_B w = (42, 24)^\top$. State which convention you used.
+      - q: |-
+          Plot the projected means and variances.
+        points: 5
+        solution: |-
+          One axis, the projected feature $x = \hat w^\top y$, with two Gaussian bells.
+
+          - Class A centred at $1.09$ with $\sigma_A \approx 1.00$: the taller, narrower one.
+          - Class B centred at $3.18$ with $\sigma_B \approx 2.10$: about half as tall and
+            twice as wide.
+
+          Label the gap of $2.09$ between the means and shade the overlap. The classes are
+          separated but not cleanly, and the overlap comes almost entirely from B's spread.
+    source: |-
+      The numbers on the real paper were not recorded. The question is worked here with the
+      standard pair of classes used in the course; the method is what was examined.
+
+  - id: past-q3
+    title: QQ plots
+    topic: models
+    points: 20
+    q: |-
+      Answer all three parts.
+    parts:
+      - q: |-
+          What is a QQ plot and what does it say?
+        points: 6
+        solution: |-
+          A quantile-quantile plot plots the ordered quantiles of a sample against the
+          corresponding quantiles of a reference distribution, or of a second sample. It is a
+          graphical test of whether two distributions have the same **shape**.
+
+          It is insensitive to location and scale: those appear as the intercept and the slope
+          of the line, not as departures from straightness.
+      - q: |-
+          How do you plot it?
+        points: 6
+        solution: |-
+          1. Sort the sample: $x_{(1)} \le x_{(2)} \le \dots \le x_{(N)}$. These order
+             statistics are the sample quantiles.
+          2. Against a theoretical distribution $F$: take plotting positions
+             $p_i = (i - \tfrac{1}{2}) / N$ and compute $q_i = F^{-1}(p_i)$.
+          3. Against a second sample of the same size: sort both and pair them.
+          4. Plot the pairs $(q_i, x_{(i)})$ and overlay a reference line.
+      - q: |-
+          Explain each situation: points near the straight line; strong curvature; tails;
+          distant points.
+        points: 8
+        solution: |-
+          | Situation | Meaning |
+          |---|---|
+          | **Near the straight line** | Same family of distribution, up to location (intercept) and scale (slope) |
+          | **Strong curvature** | The shapes differ and no rescaling fixes it. A one-sided bend means skewness; an S-shape means the tails differ in weight |
+          | **Tails** | The ends report tail weight. Above the line on the right and below on the left: heavier tails than the reference. Read with caution, since extreme order statistics vary most |
+          | **Distant points** | One or two isolated points off the line while the body stays on it: outliers or contamination, not a wrong family |
+    answer: |-
+      Straight: same shape. Bend: skew. Ends: tail weight. Isolated dots: outliers.
+
+  - id: past-q4
+    title: MED
+    topic: distance
+    points: 20
+    q: |-
+      Using the classes A and B of question 2:
+    parts:
+      - q: |-
+          Sketch classes A and B.
+        points: 4
+        solution: |-
+          A is centred at $(1, 1)$: an axis-aligned ellipse with semi-axes $1$ horizontally
+          and $\sqrt{2} \approx 1.41$ vertically.
+
+          B is centred at $(3, 2)$. Its covariance has the form
+          $\begin{pmatrix} a & b \\ b & a \end{pmatrix}$, so its eigenvalues are
+          $4 + 2 = 6$ along $(1, 1)$ and $4 - 2 = 2$ along $(1, -1)$: an ellipse tilted at
+          $45°$ with semi-axes $\sqrt{6} \approx 2.45$ and $\sqrt{2} \approx 1.41$.
+      - q: |-
+          Compute the MED line.
+        points: 6
+        solution: |-
+          $$\lVert x - \mu_A \rVert^2 = \lVert x - \mu_B \rVert^2 \quad\Longrightarrow\quad 2x^\top(\mu_B - \mu_A) = \lVert \mu_B \rVert^2 - \lVert \mu_A \rVert^2$$
+
+          after the $x^\top x$ terms cancel. With $\mu_B - \mu_A = (2, 1)^\top$ and
+          $13 - 2 = 11$:
+
+          $$4x_1 + 2x_2 = 11 \quad\Longleftrightarrow\quad 2x_1 + x_2 = 5.5$$
+      - q: |-
+          Is the MED line always a straight line?
+        points: 6
+        solution: |-
+          For two classes with mean prototypes and Euclidean distance: **yes, always.** The
+          quadratic term is the same on both sides and cancels, whatever the covariances,
+          because MED never looks at them.
+
+          It stops being one straight line when any ingredient changes: more than two classes
+          (a piecewise-linear Voronoi partition), a different prototype (nearest neighbour), a
+          different metric (L1 or L∞), or Mahalanobis distance with unequal covariances
+          (quadratic, possibly two branches).
+      - q: |-
+          Sketch the MED boundary on the plot from the first part.
+        points: 4
+        solution: |-
+          Draw $2x_1 + x_2 = 5.5$ through the midpoint $(2, 1.5)$, perpendicular to the
+          segment from $(1, 1)$ to $(3, 2)$. Convenient points: $(1, 3.5)$ and $(2.75, 0)$.
+
+          Worth one sentence: the line ignores that B is far more spread out than A, so it
+          sits closer to B than an error-optimal boundary would.
+
+  - id: past-q5
+    title: kNN code
+    topic: distance
+    points: 20
+    q: |-
+      Write the code for the kNN algorithm as two functions:
+      `knn_predict_one(x, X_train, y_train, k)` and
+      `knn_predict(X_test, X_train, y_train, k)`.
+    solution: |-
+      Four steps for a single point: distance to every training point, sort, take the $k$
+      smallest, majority vote.
+
+      ```python
+      import numpy as np
+      from collections import Counter
+
+      def knn_predict_one(x, X_train, y_train, k):
+          """Classify one point x by majority vote of its k nearest neighbours."""
+          x = np.asarray(x, dtype=float)
+          X = np.asarray(X_train, dtype=float)
+          y = np.asarray(y_train)
+
+          d = np.sqrt(np.sum((X - x) ** 2, axis=1))   # distance to every training point
+          nearest = np.argsort(d)[:k]                 # indices of the k smallest
+
+          votes = Counter(y[nearest])
+          top = max(votes.values())
+          tied = [c for c, n in votes.items() if n == top]
+          if len(tied) == 1:
+              return tied[0]
+          # tie: the class whose neighbours are closest in total
+          return min(tied, key=lambda c: d[nearest][y[nearest] == c].sum())
+
+      def knn_predict(X_test, X_train, y_train, k):
+          """Classify every row of X_test."""
+          return np.array([knn_predict_one(x, X_train, y_train, k)
+                           for x in np.asarray(X_test, dtype=float)])
+      ```
+
+      Points worth stating next to the code:
+
+      - Squaring is monotonic, so ranking on squared distance gives the same neighbours.
+      - Choose $k$ odd for two classes to avoid ties.
+      - Standardise the features first, or the one with the largest units dominates.
+      - There is no training phase; the cost is one pass over the training set per query.
+    source: |-
+      Point values were not recorded; twenty per question is assumed.

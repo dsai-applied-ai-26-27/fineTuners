@@ -1,0 +1,347 @@
+# Ids are permanent: people's progress is keyed by them.
+title: 'Other likely code tasks'
+topic: regularization
+description: 'Task types from colleagues'' variants and the labs, as code written from a verbal spec.'
+
+cards:
+  - id: task-01
+    topic: framing
+    q: |-
+      Split so the test set is **representative** of the dataset's categories.
+    a: |-
+      ```python
+      from sklearn.model_selection import StratifiedShuffleSplit
+
+      split = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
+      for train_index, test_index in split.split(X, y):
+          X_train = X.iloc[train_index]
+          X_test  = X.iloc[test_index]
+      ```
+    note: |-
+      A plain random split only preserves category proportions on average; with a rare category it can skew badly. Stratified sampling draws 20% within each category. n_splits=1 = one split, not k folds.
+
+      **In plain words.** A normal random split can, by bad luck, put nearly all of a rare category into the test set. **Stratified sampling takes 20% out of each category separately**, so the test set is a miniature version of the whole dataset.
+
+      ```text
+      1000 rows, 50 of them rare category R.
+      Random split: test might get 2 of them, or 30.
+      Stratified:   test gets exactly 10. Every time.
+      ```
+
+  - id: task-02
+    topic: preprocessing
+    q: |-
+      Preprocessing pipeline: numeric columns imputed with the median then scaled, categorical columns one-hot encoded. Result in `X_prepared`.
+    a: |-
+      ```python
+      from sklearn.pipeline import Pipeline
+      from sklearn.compose import ColumnTransformer
+      from sklearn.impute import SimpleImputer
+      from sklearn.preprocessing import StandardScaler, OneHotEncoder
+
+      num_pipeline = Pipeline([
+          ("imputer", SimpleImputer(strategy="median")),
+          ("std_scaler", StandardScaler()),
+      ])
+
+      full_pipeline = ColumnTransformer([
+          ("num", num_pipeline, num_attribs),
+          ("cat", OneHotEncoder(), cat_attribs),
+      ])
+
+      X_prepared = full_pipeline.fit_transform(X)
+      ```
+    note: |-
+      Impute before scaling — the scaler cannot compute statistics over NaNs. Pipeline = 2-tuples, ColumnTransformer = 3-tuples.
+
+      **In plain words.** The standard preprocessing answer. Numbers get their missing values filled and their scales evened out; categories get turned into yes/no columns. Both routes run at the same time and the outputs are joined side by side into one array.
+
+      ```text
+      Impute BEFORE scaling — the scaler can't compute a
+      mean over NaNs. Order inside the pipeline matters.
+      ```
+
+  - id: task-03
+    topic: linear
+    q: |-
+      Polynomial regression with a Pipeline: PolynomialFeatures degree 2, then StandardScaler, then LinearRegression. Fit it.
+    a: |-
+      ```python
+      from sklearn.pipeline import Pipeline
+      from sklearn.preprocessing import PolynomialFeatures, StandardScaler
+      from sklearn.linear_model import LinearRegression
+
+      poly_pipeline = Pipeline([
+          ("poly_features", PolynomialFeatures(degree=2, include_bias=False)),
+          ("std_scaler", StandardScaler()),
+          ("lin_reg", LinearRegression()),
+      ])
+      poly_pipeline.fit(X_train, y_train)
+      ```
+    note: |-
+      include_bias=False, because LinearRegression fits its own intercept and a constant column has zero variance for the scaler to divide by.
+
+      **In plain words.** Linear regression can only fit a straight line. **PolynomialFeatures cheats**: it adds x², x³ and so on as extra columns, so a straight-line model through those extra columns traces a curve through the original one. The model never knows anything curved happened.
+
+      ```text
+      x = 3  →  PolynomialFeatures(degree=2)  →  [3, 9]
+
+      Then y = θ₀ + θ₁·3 + θ₂·9 is a parabola in x,
+      but still perfectly linear in θ.
+      ```
+
+  - id: task-04
+    q: |-
+      Train the three regularised linear models: Ridge α=1 with the cholesky solver, Lasso α=0.1, ElasticNet α=0.1 with l1_ratio 0.5.
+    a: |-
+      ```python
+      from sklearn.linear_model import Ridge, Lasso, ElasticNet
+
+      ridge_reg = Ridge(alpha=1, solver="cholesky", random_state=42)
+      ridge_reg.fit(X_train, y_train)
+
+      lasso_reg = Lasso(alpha=0.1)
+      lasso_reg.fit(X_train, y_train)
+
+      elastic_net = ElasticNet(alpha=0.1, l1_ratio=0.5, random_state=42)
+      elastic_net.fit(X_train, y_train)
+      ```
+    note: |-
+      alpha = strength in all three. l1_ratio = the MIX, only in ElasticNet: 0 = Ridge, 1 = Lasso. Ridge shrinks all coefficients, Lasso drives some to exactly zero.
+
+      **In plain words.** All three are linear regression **with a penalty on large coefficients**, which stops the model contorting itself to fit noise.
+
+      Ridge shrinks every coefficient a bit. Lasso pushes the weak ones all the way to zero, which is automatic feature selection. ElasticNet does some of each.
+
+      ```text
+      alpha    = how hard you squeeze (all three)
+      l1_ratio = the blend, ElasticNet only
+                 0 = pure Ridge, 1 = pure Lasso
+      ```
+
+  - id: task-05
+    q: |-
+      Early stopping with SGDRegressor — the loop that keeps the best model.
+    a: |-
+      ```python
+      from copy import deepcopy
+
+      sgd_reg = SGDRegressor(max_iter=1, tol=-np.infty, warm_start=True,
+                             penalty=None, learning_rate="constant", eta0=0.0005)
+
+      minimum_val_error = float("inf")
+      best_epoch = None
+      best_model = None
+
+      for epoch in range(1000):
+          sgd_reg.fit(X_train_poly_scaled, y_train)
+          y_val_predict = sgd_reg.predict(X_val_poly_scaled)
+          val_error = mean_squared_error(y_val, y_val_predict)
+          if val_error < minimum_val_error:
+              minimum_val_error = val_error
+              best_epoch = epoch
+              best_model = deepcopy(sgd_reg)
+      ```
+    note: |-
+      max_iter=1 = one epoch per fit. warm_start=True = continue, don't reset. tol=-np.infty = never stop on its own. deepcopy = snapshot the model, not a reference that keeps training.
+
+      **In plain words.** Train one epoch at a time and check the validation score after each. The error **falls while the model is still learning the real pattern, then starts rising** the moment it begins memorising noise. You keep a photocopy of the model taken at the bottom of that curve.
+
+      ```text
+      epoch 40  val error 2.10   ← save a copy
+      epoch 41  val error 2.04   ← save a copy
+      epoch 42  val error 2.11
+      epoch 43  val error 2.19   ← past the bottom, ignore
+
+      best_model is the epoch-41 copy.
+      ```
+
+  - id: task-06
+    topic: evaluation
+    q: |-
+      Evaluate a classifier with cross-validated predictions: confusion matrix, precision, recall.
+    a: |-
+      ```python
+      from sklearn.model_selection import cross_val_predict
+      from sklearn.metrics import confusion_matrix, precision_score, recall_score
+
+      y_train_pred = cross_val_predict(sgd_clf, X_train, y_train, cv=3)
+
+      print(confusion_matrix(y_train, y_train_pred))
+      print(precision_score(y_train, y_train_pred))
+      print(recall_score(y_train, y_train_pred))
+      ```
+    note: |-
+      cross_val_predict returns PREDICTIONS (one per instance, made by a model that never saw it). cross_val_score returns SCORES (one per fold). You need predictions for a confusion matrix.
+
+      **In plain words.** You want a confusion matrix but you don't want to spend your test set to get one. Cross-validation gives an **honest prediction for every training row** — each one produced by a model that had never seen that row — so you can build the matrix from the training set alone.
+
+      ```text
+      cross_val_score  → 3 numbers (one per fold)
+      cross_val_predict → 60,000 predictions (one per row)
+
+      A confusion matrix needs the predictions.
+      ```
+
+  - id: task-07
+    topic: ensembles
+    q: |-
+      Train a **soft** VotingClassifier over LogisticRegression, RandomForest(100), and an SVC.
+    a: |-
+      ```python
+      from sklearn.ensemble import VotingClassifier, RandomForestClassifier
+      from sklearn.linear_model import LogisticRegression
+      from sklearn.svm import SVC
+
+      log_clf = LogisticRegression(solver="lbfgs", random_state=42)
+      rnd_clf = RandomForestClassifier(n_estimators=100, random_state=42)
+      svm_clf = SVC(probability=True, random_state=42)
+
+      voting_clf = VotingClassifier(
+          estimators=[("lr", log_clf), ("rf", rnd_clf), ("svc", svm_clf)],
+          voting="soft")
+      voting_clf.fit(X_train, y_train)
+      ```
+    note: |-
+      probability=True on the SVC is the mark people drop. Soft voting averages predict_proba, and SVC has none unless you ask for it.
+
+      **In plain words.** Three different models vote on each instance. **Hard voting counts votes; soft voting averages their confidence**, so a model that is 95% sure outweighs two that are barely guessing. That's usually more accurate — but every member has to be able to produce a confidence number.
+
+      ```text
+      hard:  dog, dog, cat            →  dog
+      soft:  0.51, 0.52, 0.99 for cat →  avg 0.67 → cat
+
+      One confident model can overrule two hesitant ones.
+      ```
+
+  - id: task-08
+    topic: ensembles
+    q: |-
+      Gradient boosting with early stopping — find the best number of trees with `staged_predict`.
+    a: |-
+      ```python
+      from sklearn.ensemble import GradientBoostingRegressor
+
+      gbrt = GradientBoostingRegressor(max_depth=2, n_estimators=120, random_state=42)
+      gbrt.fit(X_train, y_train)
+
+      errors = [mean_squared_error(y_val, y_pred)
+                for y_pred in gbrt.staged_predict(X_val)]
+      bst_n_estimators = np.argmin(errors) + 1
+
+      gbrt_best = GradientBoostingRegressor(max_depth=2,
+                                            n_estimators=bst_n_estimators,
+                                            random_state=42)
+      gbrt_best.fit(X_train, y_train)
+      ```
+    note: |-
+      staged_predict yields the ensemble's predictions after each successive tree. +1 because index 0 is the one-tree ensemble.
+
+      **In plain words.** Boosting adds trees one at a time, and past a point the extra trees start making it worse. **staged_predict replays the ensemble after every tree**, so you can see exactly where validation error bottomed out, then rebuild with that many trees.
+
+      ```text
+      errors[0]  = ensemble of 1 tree
+      errors[1]  = ensemble of 2 trees
+      ...
+      argmin gives an index, so add 1 for the count.
+      ```
+
+  - id: task-09
+    topic: sequences
+    q: |-
+      Hybrid Conv1D + GRU: 20 filters, kernel 4, valid padding, stride 2; two GRU(20) returning sequences; TimeDistributed Dense(10).
+    a: |-
+      ```python
+      model = keras.models.Sequential([
+          keras.layers.Conv1D(filters=20, kernel_size=4, strides=2, padding="valid",
+                              input_shape=[None, 1]),
+          keras.layers.GRU(20, return_sequences=True),
+          keras.layers.GRU(20, return_sequences=True),
+          keras.layers.TimeDistributed(keras.layers.Dense(10))
+      ])
+
+      model.compile(loss="mse", optimizer="adam", metrics=[last_time_step_mse])
+      history = model.fit(X_train, Y_train[:, 3::2], epochs=20,
+                          validation_data=(X_valid, Y_valid[:, 3::2]))
+      ```
+    note: |-
+      strides=2 halves the sequence, so the targets are downsampled to match: Y_train[:, 3::2] — start at 3 (steps lost to valid padding), step by 2 (the stride).
+
+      **In plain words.** The convolution slides a small window along the sequence and summarises it, **shortening the sequence before the slower recurrent layers see it**. Because it steps two at a time, its output is half as long — so the answer key has to be thinned out to match, or the shapes won't line up.
+
+      ```text
+      50 time steps in
+      → kernel 4, stride 2, valid padding
+      → ~24 time steps out
+
+      So the targets become Y_train[:, 3::2].
+      ```
+
+  - id: task-10
+    topic: sequences
+    q: |-
+      WaveNet-style stack: dilation doubling 1,2,4,8, causal padding, relu, ending in Conv1D(10, kernel 1).
+    a: |-
+      ```python
+      model = keras.models.Sequential()
+      model.add(keras.layers.InputLayer(input_shape=[None, 1]))
+
+      for rate in (1, 2, 4, 8) * 2:
+          model.add(keras.layers.Conv1D(filters=20, kernel_size=2,
+                                        padding="causal", activation="relu",
+                                        dilation_rate=rate))
+
+      model.add(keras.layers.Conv1D(filters=10, kernel_size=1))
+      model.compile(loss="mse", optimizer="adam", metrics=[last_time_step_mse])
+      ```
+    note: |-
+      causal = pad only on the left, never see the future. Doubling dilation grows the receptive field exponentially. The final kernel_size=1 conv is a per-time-step Dense.
+
+      **In plain words.** A stack of convolutions where **each layer skips over twice as many steps as the one below**, so after only a handful of layers each output can see a long way back in time. "Causal" means the padding is only on the left, so the model can never peek at the values it is meant to predict.
+
+      ```text
+      layer 1 (rate 1): sees steps t, t−1
+      layer 2 (rate 2): sees t, t−2
+      layer 3 (rate 4): sees t, t−4
+      layer 4 (rate 8): sees t, t−8
+      → 4 layers already reach 16 steps back.
+      ```
+
+  - id: task-11
+    topic: nlp
+    q: |-
+      Encoder–decoder for sequence-to-sequence: encoder LSTM(128) returning state, decoder LSTM(128) initialised with it, Dense softmax output.
+    a: |-
+      ```python
+      encoder_inputs = keras.layers.Input(shape=[None], dtype=np.int32)
+      decoder_inputs = keras.layers.Input(shape=[None], dtype=np.int32)
+
+      embeddings = keras.layers.Embedding(vocab_size, embed_size)
+      encoder_embeddings = embeddings(encoder_inputs)
+      decoder_embeddings = embeddings(decoder_inputs)
+
+      encoder = keras.layers.LSTM(128, return_state=True)
+      encoder_outputs, state_h, state_c = encoder(encoder_embeddings)
+      encoder_state = [state_h, state_c]
+
+      decoder_lstm = keras.layers.LSTM(128, return_sequences=True)
+      decoder_outputs = decoder_lstm(decoder_embeddings,
+                                     initial_state=encoder_state)
+
+      Y_proba = keras.layers.Dense(vocab_size, activation="softmax")(decoder_outputs)
+
+      model = keras.models.Model(inputs=[encoder_inputs, decoder_inputs],
+                                 outputs=[Y_proba])
+      ```
+    note: |-
+      return_state=True on an LSTM unpacks into THREE values. initial_state=encoder_state is the handoff that makes it an encoder–decoder. Functional API, because there are two inputs.
+
+      **In plain words.** Two networks in a chain. The first **reads the whole input and boils it down to its final internal state**. That state is handed to the second network as its starting memory, and the second writes the output one token at a time.
+
+      `return_state=True` is how you get the state out; `initial_state=` is how you put it in.
+
+      ```text
+      "je bois du lait"  →  ENCODER  →  [state_h, state_c]
+                                              ↓
+                            DECODER  →  "I drink milk"
+      ```

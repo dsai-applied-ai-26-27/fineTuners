@@ -1,0 +1,80 @@
+# Ids are permanent: people's progress is keyed by them.
+title: 'Room 7 · Home Office: Decision trees (CART)'
+topic: trees
+encodes: |-
+  The desk in the corner, where every decision is a yes/no question and the filing is done greedily. 5 stops, one exam-ready code pattern or idea at each.
+intro: |-
+  Room 7 of 12 on the walk from the front door to the roof: your own home office, or whatever you substituted for it. Put each scene on the object itself, in this order: the org chart, the in-tray, the two rulers, the drawer stops, the shredder. The method is in [](guide:memory-palace).
+
+loci:
+  - id: s7-1
+    place: 'The org chart'
+    image: |-
+      **An org chart pinned above the desk.** Above the desk hangs an org chart: one boss at the top, every manager asking exactly **one yes/no question**, and at the bottom a row of interns who each give the **same answer to everyone** who reaches them.
+    means: |-
+      **What a CART tree is.** **CART** partitions the feature space into **rectangular regions** by recursive **binary splits**, and predicts a constant in each leaf. Root → internal nodes → terminal nodes. `predict_proba` returns the proportion of each class among the training instances in that leaf.
+
+      ```python
+      from sklearn.tree import DecisionTreeClassifier, export_graphviz
+      tree_clf = DecisionTreeClassifier(max_depth=2, random_state=42)
+      tree_clf.fit(X, y)
+      tree_clf.predict_proba([[5, 1.5]])   # class fractions inside the leaf
+      ```
+    refs: ["guide:07-trees"]
+
+  - id: s7-2
+    place: 'The in-tray'
+    image: |-
+      **The clerk who never revisits a decision.** A clerk works through the in-tray. For each pile he tries **every possible question on every possible column**, picks whichever one makes the two resulting piles purest, and files it — then never, ever reconsiders that choice, no matter what he finds later.
+    means: |-
+      **Fitting by recursive greedy search.** **Fitting = recursive greedy search.** At each node the algorithm exhaustively searches all features and all split points and takes the one that minimises the empirical risk (impurity) of the resulting children. Greedy means locally optimal, not globally optimal — the tree it finds is usually not the best possible tree.
+    refs: ["guide:07-trees"]
+
+  - id: s7-3
+    place: 'The two rulers'
+    image: |-
+      **Two rulers in the drawer, one per task.** The desk drawer holds two rulers. The **regression** ruler measures how spread out the numbers in a pile are. The **classification** ruler measures how mixed the colours are — and it comes in two brands that behave almost identically.
+    means: |-
+      **Splitting criteria.** **Regression:** minimise total squared error / variance in the children. **Classification:** minimise **Gini impurity** (equivalent to the Brier score) or **entropy** (equivalent to log loss). Gini is slightly faster and usually gives near-identical trees.
+
+      ```python
+      DecisionTreeRegressor(max_depth=3, random_state=0)   # criterion: squared_error
+      DecisionTreeClassifier(criterion="gini")             # or "entropy"
+      ```
+    refs: ["guide:07-trees"]
+
+  - id: s7-4
+    place: 'The drawer stops'
+    image: |-
+      **Four stops that keep the drawer from falling out.** Without stops, the filing cabinet drawer rolls all the way out until **every folder is alone in its own drawer** — perfect filing, useless for anyone new. Four little catches prevent that: how deep, how many drawers, how many folders before you may split, how many must remain.
+    means: |-
+      **Stopping criteria (pre-pruning).** An unrestricted tree grows until every leaf contains a single observation — the archetype of overfitting. **Stopping criteria** (pre-pruning) limit depth, leaves, or samples per node.
+
+      ```python
+      DecisionTreeClassifier(max_depth=3,
+                             max_leaf_nodes=16,
+                             min_samples_split=4,
+                             min_samples_leaf=10,
+                             random_state=42)
+      ```
+
+      - `max_depth` (dial): Longest question chain. Lower = simpler = more bias, less variance.
+      - `max_leaf_nodes` (dial): Cap on the number of terminal regions.
+      - `min_samples_split` (dial): A node must hold at least this many samples to be allowed to split.
+      - `min_samples_leaf` (dial): Every leaf must keep at least this many samples. Raising ANY `min_*` or lowering any `max_*` regularises the tree.
+    refs: ["guide:07-trees"]
+
+  - id: s7-5
+    place: 'The shredder'
+    image: |-
+      **Grow the whole file, then shred the useless branches.** In the corner, a shredder labelled **α**. The strategy is the opposite of the drawer stops: let the cabinet grow monstrous first, then feed the least informative branches into the shredder until the complexity penalty is paid.
+    means: |-
+      **Cost-complexity pruning.** **Post-pruning / cost-complexity pruning (CCP)**: grow a large tree, then remove the branches whose contribution does not justify their complexity, controlled by a regularisation parameter α. Trees are easy to interpret but **unstable** — a small change in the data can produce a very different tree, which is exactly the weakness ensembles fix.
+
+      ```python
+      path = tree.cost_complexity_pruning_path(X_train, y_train)
+      clf = DecisionTreeClassifier(ccp_alpha=0.01, random_state=42)
+      ```
+
+      - `ccp_alpha` (dial): Complexity penalty. α=0 means no pruning; raising it prunes more aggressively.
+    refs: ["guide:07-trees"]

@@ -1,0 +1,274 @@
+title: Rigid-body motions practice
+topic: transformations
+instructions: |-
+  The seven numerical practice problems that close lecture 2 (section 5.2), as set, with
+  solutions written here. Use right-handed frames and positive angles by the right-hand
+  rule; intrinsic ZYZ Euler angles and fixed-axis XYZ roll-pitch-yaw as defined in the
+  lecture. Give exact values where practical. Work on paper before opening a solution.
+
+  The version of lecture 2 uploaded on 20 October no longer has this section; the
+  problems are kept here as they were set.
+
+questions:
+  - id: rbm-p1
+    title: Constructing a rotation matrix
+    q: |-
+      The local normal direction points along positive global $y$, and the local approach
+      direction points along positive global $z$. Determine $\boldsymbol{n}$,
+      $\boldsymbol{s}$ and $\boldsymbol{a}$ in global coordinates, and construct
+      $\boldsymbol{R} = [\boldsymbol{n}\ \boldsymbol{s}\ \boldsymbol{a}]$. Verify
+      orthogonality and $\det(\boldsymbol{R}) = 1$.
+    steps:
+      - do: |-
+          $\boldsymbol{n} = [0, 1, 0]^\top$ and $\boldsymbol{a} = [0, 0, 1]^\top$.
+        why: |-
+          Given: normal along $+y$, approach along $+z$.
+      - do: |-
+          $\boldsymbol{s} = \boldsymbol{a} \times \boldsymbol{n} = \boldsymbol{k} \times \boldsymbol{j} = -\boldsymbol{i} = [-1, 0, 0]^\top$.
+        why: |-
+          A right-handed frame has $\boldsymbol{n} \times \boldsymbol{s} = \boldsymbol{a}$,
+          which by cyclic permutation gives
+          $\boldsymbol{s} = \boldsymbol{a} \times \boldsymbol{n}$.
+      - do: |-
+          $$\boldsymbol{R} = \begin{bmatrix} 0 & -1 & 0 \\ 1 & 0 & 0 \\ 0 & 0 & 1 \end{bmatrix}$$
+        why: |-
+          Columns are the local axes in global coordinates.
+      - do: |-
+          The columns are unit vectors with zero mutual dot products, so
+          $\boldsymbol{R}^\top\boldsymbol{R} = \boldsymbol{I}$, and
+          $\det(\boldsymbol{R}) = 0 \cdot 0 - (-1)(1 \cdot 1 - 0) + 0 = 1$.
+        why: |-
+          The two defining checks of $SO(3)$.
+    answer: |-
+      $\boldsymbol{n} = [0,1,0]^\top$, $\boldsymbol{s} = [-1,0,0]^\top$,
+      $\boldsymbol{a} = [0,0,1]^\top$. The matrix is $\boldsymbol{R}_z(90^\circ)$.
+    source: |-
+      Lecture 2, numerical practice 1.
+
+  - id: rbm-p2
+    title: Converting point coordinates
+    q: |-
+      Frames $\{0\}$ and $\{1\}$ have coincident origins. Their relative orientation is
+      $\boldsymbol{R}^0_1 = \boldsymbol{R}_z(30^\circ)$. A stationary point has local
+      coordinates $\boldsymbol{p}^1 = [2, -1, 3]^\top$. Write $\boldsymbol{R}^0_1$
+      explicitly and calculate $\boldsymbol{p}^0$. Then use the inverse rotation to recover
+      $\boldsymbol{p}^1$.
+    solution: |-
+      $$\boldsymbol{R}^0_1 = \begin{bmatrix} \tfrac{\sqrt3}{2} & -\tfrac12 & 0 \\ \tfrac12 & \tfrac{\sqrt3}{2} & 0 \\ 0 & 0 & 1 \end{bmatrix}$$
+
+      $$\boldsymbol{p}^0 = \boldsymbol{R}^0_1 \boldsymbol{p}^1 = \begin{bmatrix} 2 \cdot \tfrac{\sqrt3}{2} + \tfrac12 \\ 2 \cdot \tfrac12 - \tfrac{\sqrt3}{2} \\ 3 \end{bmatrix} = \begin{bmatrix} \sqrt3 + \tfrac12 \\ 1 - \tfrac{\sqrt3}{2} \\ 3 \end{bmatrix} \approx \begin{bmatrix} 2.232 \\ 0.134 \\ 3 \end{bmatrix}$$
+
+      Back with the transpose, $\boldsymbol{p}^1 = (\boldsymbol{R}^0_1)^\top \boldsymbol{p}^0$:
+
+      $$p_n = \tfrac{\sqrt3}{2}\big(\sqrt3 + \tfrac12\big) + \tfrac12\big(1 - \tfrac{\sqrt3}{2}\big) = \tfrac32 + \tfrac{\sqrt3}{4} + \tfrac12 - \tfrac{\sqrt3}{4} = 2$$
+
+      $$p_s = -\tfrac12\big(\sqrt3 + \tfrac12\big) + \tfrac{\sqrt3}{2}\big(1 - \tfrac{\sqrt3}{2}\big) = -\tfrac{\sqrt3}{2} - \tfrac14 + \tfrac{\sqrt3}{2} - \tfrac34 = -1$$
+
+      and $p_a = 3$. The point did not move; only its description changed.
+    answer: |-
+      $\boldsymbol{p}^0 = \big[\sqrt3 + \tfrac12,\ 1 - \tfrac{\sqrt3}{2},\ 3\big]^\top$, and
+      the transpose returns $[2, -1, 3]^\top$.
+    source: |-
+      Lecture 2, numerical practice 2.
+
+  - id: rbm-p3
+    title: A chain of reference frames
+    q: |-
+      Four frames have coincident origins, with
+      $\boldsymbol{R}^0_1 = \boldsymbol{R}_z(90^\circ)$,
+      $\boldsymbol{R}^1_2 = \boldsymbol{R}_y(90^\circ)$ and
+      $\boldsymbol{R}^2_3 = \boldsymbol{R}_z(-90^\circ)$. Calculate $\boldsymbol{R}^0_3$ and
+      express $\boldsymbol{v}^3 = [1, -2, 3]^\top$ in frame $\{0\}$. Determine
+      $\boldsymbol{R}^3_0$ and check the reverse conversion.
+    steps:
+      - do: |-
+          $\boldsymbol{R}^0_3 = \boldsymbol{R}^0_1\boldsymbol{R}^1_2\boldsymbol{R}^2_3 = \boldsymbol{R}_z(90^\circ)\boldsymbol{R}_y(90^\circ)\boldsymbol{R}_z(-90^\circ)$
+        why: |-
+          Neighbouring indices chain: $\{3\} \to \{2\} \to \{1\} \to \{0\}$.
+      - do: |-
+          $$\boldsymbol{R}_z(90^\circ)\boldsymbol{R}_y(90^\circ) = \begin{bmatrix} 0 & -1 & 0 \\ 1 & 0 & 0 \\ 0 & 0 & 1 \end{bmatrix} \begin{bmatrix} 0 & 0 & 1 \\ 0 & 1 & 0 \\ -1 & 0 & 0 \end{bmatrix} = \begin{bmatrix} 0 & -1 & 0 \\ 0 & 0 & 1 \\ -1 & 0 & 0 \end{bmatrix}$$
+      - do: |-
+          $$\boldsymbol{R}^0_3 = \begin{bmatrix} 0 & -1 & 0 \\ 0 & 0 & 1 \\ -1 & 0 & 0 \end{bmatrix} \begin{bmatrix} 0 & 1 & 0 \\ -1 & 0 & 0 \\ 0 & 0 & 1 \end{bmatrix} = \begin{bmatrix} 1 & 0 & 0 \\ 0 & 0 & 1 \\ 0 & -1 & 0 \end{bmatrix}$$
+        why: |-
+          The result is $\boldsymbol{R}_x(-90^\circ)$: three quarter-turns about two axes
+          amount to one quarter-turn about the third.
+      - do: |-
+          $\boldsymbol{v}^0 = \boldsymbol{R}^0_3\boldsymbol{v}^3 = [1,\ 3,\ 2]^\top$
+        why: |-
+          Row by row: $1$; $0 + 0 + 3$; $0 + 2 + 0$.
+      - do: |-
+          $$\boldsymbol{R}^3_0 = (\boldsymbol{R}^0_3)^\top = \begin{bmatrix} 1 & 0 & 0 \\ 0 & 0 & -1 \\ 0 & 1 & 0 \end{bmatrix}, \qquad \boldsymbol{R}^3_0\boldsymbol{v}^0 = [1,\ -2,\ 3]^\top$$
+        why: |-
+          The inverse of a rotation is its transpose; it returns the original components.
+    answer: |-
+      $\boldsymbol{R}^0_3 = \boldsymbol{R}_x(-90^\circ)$ and
+      $\boldsymbol{v}^0 = [1, 3, 2]^\top$.
+    source: |-
+      Lecture 2, numerical practice 3.
+
+  - id: rbm-p4
+    title: Current-axis against fixed-axis rotation
+    q: |-
+      Begin with a moving frame aligned with the global frame. First rotate it through
+      $90^\circ$ about fixed $z$. Then rotate it through $45^\circ$: (a) about current
+      $x_1$; (b) about fixed $x$. Write and evaluate the matrix product for each case.
+      Determine the final approach direction from the third column of each matrix and
+      compare the two directions.
+    parts:
+      - q: |-
+          About the current $x_1$.
+        solution: |-
+          A current-axis rotation multiplies on the right:
+
+          $$\boldsymbol{R}_z(90^\circ)\boldsymbol{R}_x(45^\circ) = \begin{bmatrix} 0 & -1 & 0 \\ 1 & 0 & 0 \\ 0 & 0 & 1 \end{bmatrix} \begin{bmatrix} 1 & 0 & 0 \\ 0 & \tfrac{\sqrt2}{2} & -\tfrac{\sqrt2}{2} \\ 0 & \tfrac{\sqrt2}{2} & \tfrac{\sqrt2}{2} \end{bmatrix} = \begin{bmatrix} 0 & -\tfrac{\sqrt2}{2} & \tfrac{\sqrt2}{2} \\ 1 & 0 & 0 \\ 0 & \tfrac{\sqrt2}{2} & \tfrac{\sqrt2}{2} \end{bmatrix}$$
+
+          $\boldsymbol{a} = \big[\tfrac{\sqrt2}{2},\ 0,\ \tfrac{\sqrt2}{2}\big]^\top$: in the
+          global $xz$ plane.
+      - q: |-
+          About the fixed $x$.
+        solution: |-
+          A fixed-axis rotation multiplies on the left:
+
+          $$\boldsymbol{R}_x(45^\circ)\boldsymbol{R}_z(90^\circ) = \begin{bmatrix} 0 & -1 & 0 \\ \tfrac{\sqrt2}{2} & 0 & -\tfrac{\sqrt2}{2} \\ \tfrac{\sqrt2}{2} & 0 & \tfrac{\sqrt2}{2} \end{bmatrix}$$
+
+          $\boldsymbol{a} = \big[0,\ -\tfrac{\sqrt2}{2},\ \tfrac{\sqrt2}{2}\big]^\top$: in the
+          global $yz$ plane.
+    answer: |-
+      (a) $\boldsymbol{a} = [\tfrac{\sqrt2}{2}, 0, \tfrac{\sqrt2}{2}]^\top$ and
+      (b) $\boldsymbol{a} = [0, -\tfrac{\sqrt2}{2}, \tfrac{\sqrt2}{2}]^\top$. After the first
+      turn the current $x_1$ axis lies along global $y$, so tilting about it tips the
+      approach axis toward global $x$; tilting about the fixed $x$ tips it toward $-y$.
+    source: |-
+      Lecture 2, numerical practice 4.
+
+  - id: rbm-p5
+    title: A ZYZ Euler-angle example
+    q: |-
+      Let $\phi = 30^\circ$, $\theta = 60^\circ$, $\psi = -45^\circ$. Write the three
+      elementary matrices and calculate
+      $\boldsymbol{R} = \boldsymbol{R}_z(\phi)\boldsymbol{R}_y(\theta)\boldsymbol{R}_z(\psi)$.
+      Identify the final approach direction $\boldsymbol{a}$. Apply the extraction formulas
+      to recover the angles, using the principal range $0 \le \theta \le \pi$.
+    solution: |-
+      $$\boldsymbol{R}_z(30^\circ) = \begin{bmatrix} \tfrac{\sqrt3}{2} & -\tfrac12 & 0 \\ \tfrac12 & \tfrac{\sqrt3}{2} & 0 \\ 0 & 0 & 1 \end{bmatrix}, \quad \boldsymbol{R}_y(60^\circ) = \begin{bmatrix} \tfrac12 & 0 & \tfrac{\sqrt3}{2} \\ 0 & 1 & 0 \\ -\tfrac{\sqrt3}{2} & 0 & \tfrac12 \end{bmatrix}, \quad \boldsymbol{R}_z(-45^\circ) = \begin{bmatrix} \tfrac{\sqrt2}{2} & \tfrac{\sqrt2}{2} & 0 \\ -\tfrac{\sqrt2}{2} & \tfrac{\sqrt2}{2} & 0 \\ 0 & 0 & 1 \end{bmatrix}$$
+
+      Using the general ZYZ matrix with $c_\phi = \tfrac{\sqrt3}{2}$, $s_\phi = \tfrac12$,
+      $c_\theta = \tfrac12$, $s_\theta = \tfrac{\sqrt3}{2}$, $c_\psi = \tfrac{\sqrt2}{2}$,
+      $s_\psi = -\tfrac{\sqrt2}{2}$:
+
+      $$\boldsymbol{R} = \begin{bmatrix} \tfrac{\sqrt6 + 2\sqrt2}{8} & \tfrac{\sqrt6 - 2\sqrt2}{8} & \tfrac34 \\ \tfrac{\sqrt2 - 2\sqrt6}{8} & \tfrac{\sqrt2 + 2\sqrt6}{8} & \tfrac{\sqrt3}{4} \\ -\tfrac{\sqrt6}{4} & -\tfrac{\sqrt6}{4} & \tfrac12 \end{bmatrix} \approx \begin{bmatrix} 0.660 & -0.047 & 0.750 \\ -0.436 & 0.789 & 0.433 \\ -0.612 & -0.612 & 0.500 \end{bmatrix}$$
+
+      The approach direction is the third column,
+      $\boldsymbol{a} = \big[\tfrac34,\ \tfrac{\sqrt3}{4},\ \tfrac12\big]^\top$.
+
+      Recovering:
+
+      $$\theta = \operatorname{atan2}\!\Big(\sqrt{\tfrac{9}{16} + \tfrac{3}{16}},\ \tfrac12\Big) = \operatorname{atan2}\!\big(\tfrac{\sqrt3}{2}, \tfrac12\big) = 60^\circ$$
+
+      $$\phi = \operatorname{atan2}\!\big(\tfrac{\sqrt3}{4}, \tfrac34\big) = 30^\circ, \qquad \psi = \operatorname{atan2}(s_z, -n_z) = \operatorname{atan2}\!\big(-\tfrac{\sqrt6}{4}, \tfrac{\sqrt6}{4}\big) = -45^\circ$$
+    answer: |-
+      $\boldsymbol{a} = [\tfrac34, \tfrac{\sqrt3}{4}, \tfrac12]^\top$, and the formulas return
+      $(30^\circ, 60^\circ, -45^\circ)$.
+    source: |-
+      Lecture 2, numerical practice 5.
+
+  - id: rbm-p6
+    title: A roll-pitch-yaw example
+    q: |-
+      Let $\alpha = -30^\circ$, $\beta = 45^\circ$, $\gamma = 60^\circ$. Apply roll about
+      fixed $x$, pitch about fixed $y$, and yaw about fixed $z$. Write the three elementary
+      matrices and calculate
+      $\boldsymbol{R} = \boldsymbol{R}_z(\gamma)\boldsymbol{R}_y(\beta)\boldsymbol{R}_x(\alpha)$.
+      Identify the final approach direction $\boldsymbol{a}$. Recover the RPY angles using
+      the principal pitch range $-90^\circ < \beta < 90^\circ$.
+    solution: |-
+      $$\boldsymbol{R}_x(-30^\circ) = \begin{bmatrix} 1 & 0 & 0 \\ 0 & \tfrac{\sqrt3}{2} & \tfrac12 \\ 0 & -\tfrac12 & \tfrac{\sqrt3}{2} \end{bmatrix}, \quad \boldsymbol{R}_y(45^\circ) = \begin{bmatrix} \tfrac{\sqrt2}{2} & 0 & \tfrac{\sqrt2}{2} \\ 0 & 1 & 0 \\ -\tfrac{\sqrt2}{2} & 0 & \tfrac{\sqrt2}{2} \end{bmatrix}, \quad \boldsymbol{R}_z(60^\circ) = \begin{bmatrix} \tfrac12 & -\tfrac{\sqrt3}{2} & 0 \\ \tfrac{\sqrt3}{2} & \tfrac12 & 0 \\ 0 & 0 & 1 \end{bmatrix}$$
+
+      Using the general RPY matrix with $c_\alpha = \tfrac{\sqrt3}{2}$,
+      $s_\alpha = -\tfrac12$, $c_\beta = s_\beta = \tfrac{\sqrt2}{2}$, $c_\gamma = \tfrac12$,
+      $s_\gamma = \tfrac{\sqrt3}{2}$:
+
+      $$\boldsymbol{R} = \begin{bmatrix} \tfrac{\sqrt2}{4} & -\tfrac{\sqrt2 + 6}{8} & \tfrac{\sqrt6 - 2\sqrt3}{8} \\ \tfrac{\sqrt6}{4} & \tfrac{2\sqrt3 - \sqrt6}{8} & \tfrac{3\sqrt2 + 2}{8} \\ -\tfrac{\sqrt2}{2} & -\tfrac{\sqrt2}{4} & \tfrac{\sqrt6}{4} \end{bmatrix} \approx \begin{bmatrix} 0.354 & -0.927 & -0.127 \\ 0.612 & 0.127 & 0.780 \\ -0.707 & -0.354 & 0.612 \end{bmatrix}$$
+
+      The approach direction is the third column,
+      $\boldsymbol{a} \approx [-0.127,\ 0.780,\ 0.612]^\top$.
+
+      Recovering:
+
+      $$\beta = \operatorname{atan2}\!\Big(\tfrac{\sqrt2}{2},\ \sqrt{\tfrac{2}{16} + \tfrac{6}{16}}\Big) = \operatorname{atan2}\!\big(\tfrac{\sqrt2}{2}, \tfrac{\sqrt2}{2}\big) = 45^\circ$$
+
+      $$\gamma = \operatorname{atan2}\!\big(\tfrac{\sqrt6}{4}, \tfrac{\sqrt2}{4}\big) = 60^\circ, \qquad \alpha = \operatorname{atan2}(s_z, a_z) = \operatorname{atan2}\!\big(-\tfrac{\sqrt2}{4}, \tfrac{\sqrt6}{4}\big) = -30^\circ$$
+    answer: |-
+      $\boldsymbol{a} = \big[\tfrac{\sqrt6 - 2\sqrt3}{8},\ \tfrac{3\sqrt2 + 2}{8},\ \tfrac{\sqrt6}{4}\big]^\top$,
+      and the formulas return roll $-30^\circ$, pitch $45^\circ$, yaw $60^\circ$.
+    source: |-
+      Lecture 2, numerical practice 6.
+
+  - id: rbm-p7
+    title: Recovering an axis and an angle
+    q: |-
+      A rotation matrix is given by
+
+      $$\boldsymbol{R} = \frac13 \begin{bmatrix} 2 & -1 & 2 \\ 2 & 2 & -1 \\ -1 & 2 & 2 \end{bmatrix} .$$
+
+      Verify that it is a proper rotation matrix. Find a unit rotation axis
+      $\boldsymbol{u}$ and the principal angle $0 \le \vartheta \le \pi$, choosing the axis
+      direction so that the positive right-hand rotation agrees with $\boldsymbol{R}$. Using
+      $\boldsymbol{b}_1 = \tfrac{1}{\sqrt2}[1, -1, 0]^\top$, calculate
+      $\boldsymbol{b}_2 = \boldsymbol{u} \times \boldsymbol{b}_1$ and construct
+      $\boldsymbol{B} = [\boldsymbol{b}_1\ \boldsymbol{b}_2\ \boldsymbol{u}]$. Evaluate
+      $\boldsymbol{B}^\top\boldsymbol{R}\boldsymbol{B}$ and identify its planar rotation
+      block. Finally, compare $\boldsymbol{u}$ with the approach direction given by the
+      third column of $\boldsymbol{R}$.
+    steps:
+      - do: |-
+          Columns $\tfrac13[2,2,-1]^\top$, $\tfrac13[-1,2,2]^\top$, $\tfrac13[2,-1,2]^\top$
+          each have length $\tfrac13\sqrt{4+4+1} = 1$, and the mixed dot products are
+          $\tfrac19(-2+4-2) = 0$, $\tfrac19(4-2-2) = 0$, $\tfrac19(-2-2+4) = 0$.
+        why: |-
+          Orthonormal columns give $\boldsymbol{R}^\top\boldsymbol{R} = \boldsymbol{I}$.
+      - do: |-
+          $\boldsymbol{n} \times \boldsymbol{s} = \tfrac19[6, -3, 6]^\top = \tfrac13[2, -1, 2]^\top = \boldsymbol{a}$,
+          so $\det(\boldsymbol{R}) = 1$.
+        why: |-
+          Right-handedness is the second check; together they give
+          $\boldsymbol{R} \in SO(3)$.
+      - do: |-
+          $\operatorname{tr}(\boldsymbol{R}) = \tfrac13(2+2+2) = 2$, so
+          $\vartheta = \arccos\!\big(\tfrac{2-1}{2}\big) = 60^\circ$.
+        why: |-
+          $\operatorname{tr}(\boldsymbol{R}) = 1 + 2\cos\vartheta$.
+      - do: |-
+          $(\boldsymbol{R} - \boldsymbol{I})\boldsymbol{u} = \boldsymbol{0}$ gives
+          $-u_x - u_y + 2u_z = 0$ and $2u_x - u_y - u_z = 0$, hence $u_x = u_y = u_z$ and
+          $\boldsymbol{u} = \pm\tfrac{1}{\sqrt3}[1, 1, 1]^\top$.
+        why: |-
+          The axis is the direction the rotation leaves unchanged.
+      - do: |-
+          With $\boldsymbol{u} = \tfrac{1}{\sqrt3}[1,1,1]^\top$:
+          $\boldsymbol{b}_2 = \boldsymbol{u} \times \boldsymbol{b}_1 = \tfrac{1}{\sqrt6}[1, 1, -2]^\top$.
+        why: |-
+          $[1,1,1] \times [1,-1,0] = [1, 1, -2]$, scaled by $\tfrac{1}{\sqrt3 \sqrt2}$.
+      - do: |-
+          $\boldsymbol{R}\boldsymbol{b}_1 = \tfrac{1}{\sqrt2}[1, 0, -1]^\top$, so
+          $\boldsymbol{b}_2^\top\boldsymbol{R}\boldsymbol{b}_1 = \tfrac{1 + 2}{\sqrt{12}} = \tfrac{\sqrt3}{2} = \sin 60^\circ > 0$.
+        why: |-
+          Positive, so this sign of $\boldsymbol{u}$ makes the right-hand turn agree with
+          $\boldsymbol{R}$. No flip needed.
+      - do: |-
+          $$\boldsymbol{B}^\top\boldsymbol{R}\boldsymbol{B} = \begin{bmatrix} \tfrac12 & -\tfrac{\sqrt3}{2} & 0 \\ \tfrac{\sqrt3}{2} & \tfrac12 & 0 \\ 0 & 0 & 1 \end{bmatrix}$$
+        why: |-
+          In the frame whose third axis is $\boldsymbol{u}$ the rotation is planar: the
+          upper-left block is the $2 \times 2$ rotation by $60^\circ$.
+      - do: |-
+          The approach direction is $\boldsymbol{a} = \tfrac13[2, -1, 2]^\top$, which is
+          not $\boldsymbol{u}$.
+        why: |-
+          $\boldsymbol{a} = \boldsymbol{R}\boldsymbol{k}$ is where the third axis ends up;
+          $\boldsymbol{u}$ is what does not move.
+    answer: |-
+      $\boldsymbol{u} = \tfrac{1}{\sqrt3}[1,1,1]^\top$ and $\vartheta = 60^\circ$: a
+      $60^\circ$ turn about the space diagonal. The approach axis
+      $\boldsymbol{a} = \tfrac13[2,-1,2]^\top$ is a different direction.
+    source: |-
+      Lecture 2, numerical practice 7.

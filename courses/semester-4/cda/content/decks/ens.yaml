@@ -1,0 +1,251 @@
+# Ids are permanent: people's progress is keyed by them.
+title: 'Ensembles'
+topic: 'ens'
+cards:
+  - id: 'en01'
+    hy: true
+    q: |-
+      Write the error decomposition and define every term.
+    a: |-
+      **Error = bias² + variance + noise**\
+      \
+      **bias²** = Eₓ\[ (h\*(x) − E\_D\[y(x;D)])² ] — how far the *average* prediction is from the truth. High bias = the model is too simple = underfitting.\
+      **variance** = E\_(D,x)\[ (y(x;D) − E\_D\[y(x;D)])² ] — how much the prediction changes when the training set changes. High variance = overfitting.\
+      **noise** = E\_(D,x,t)\[ (t − h\*(x))² ] — irreducible error; no algorithm can beat it.\
+      \
+      where **t** = the true target, **D** = a randomly drawn training set, **y(x;D)** = the prediction of the model trained on D, and **h\*(x) = E\[t|x]** = the Bayes-optimal predictor.
+    note: |-
+      Asked on **both** papers. It is the single highest-frequency formula in this course — write it until it's automatic.
+
+  - id: 'en02'
+    hy: true
+    q: |-
+      Derive the error decomposition for regression with L2 loss.
+    steps:
+      - do: |-
+          State what is being decomposed: the expected test error **E\_(D,x,t)\[ (t − y(x;D))² ]** — the error when we sample a random training set.
+        why: |-
+          The expectation is over the training set as well as over x and t. That is what makes 'variance' meaningful at all: it is variance *across training sets*.
+
+      - do: |-
+          **Insert ±h\*(x)** inside the square: Eₜ\[(t − h\*(x) + h\*(x) − y(x;D))² | D,x].
+        why: |-
+          Adding and subtracting the same quantity changes nothing, but it splits the error into 'distance from the truth to the best possible predictor' plus 'distance from that predictor to ours'.
+
+      - do: |-
+          Expand. The cross-term **vanishes**, leaving Eₜ\[(t − h\*(x))²|D,x] + Eₜ\[(h\*(x) − y(x;D))²|D,x].
+        why: |-
+          The cross-term disappears because **E\[t|x] = h\*(x)** by definition of the Bayes-optimal predictor, so the factor (t − h\*(x)) has expectation zero.
+
+      - do: |-
+          Take expectations over D and x: **E\[(t − y)²] = E\[(t − h\*)²] + E\[(h\* − y)²]**. The first term is the **noise** — we have no control over it.
+        why: |-
+          Noise is the gap between reality and the best predictor that exists. No choice of algorithm touches it.
+
+      - do: |-
+          **Apply the same trick to the second term.** Insert ±E\_D\[y] inside the square: \
+          (h\* − y)² = ( h\* − E\_D\[y] + E\_D\[y] − y )² \
+          Expand; the cross-term dies again, leaving \
+          **E\_D\[ (h\* − E\_D\[y])² | x ] + E\_D\[ (E\_D\[y] − y)² | x ]** \
+          \
+          **On the order inside that second bracket:** the expansion gives (E\_D\[y] − y), but it is *squared*, so (E\_D\[y] − y)² = (y − E\_D\[y])² — the order inside a square never matters. The second spelling is how variance is conventionally written, E\[(X − E\[X])²], so that is the form used from here on. **It is the same quantity, not a sign change.**
+        why: |-
+          Same mechanism as before: the cross-term is 2·(h\* − E\_D\[y])·(E\_D\[y] − y), and its second factor has expectation zero, because E\_D\[E\_D\[y] − y] = E\_D\[y] − E\_D\[y] = 0. The first factor is a constant once x is fixed, so it comes straight out of the expectation and the whole cross-term is 0.
+
+      - do: |-
+          Name them: the first is **bias²**, the second is **variance**. So **Error = bias² + variance + noise**.
+        why: |-
+          Bias compares the *average* model to the truth; variance measures the spread of models around their own average. If we overfit we have high variance.
+
+  - id: 'en03'
+    hy: true
+    q: |-
+      What is an ensemble, and what are its main components?
+    a: |-
+      **An ensemble of predictors is a set of predictors whose individual decisions are combined in some way to classify new examples.** The simplest approach: generate multiple classifiers, and each votes on the test instance.\
+      \
+      **Components:** **(1)** the **base learners** — usually decision trees; **(2)** a source of **diversity** — different training subsets, different feature subsets, different example weights, or different model types; **(3)** a **combination rule** — majority vote, average, or a weighted vote.
+    note: |-
+      Diversity is a component and not a nicety: if every member makes the same mistakes, combining them changes nothing. The theoretical backing for majority voting is **Condorcet's jury theorem**, which requires the voters to be better than chance *and independent*.
+
+  - id: 'en04'
+    hy: true
+    q: |-
+      The two main strategies in ensemble learning — how do they differ in training?
+    a: |-
+      **Bagging** — **parallel**. Every base learner is trained *independently*, each on its own bootstrap sample (sampling **with replacement**, same size as the original set). Combined by plain average or majority vote. **Reduces variance.**\
+      \
+      **Boosting** — **sequential**. Each learner is trained on a reweighted dataset that emphasises the previous learners' mistakes. Combined by a **weighted** vote. **Reduces bias.**
+    note: |-
+      A third from the skripta: **stacking** — combining a set of *heterogeneous* classifiers. And a fourth training mode: **mixture of experts** — parallel training with an objective that encourages division of labour.
+
+  - id: 'en05'
+    hy: true
+    q: |-
+      How do bagging and boosting each affect bias and variance?
+    a: |-
+      **Bagging:** reduces **variance**, leaves **bias unchanged**. Averaging m predictors divides variance by m; the mean of the average equals the average of the means, so the bias is untouched. Its stated limitations are exactly these: *does not reduce bias*, and *there is still correlation between classifiers*.\
+      \
+      **Boosting:** reduces **bias**, by making each classifier focus on the previous ones' mistakes so the ensemble becomes progressively more expressive. It **increases variance** — tends to greater accuracy than bagging but **risks overfitting**.\
+      \
+      **Noise** is irreducible under both.
+    note: |-
+      Random Forest vs AdaBoost, if asked: Random Forest is **more robust to errors and outliers**, because boosting up-weights misclassified points every round — and a mislabelled point is misclassified every round.
+
+  - id: 'en06'
+    hy: true
+    q: |-
+      Compute the variance of an averaged ensemble, with and without correlation between learners.
+    steps:
+      - do: |-
+          **Independent case:** Var( (1/m) Σ\_(i=1..m) xᵢ ) = (1/m)·Var(x₁) = **σ²/m**
+        why: |-
+          Variance of a mean of m i.i.d. variables. This is the whole mathematical case for bagging: average m models, divide the variance by m.
+
+      - do: |-
+          **Note what did not change:** the **bias**. E\[average] = average of E\[·], so averaging cannot move the bias at all.
+        why: |-
+          This is why bagging helps an overfitting model and does nothing for an underfitting one — and why the answer to 'how do these methods affect bias and variance' is not symmetric.
+
+      - do: |-
+          **The problem:** bootstrap samples overlap heavily, so the learners are **not** independent. With pairwise correlation ρ: **Var = (1 − ρ)σ²/m + ρσ²**
+        why: |-
+          The covariance terms in the expansion of Var(Σxᵢ) no longer vanish; collecting them gives a term that does not shrink with m.
+
+      - do: |-
+          **Take m → ∞:** the first term vanishes but the second does not. Variance **floors at ρσ²**.
+        why: |-
+          Adding more trees past that point buys nothing — the ensemble is limited by how alike its members are, not how many there are.
+
+      - do: |-
+          **Numbers to quote:** at ρ = 0.5, m = 10 gives 0.550σ² and m = 100 gives 0.505σ². Ten times the trees for a 0.045σ² gain.
+        why: |-
+          Concrete numbers show you understand the formula rather than having memorised it.
+
+      - do: |-
+          **The conclusion:** this is why Random Forest adds feature subsampling at each split — to drive ρ *down* so the (1−ρ)/m term can actually do its work.
+        why: |-
+          Bagging alone leaves trees correlated: they see nearly the same data and pick nearly the same top split. Restricting the features breaks that.
+
+  - id: 'en07'
+    hy: true
+    q: |-
+      Name 4 examples of bagging and boosting methods.
+    a: |-
+      **Bagging:** **Random Forest** · bagged decision trees.\
+      **Boosting:** **AdaBoost** · **Gradient Boosting** · **XGBoost**.\
+      \
+      (Also **stacking** and **voting classifiers** as general ensembles, and **mixture of experts**.)
+    note: |-
+      The 26.8 paper asks for exactly four, so have four ready and say which family each belongs to — the marks are for the pairing, not the names.
+
+  - id: 'en08'
+    hy: true
+    q: |-
+      What is Random Forest and what is the extra trick beyond bagging?
+    a: |-
+      An ensemble in which each classifier is a **decision tree**, trained on a bootstrap sample. During classification **each tree votes and the most popular class is returned**.\
+      \
+      **The extra trick:** each tree is generated using a **random selection of attributes at each node** to determine the split — not just a random sample of the data.\
+      \
+      **Why:** to reduce the **correlation** between trees, which is what caps bagging's variance reduction at ρσ².
+    note: |-
+      Why trees are the natural base learner: they **overfit easily** (so there is plenty of variance to remove), they are **fast at inference**, and they are a powerful method on relational data.
+
+  - id: 'en09'
+    hy: false
+    q: |-
+      What is bootstrapping, and what does 'bagging' stand for?
+    a: |-
+      **Bootstrapping** is a classical statistics technique for **sampling with replacement**. It replaces the true data distribution with the **empirical distribution**, and sampling from the empirical distribution is the same as sampling with replacement from your dataset.\
+      \
+      **Bagging = Bootstrap AGGregatING.**
+    note: |-
+      Why it exists: to reduce variance you want to average i.i.d. samples, and the samples you want are *other training sets* — which you don't have. Bootstrapping manufactures many training sets from the one you do have.
+
+  - id: 'en10'
+    hy: false
+    q: |-
+      What is out-of-bag estimation and what does it save you?
+    a: |-
+      Each training example appears in only some of the bagged trees — the probability of **not** being picked is about **1/e ≈ 37%**. **OOB estimation** predicts each training example using only the trees that did **not** contain it in their training data, giving a free estimate of test error.\
+      \
+      It **reduces the need for a separate validation set or cross-validation**.
+
+  - id: 'en11'
+    hy: false
+    q: |-
+      Write the AdaBoost algorithm.
+    steps:
+      - do: |-
+          **Initialise the example weights** uniformly: D⁽ⁿ⁾₁ = 1/N for all N training examples.
+        why: |-
+          Before any learner has been trained there is no reason to prefer any example, so all start equal.
+
+      - do: |-
+          **For m = 1…M, fit a weak learner** hₘ by minimising the weighted error Jₘ = Σₙ Dₘ⁽ⁿ⁾·\[ hₘ(xₙ) ≠ t⁽ⁿ⁾ ].
+        why: |-
+          The learner must minimise *weighted* accuracy, not plain accuracy — that is the mechanism by which it is steered onto the previous rounds' failures.
+
+      - do: |-
+          **Compute the weighted error rate** εₘ = Jₘ / Σ Dₘ⁽ⁿ⁾.
+        why: |-
+          Normalising by the total weight keeps ε on a 0–1 scale regardless of how the weights have grown.
+
+      - do: |-
+          **Compute the classifier coefficient** αₘ = ½ ln( (1 − εₘ) / εₘ ).
+        why: |-
+          α measures classifier quality: as ε → 0, α → ∞; at ε = ½ (chance) α = 0 and the learner is ignored. The weak learner is assumed to do better than chance.
+
+      - do: |-
+          **Update the weights:** D⁽ⁿ⁾ₘ₊₁ = D⁽ⁿ⁾ₘ · exp( −t⁽ⁿ⁾ αₘ hₘ(x⁽ⁿ⁾) ).
+        why: |-
+          For a correct prediction t and h agree, the exponent is negative and the weight shrinks; for a mistake it grows. The next learner therefore concentrates on what this one got wrong.
+
+      - do: |-
+          **Final model:** H(x) = sign( Σ\_(m=1..M) αₘ hₘ(x) ).
+        why: |-
+          A weighted vote, not a plain one. Note that summing predictions *after* the sign means a sum of linear classifiers is not itself a linear classifier — which is where boosting's extra expressiveness comes from.
+
+    note: |-
+      The theorem worth a line: with γₘ = ½ − εₘ, the training loss is bounded by **exp(−2 Σₘ γₘ²)** — training error falls **exponentially** so long as every weak learner beats chance.
+
+  - id: 'en12'
+    hy: false
+    q: |-
+      Define bias, variance and noise in one sentence each, without the formulas.
+    a: |-
+      **Bias** is a measure of how far predictions are from the true values.\
+      **Variance** is a measure of how much a model's predictions change with different training datasets.\
+      **Noise** is the irreducible error.
+    note: |-
+      This is the skripta's phrasing. Useful when the question says 'what are bias, noise and variance' rather than 'write the decomposition' — answer the question that was asked.
+
+  - id: 'en13'
+    hy: false
+    q: |-
+      How can we reduce variance, and what are bagging's stated limitations?
+    a: |-
+      **Reduce variance** by averaging — and since we only have one training set, by **bootstrapping** to manufacture many.\
+      \
+      **Bagging's limitations:** it **does not reduce bias**, and there is **still correlation between the classifiers**. Random Forest's answer to the second is to add more randomness.
+
+  - id: 'en14'
+    hy: false
+    q: |-
+      Write the bagging algorithm.
+    a: |-
+      **Input:** dataset D, ML algorithm A, number of bags N.\
+      **For i = 1…N:** generate dataset Dᵢ by **sampling with replacement** from D (same number of elements); train fᵢ = A(Dᵢ).\
+      **Return** f₁, …, f\_N.\
+      \
+      **Prediction:** given a new example x, return (1/N) Σᵢ fᵢ(x) — or the **majority vote** for classification.
+
+  - id: 'en15'
+    hy: false
+    q: |-
+      Name the three training strategies for ensembles.
+    a: |-
+      **1.** Parallel training with different sets — **bagging**.\
+      **2.** Sequential training — **boosting**.\
+      **3.** Parallel training with an objective encouraging division of labour — **mixture of experts**.

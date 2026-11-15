@@ -1,0 +1,57 @@
+title: The MED derivation, from the front door to the balcony
+topic: distance
+encodes: |-
+  The five steps of deriving the MED boundary between two classes, in the order a marker
+  expects them. The cancellation in the middle is the step that earns the mark.
+intro: |-
+  Walk through a flat you know: in at the front door, down the hallway, into the kitchen,
+  through the living room, out onto the balcony.
+
+loci:
+  - id: door
+    place: Front door
+    image: |-
+      Two identical doormats lie side by side, each a perfect **square**, and a set of
+      scales on the doorstep balances one on each pan.
+    means: |-
+      **Square and set equal:** $\lVert x - \mu_1 \rVert^2 = \lVert x - \mu_2 \rVert^2$. The
+      boundary is where the two squared distances tie.
+    refs: ["card:med-derive"]
+
+  - id: hallway
+    place: Hallway
+    image: |-
+      Both doormats have been unrolled down the hallway into long runners, each one made of
+      three strips sewn end to end.
+    means: |-
+      **Expand** both sides into three terms:
+      $x^\top x - 2x^\top \mu + \mu^\top \mu$.
+
+  - id: kitchen
+    place: Kitchen
+    image: |-
+      On the kitchen table two identical giant letter **X** cakes sit on the two pans of
+      the scales. You eat one from each pan at once and the scales do not move.
+    means: |-
+      **Cancel** $x^\top x$. It is the same on both sides, and removing it is why the
+      boundary is straight.
+
+  - id: living-room
+    place: Living room
+    image: |-
+      The furniture has been pushed apart: everything with an X on it stands against the left
+      wall, every plain numbered box against the right.
+    means: |-
+      **Rearrange:** $2x^\top(\mu_2 - \mu_1) = \lVert \mu_2 \rVert^2 - \lVert \mu_1 \rVert^2$.
+      The terms in $x$ on one side, the constants on the other.
+    refs: ["formula:f-med"]
+
+  - id: balcony
+    place: Balcony
+    image: |-
+      From the balcony you see two towers and a dead-straight road cutting exactly halfway
+      between them, crossing the line of sight at a right angle.
+    means: |-
+      **Bisect:** the boundary is the perpendicular bisector of the segment joining the
+      means, through their midpoint.
+    refs: ["card:med-straight"]

@@ -1,0 +1,238 @@
+title: Lᵖ spaces practice
+topic: measure
+instructions: |-
+  Problems 1 to 4 are the lecture's worked example and its two supplementary exercises,
+  with full solutions. Problems 5 to 14 are written here in the same style; their answers
+  were checked numerically. $\lambda$ is Lebesgue measure.
+
+  Show the hypotheses of every theorem you use (monotone or dominated convergence, 3.34,
+  Hölder with its conjugate pair) before the conclusion.
+
+questions:
+  - id: lp-p1
+    title: Membership depends on p
+    points: 4
+    q: |-
+      Let $\lambda$ be Lebesgue measure on $(0, \infty)$.
+    parts:
+      - q: |-
+          Show that $f(x) = x^{-1/3}\chi_{(0,1)}(x)$ belongs to $L^1(\lambda)$ but not to $L^3(\lambda)$.
+        solution: |-
+          Let $f_n = x^{-1/3}\chi_{[1/n,1)}$. Each is measurable, $0 \le f_n \le f_{n+1}$, and
+          $f_n \to f$ pointwise (every $x \in (0,1)$ is $\ge 1/n$ for large $n$). By monotone
+          convergence and 3.34 ($f_n$ is bounded by $n^{1/3}$ and continuous on $[1/n, 1]$; the
+          endpoint has measure 0):
+          $$\|f\|_1 = \lim_{n} \int_{1/n}^{1} x^{-1/3}dx = \lim_n \tfrac32\left(1 - n^{-2/3}\right) = \tfrac32 .$$
+          $\lvert f \rvert^3 = x^{-1}\chi_{(0,1)}$, and the same truncation gives
+          $\lim_n \int_{1/n}^1 x^{-1}dx = \lim_n \ln n = \infty$. So $f \in L^1$, $f \notin L^3$.
+      - q: |-
+          Show that $g(x) = x^{-1}\chi_{(1,\infty)}(x)$ belongs to $L^2(\lambda)$ but not to $L^1(\lambda)$.
+        solution: |-
+          Let $g_n = \chi_{(1,n)}\lvert g \rvert^p$: increasing, converging pointwise to
+          $\lvert g \rvert^p$, bounded by 1 on a bounded interval. By monotone convergence and 3.34,
+          $\int \lvert g \rvert^p = \lim_n \int_1^n x^{-p}dx$.
+          For $p = 2$: $\lim_n (1 - \frac1n) = 1$, so $\|g\|_2 = 1$. For $p = 1$:
+          $\lim_n \ln n = \infty$.
+    answer: |-
+      $f \in L^1 \setminus L^3$ with $\|f\|_1 = \frac32$; $g \in L^2 \setminus L^1$ with $\|g\|_2 = 1$.
+      So neither $L^1 \subset L^3$ nor $L^2 \subset L^1$ holds on $(0,\infty)$.
+    source: |-
+      Lecture 3 part 1, section 4, example.
+
+  - id: lp-p2
+    title: Which powers are integrable?
+    points: 3
+    q: |-
+      For $a > 0$ let $f_a(x) = x^{-a}$ on $(0,\infty)$. For which $p \in (0,\infty)$ do
+      $f_a\chi_{(0,1)}$ and $f_a\chi_{(1,\infty)}$ belong to $L^p(\lambda)$?
+    steps:
+      - do: |-
+          Put $s = ap$, so $\lvert f_a \rvert^p = x^{-s}$.
+      - do: |-
+          Near 0, truncating to $[1/n, 1)$ (monotone convergence, 3.34):
+          $\int_{(0,1)} x^{-s} = \lim_n \int_{1/n}^1 x^{-s}dx$, which is $\frac{1}{1-s}$ for $s < 1$,
+          $\lim_n \ln n = \infty$ for $s = 1$, and $\lim_n \frac{n^{s-1} - 1}{s-1} = \infty$ for $s > 1$.
+      - do: |-
+          Near $\infty$, truncating to $(1, n)$: $\int_1^n x^{-s}dx$ tends to $\frac{1}{s-1}$ for
+          $s > 1$, and to $\infty$ for $s \le 1$.
+    answer: |-
+      $f_a\chi_{(0,1)} \in L^p$ iff $ap < 1$; $f_a\chi_{(1,\infty)} \in L^p$ iff $ap > 1$. Neither
+      inclusion between $L^p$ and $L^q$ holds in general.
+    source: |-
+      Lecture 3 part 1, supplementary exercise.
+
+  - id: lp-p3
+    title: Truncation converges in L¹
+    points: 3
+    q: |-
+      Let $f \in L^1(\lambda)$ on $\mathbb{R}$ be real-valued. Show that
+      $\lim_{n\to\infty}\|f - f\chi_{[-n,n]}\|_1 = 0$.
+    steps:
+      - do: |-
+          $h_n = \lvert f - f\chi_{[-n,n]} \rvert = \lvert f \rvert\chi_{\mathbb{R}\setminus[-n,n]}$ is
+          measurable and $0 \le h_n \le \lvert f \rvert$.
+      - do: |-
+          For each $x$, $x \in [-n, n]$ once $n \ge \lvert x \rvert$, so $h_n(x) = 0$ eventually:
+          $h_n \to 0$ pointwise.
+      - do: |-
+          $\int \lvert f \rvert \, d\lambda < \infty$, so dominated convergence with $g = \lvert f \rvert$
+          gives $\int h_n \, d\lambda \to 0$.
+    answer: |-
+      $f\chi_{[-n,n]} \to f$ in $L^1$.
+    source: |-
+      Lecture 3 part 1, supplementary exercise (with the hint to use dominated convergence).
+
+  - id: lp-p4
+    title: Products of an L² sequence
+    points: 2
+    q: |-
+      Let $f_n, f, g \in L^2$ with $f_n \to f$ in $L^2$. Show $f_n g \to fg$ in $L^1$.
+    steps:
+      - do: |-
+          $(2, 2)$ is a conjugate pair, so by Hölder $f_n g, fg \in L^1$.
+      - do: |-
+          $\int \lvert f_ng - fg \rvert = \int \lvert g \rvert\lvert f_n - f \rvert \le \|g\|_2\|f_n - f\|_2$.
+        why: |-
+          Hölder again, with $\lvert g \rvert$ and $\lvert f_n - f \rvert$.
+      - do: |-
+          $\|g\|_2 < \infty$ and $\|f_n - f\|_2 \to 0$, so $\|f_n g - fg\|_1 \to 0$.
+    answer: |-
+      $\|f_ng - fg\|_1 \le \|g\|_2\|f_n - f\|_2 \to 0$.
+    source: |-
+      Lecture 3 part 1, section 5, example.
+
+  - id: lp-p5
+    title: Conjugate exponents
+    type: mcq
+    points: 1
+    q: |-
+      What is the conjugate exponent of $p = 3$?
+    choices:
+      - text: $\frac32$
+        correct: true
+        why: $q = \frac{p}{p-1} = \frac32$, and $\frac13 + \frac23 = 1$.
+      - text: $\frac13$
+        why: That is $1/p$, not $q$.
+      - text: '3'
+        why: Only $p = 2$ is its own conjugate.
+      - text: $\infty$
+        why: $\infty$ is conjugate to 1.
+
+  - id: lp-p6
+    title: p-norms of an indicator
+    points: 2
+    q: |-
+      Compute $\|\chi_{[0,2]}\|_p$ for $1 \le p < \infty$ and $\|\chi_{[0,2]}\|_\infty$, with Lebesgue measure.
+    solution: |-
+      $\lvert \chi_{[0,2]} \rvert^p = \chi_{[0,2]}$, so $\int \lvert \chi_{[0,2]} \rvert^p = 2$ and
+      $\|\chi_{[0,2]}\|_p = 2^{1/p}$ (2, $\sqrt2$, $\sqrt[3]{2}$ for $p = 1, 2, 3$). The essential
+      supremum is 1. Note $2^{1/p} \to 1$ as $p \to \infty$.
+    answer: |-
+      $2^{1/p}$, and $\|\chi_{[0,2]}\|_\infty = 1$.
+
+  - id: lp-p7
+    title: Essential supremum
+    type: mcq
+    points: 1
+    q: |-
+      On $[0,1]$ with Lebesgue measure, what is $\|\chi_{\mathbb{Q}}\|_\infty$?
+    choices:
+      - text: '0'
+        correct: true
+        why: |-
+          $\lambda(\{x : \chi_{\mathbb{Q}}(x) > 0\}) = \lambda(\mathbb{Q} \cap [0,1]) = 0$, so $a = 0$ already works.
+      - text: '1'
+        why: That is the ordinary supremum, which counts a set of measure 0.
+      - text: $\infty$
+        why: The function is bounded.
+      - text: Undefined
+        why: The essential supremum exists for every measurable function.
+
+  - id: lp-p8
+    title: Hölder on [0, 1]
+    points: 2
+    q: |-
+      Check Hölder's inequality with $p = q = 2$ for $f = 1$ and $g(x) = x$ on $[0,1]$.
+    solution: |-
+      $\|fg\|_1 = \int_0^1 x \, dx = \frac12$. $\|f\|_2 = 1$ and
+      $\|g\|_2 = \left(\int_0^1 x^2dx\right)^{1/2} = \frac{1}{\sqrt3} \approx 0.577$. So
+      $\frac12 \le \frac{1}{\sqrt3}$: strict, as it must be, since $\lvert f \rvert^2$ and
+      $\lvert g \rvert^2$ are not proportional.
+    answer: |-
+      $0.5 \le 0.577$.
+
+  - id: lp-p9
+    title: The finite-measure inclusion with a constant
+    points: 2
+    q: |-
+      On $[0,2]$ with Lebesgue measure, use 7.10 with $p = 1$, $q = 2$ to bound $\|f\|_1$ by
+      $\|f\|_2$, and check it for $f(x) = x$.
+    steps:
+      - do: |-
+          $\mu(X)^{(q-p)/(pq)} = 2^{1/2}$, so $\|f\|_1 \le \sqrt2\,\|f\|_2$.
+      - do: |-
+          $\|x\|_1 = \int_0^2 x\,dx = 2$ and $\|x\|_2 = \left(\frac83\right)^{1/2} \approx 1.633$, so
+          $\sqrt2\,\|x\|_2 \approx 2.309 \ge 2$.
+    answer: |-
+      $\|f\|_1 \le \sqrt2\|f\|_2$; for $f = x$: $2 \le 2.309$.
+
+  - id: lp-p10
+    title: L¹ but not L²
+    points: 3
+    q: |-
+      Let $f_n = \sqrt n\,\chi_{(0,1/n)}$ on $\mathbb{R}$. Does $f_n \to 0$ in $L^1$? In $L^2$?
+    solution: |-
+      $\|f_n\|_1 = \sqrt n \cdot \frac1n = \frac{1}{\sqrt n} \to 0$: yes in $L^1$.
+      $\|f_n\|_2 = \left(n \cdot \frac1n\right)^{1/2} = 1$ for all $n$: not in $L^2$. Squaring
+      makes the spike count more. (On $(0,1)$ this agrees with 7.10: convergence in $L^2$
+      would force convergence in $L^1$, not the other way.)
+    answer: |-
+      Converges to 0 in $L^1$, not in $L^2$.
+
+  - id: lp-p11
+    title: L² but not L^∞
+    points: 2
+    q: |-
+      On $[0,1]$, does $x^n \to 0$ in $L^2$? In $L^\infty$?
+    solution: |-
+      $\|x^n\|_2 = \left(\int_0^1 x^{2n}dx\right)^{1/2} = \frac{1}{\sqrt{2n+1}} \to 0$: yes in $L^2$.
+      But for every $t < 1$ the set $\{x^n > t\} = (t^{1/n}, 1]$ has positive measure, so
+      $\|x^n\|_\infty = 1$: not in $L^\infty$.
+    answer: |-
+      In $L^2$ yes, in $L^\infty$ no.
+
+  - id: lp-p12
+    title: Not a genuine norm
+    type: tf
+    points: 1
+    q: |-
+      Without identifying functions equal almost everywhere, $\|\cdot\|_1$ is a norm on
+      $L^1(\lambda)$.
+    correct: false
+    solution: |-
+      False. $\chi_{\{0\}} \ne 0$ but $\|\chi_{\{0\}}\|_1 = \lambda(\{0\}) = 0$: definiteness fails.
+      It is a seminorm until a.e.-equal functions are identified.
+
+  - id: lp-p13
+    title: Why p ≥ 1
+    points: 2
+    q: |-
+      Show that the triangle inequality fails for $\|\cdot\|_{1/2}$, using
+      $f = \chi_{[0,1]}$ and $g = \chi_{[1,2]}$.
+    solution: |-
+      $\|f\|_{1/2} = \left(\int \lvert f \rvert^{1/2}\right)^2 = 1^2 = 1$, likewise $\|g\|_{1/2} = 1$.
+      $f + g = \chi_{[0,2]}$ almost everywhere, so $\|f + g\|_{1/2} = 2^2 = 4 > 1 + 1$.
+    answer: |-
+      $4 > 2$.
+
+  - id: lp-p14
+    title: Mean squared error as an L² norm
+    points: 2
+    q: |-
+      Data points $x = 0, 1, 2$, target $f(x) = x^2$, model values $f_n(x_i) = f(x_i) + e_i$
+      with errors $(0.1, -0.1, 0.2)$. Write the MSE as an $L^2$ norm and compute it.
+    solution: |-
+      With $\mu$ giving each point mass $\frac13$,
+      $\mathrm{MSE} = \int \lvert f_n - f \rvert^2 d\mu = \|f_n - f\|_2^2 = \frac13(0.01 + 0.01 + 0.04) = 0.02$.
+    answer: |-
+      $\|f_n - f\|_2^2 = 0.02$, so $\|f_n - f\|_2 \approx 0.141$.

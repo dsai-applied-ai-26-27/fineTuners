@@ -1,0 +1,239 @@
+title: 'Proofs: Lᵖ spaces'
+topic: measure
+lecture: 03-lp-spaces
+description: The proofs of lecture 3, from why the p-norm is only a seminorm to Hölder, Minkowski and the inclusion on a finite measure space.
+
+cards:
+  - id: lp-l1-zero-proof
+    q: |-
+      Prove that $\|f\|_1 = 0$ if and only if $f = 0$ almost everywhere.
+    steps:
+      - do: |-
+          If $f = 0$ outside a null set $N$, then $\lvert f \rvert = \lvert f \rvert\chi_N$
+          and $\int \lvert f \rvert \chi_N \, d\mu = 0$.
+        why: |-
+          A null set does not change an integral ([null sets do not change integrals](card:leb-null-set-proof)).
+      - do: |-
+          Conversely let $\int \lvert f \rvert = 0$ and $E_n = \{x : \lvert f(x) \rvert > \frac1n\}$.
+          Then $\frac1n \chi_{E_n} \le \lvert f \rvert$, so $\frac1n \mu(E_n) \le 0$ and
+          $\mu(E_n) = 0$.
+        why: |-
+          Order (3.8) and $\int \chi_{E_n} = \mu(E_n)$ (3.4).
+      - do: |-
+          $\{f \ne 0\} = \bigcup_n E_n$, so $\mu(\{f \ne 0\}) \le \sum_n \mu(E_n) = 0$.
+        why: |-
+          Countable subadditivity (2.58).
+    note: |-
+      Part of 3.43, stated without proof in the notes. It is exactly why functions equal
+      almost everywhere are identified in $L^p$.
+
+  - id: lp-vector-space-proof
+    q: |-
+      Prove that $L^p(\mu)$ is closed under sums and scalar multiples, for $0 < p < \infty$.
+    steps:
+      - do: |-
+          $\lvert f + g \rvert \le \lvert f \rvert + \lvert g \rvert \le 2\max(\lvert f \rvert, \lvert g \rvert)$.
+      - do: |-
+          So $\lvert f + g \rvert^p \le 2^p \max(\lvert f \rvert^p, \lvert g \rvert^p) \le 2^p \big( \lvert f \rvert^p + \lvert g \rvert^p \big)$.
+        why: |-
+          $t \mapsto t^p$ is increasing on $[0,\infty)$, and a maximum of two non-negative
+          numbers is at most their sum.
+      - do: |-
+          Integrate: $\int \lvert f + g \rvert^p \le 2^p \big( \int \lvert f \rvert^p + \int \lvert g \rvert^p \big) < \infty$.
+        why: |-
+          Order, additivity and homogeneity of the integral. $f + g$ is measurable (2.46).
+      - do: |-
+          $\int \lvert \lambda f \rvert^p = \lvert \lambda \rvert^p \int \lvert f \rvert^p < \infty$.
+    note: |-
+      Axler 7.5; the notes give the inequality of the second step. The bound is crude, but
+      finiteness is all that is needed. Minkowski gives the sharp version for $p \ge 1$.
+
+  - id: lp-ess-sup-attained-proof
+    q: |-
+      Prove that the essential supremum is attained:
+      $\lvert f \rvert \le \|f\|_\infty$ almost everywhere.
+    steps:
+      - do: |-
+          Let $s = \|f\|_\infty < \infty$. For each $n$ there is $a < s + \frac1n$ with
+          $\mu(\{\lvert f \rvert > a\}) = 0$.
+        why: |-
+          $s$ is the infimum of such $a$, and $s + \frac1n$ is above it.
+      - do: |-
+          $\{\lvert f \rvert > s + \frac1n\} \subset \{\lvert f \rvert > a\}$ is null.
+        why: |-
+          Monotonicity (2.57).
+      - do: |-
+          $\{\lvert f \rvert > s\} = \bigcup_n \{\lvert f \rvert > s + \frac1n\}$ is a
+          countable union of null sets, hence null.
+        why: |-
+          Subadditivity (2.58). The margin $\frac1n$ again turns a strict inequality into a
+          countable union.
+    note: |-
+      Stated without proof in the notes. If $s = \infty$ there is nothing to prove.
+
+  - id: lp-young-proof
+    q: |-
+      Prove Young's inequality: for $a, b \ge 0$ and conjugate $1 < p, q < \infty$,
+      $ab \le \dfrac{a^p}{p} + \dfrac{b^q}{q}$.
+    steps:
+      - do: |-
+          If $a = 0$ or $b = 0$ the left side is $0$. Assume $a, b > 0$.
+      - do: |-
+          $\log$ is concave, and $\frac1p + \frac1q = 1$, so
+          $\log\Big( \frac1p a^p + \frac1q b^q \Big) \ge \frac1p \log a^p + \frac1q \log b^q$.
+        why: |-
+          Concavity: $\log(\lambda u + (1-\lambda) v) \ge \lambda \log u + (1-\lambda)\log v$
+          for $0 < \lambda < 1$, here with $\lambda = \frac1p$, $u = a^p$, $v = b^q$.
+      - do: |-
+          The right side is $\log a + \log b = \log(ab)$. Exponentiate.
+    note: |-
+      Not in the notes. It is the lemma behind Hölder's inequality (Folland, lemma 6.1,
+      in the form $a^\lambda b^{1-\lambda} \le \lambda a + (1-\lambda) b$). For $p = q = 2$ it is
+      $ab \le \frac12(a^2 + b^2)$.
+
+  - id: lp-holder-proof
+    q: |-
+      Prove Hölder's inequality $\|fg\|_1 \le \|f\|_p \|g\|_q$ for conjugate
+      $1 < p, q < \infty$.
+    steps:
+      - do: |-
+          If $\|f\|_p = 0$, then $f = 0$ a.e., so $fg = 0$ a.e. and both sides are $0$; the
+          same if $\|g\|_q = 0$. If either norm is $\infty$ (and neither is $0$), there is
+          nothing to prove.
+        why: |-
+          [‖f‖₁ = 0 iff f = 0 a.e.](card:lp-l1-zero-proof).
+      - do: |-
+          Otherwise normalise: $F = \lvert f \rvert / \|f\|_p$, $G = \lvert g \rvert / \|g\|_q$,
+          so $\int F^p = \int G^q = 1$.
+        why: |-
+          Both sides of the inequality are homogeneous, so it is enough to prove it for
+          norms equal to $1$.
+      - do: |-
+          Pointwise, $FG \le \frac{F^p}{p} + \frac{G^q}{q}$.
+        why: |-
+          Young's inequality ([Young's inequality](card:lp-young-proof)).
+      - do: |-
+          Integrate: $\int FG \le \frac1p + \frac1q = 1$, that is
+          $\int \lvert fg \rvert \le \|f\|_p \|g\|_q$.
+        why: |-
+          Order, additivity and homogeneity of the integral.
+    note: |-
+      Not in the notes, which refer to Folland (p. 182); this is that proof.
+    hook: |-
+      Normalise both to norm 1, apply Young under the integral, read off $\frac1p + \frac1q = 1$.
+
+  - id: lp-holder-endpoint-proof
+    q: |-
+      Prove $\|fg\|_1 \le \|f\|_1 \|g\|_\infty$.
+    a: |-
+      $\lvert g \rvert \le \|g\|_\infty$ almost everywhere, so
+      $\lvert fg \rvert \le \|g\|_\infty \lvert f \rvert$ almost everywhere. Integrate:
+      a null set does not change either integral.
+    note: |-
+      The case $p = 1$, $q = \infty$ of Hölder, as in the notes. It uses that the essential
+      supremum is attained ([the essential supremum is attained](card:lp-ess-sup-attained-proof)).
+
+  - id: lp-minkowski-proof
+    hy: true
+    q: |-
+      Prove Minkowski's inequality $\|f + g\|_p \le \|f\|_p + \|g\|_p$ for
+      $f, g \in L^p$ and $1 \le p < \infty$.
+    steps:
+      - do: |-
+          $p = 1$: integrate $\lvert f + g \rvert \le \lvert f \rvert + \lvert g \rvert$. If
+          $f + g = 0$ a.e., the left side is $0$. Otherwise let $p > 1$ and $q = \frac{p}{p-1}$.
+      - do: |-
+          $\lvert f+g \rvert^p = \lvert f+g \rvert \, \lvert f+g \rvert^{p-1} \le (\lvert f \rvert + \lvert g \rvert)\lvert f+g \rvert^{p-1}$.
+      - do: |-
+          Hölder on each term:
+          $\int \lvert f \rvert \lvert f+g \rvert^{p-1} \le \|f\|_p \Big( \int \lvert f+g \rvert^{(p-1)q} \Big)^{1/q} = \|f\|_p \Big( \int \lvert f+g \rvert^p \Big)^{1/q}$,
+          and the same for $g$.
+        why: |-
+          $(p-1)q = p$: the conjugate norm of the leftover power is again a power of
+          $\int \lvert f+g \rvert^p$.
+      - do: |-
+          So $\int \lvert f+g \rvert^p \le (\|f\|_p + \|g\|_p)\Big( \int \lvert f+g \rvert^p \Big)^{1/q}$.
+      - do: |-
+          Divide by $\big( \int \lvert f+g \rvert^p \big)^{1/q}$:
+          $\big( \int \lvert f+g \rvert^p \big)^{1 - 1/q} = \|f+g\|_p \le \|f\|_p + \|g\|_p$.
+        why: |-
+          The divisor is positive, because $f + g$ is not $0$ almost everywhere, and finite,
+          because $L^p$ is a vector space. And $1 - \frac1q = \frac1p$.
+    note: |-
+      Folland 6.5; the proof is the notes'.
+
+  - id: lp-minkowski-infty
+    q: |-
+      Prove the triangle inequality for $\|\cdot\|_\infty$.
+    a: |-
+      Outside the union of two null sets,
+      $\lvert f + g \rvert \le \lvert f \rvert + \lvert g \rvert \le \|f\|_\infty + \|g\|_\infty$.
+      So $\|f\|_\infty + \|g\|_\infty$ is a bound on $\lvert f + g \rvert$ almost everywhere,
+      and the infimum of such bounds is at most it.
+    note: |-
+      Folland 6.8b, quoted in the notes.
+
+  - id: lp-power-rule-proof
+    hy: true
+    q: |-
+      Prove that for $a, p > 0$: $x^{-a}\chi_{(0,1)} \in L^p$ iff $ap < 1$, and
+      $x^{-a}\chi_{(1,\infty)} \in L^p$ iff $ap > 1$.
+    steps:
+      - do: |-
+          Put $s = ap$, so $\lvert f \rvert^p = x^{-s}$ on the given piece.
+      - do: |-
+          Near $0$, truncate to $[\frac1n, 1)$: by monotone convergence and 3.34,
+          $\int_{(0,1)} x^{-s} \, d\lambda = \lim_n \int_{1/n}^1 x^{-s} \, dx$, which is
+          $\frac{1}{1-s}$ if $s < 1$ and $\infty$ if $s \ge 1$ ($\ln n$ for $s = 1$).
+      - do: |-
+          Near $\infty$, truncate to $(1, n)$: $\int_1^n x^{-s} \, dx$ tends to
+          $\frac{1}{s-1}$ if $s > 1$ and to $\infty$ if $s \le 1$.
+    note: |-
+      The notes' proof of the supplementary exercise. At $s = 1$ both ends fail, because
+      $\int dx/x$ diverges at $0$ and at $\infty$.
+
+  - id: lp-inclusion-proof
+    hy: true
+    q: |-
+      Prove 7.10: if $\mu(X) < \infty$ and $0 < p < q < \infty$, then
+      $\|f\|_p \le \mu(X)^{(q-p)/(pq)} \|f\|_q$.
+    steps:
+      - do: |-
+          Let $r = \frac{q}{p} > 1$. Its conjugate is $r' = \frac{q}{q-p}$.
+        why: |-
+          $\frac1r + \frac1{r'} = \frac{p}{q} + \frac{q-p}{q} = 1$.
+      - do: |-
+          Hölder with $r, r'$ on $\lvert f \rvert^p$ and the constant $1$:
+          $$\int \lvert f \rvert^p \, d\mu \le \Big( \int \lvert f \rvert^{pr} d\mu \Big)^{1/r} \Big( \int 1 \, d\mu \Big)^{1/r'} = \Big( \int \lvert f \rvert^q d\mu \Big)^{p/q} \mu(X)^{(q-p)/q}.$$
+        why: |-
+          $pr = q$, and $\int 1 \, d\mu = \mu(X)$, finite by assumption.
+      - do: |-
+          Raise both sides to the power $\frac1p$.
+    a: |-
+      $\|f\|_p \le \mu(X)^{(q-p)/(pq)}\|f\|_q$, so $L^q(\mu) \subset L^p(\mu)$.
+    note: |-
+      The notes' proof. Hölder against the constant $1$ is the move; it is also how
+      $\|f\|_1 \le \sqrt{\mu(X)}\,\|f\|_2$ comes out.
+
+  - id: lp-product
+    q: |-
+      $f_n \to f$ in $L^2$ and $g \in L^2$. What follows for $f_n g$?
+    a: |-
+      $f_ng \to fg$ in $L^1$, since $\|f_ng - fg\|_1 \le \|g\|_2\|f_n - f\|_2$ (Hölder).
+
+  - id: lp-truncation-proof
+    q: |-
+      For real $f \in L^1(\lambda)$ on $\mathbf{R}$, prove
+      $\lim_{n\to\infty} \|f - f\chi_{[-n,n]}\|_1 = 0$.
+    steps:
+      - do: |-
+          $h_n = \lvert f - f\chi_{[-n,n]} \rvert = \lvert f \rvert\chi_{\mathbf{R} \setminus [-n,n]}$
+          is measurable and $0 \le h_n \le \lvert f \rvert$.
+      - do: |-
+          $h_n(x) = 0$ once $n \ge \lvert x \rvert$, so $h_n \to 0$ pointwise.
+      - do: |-
+          Dominated convergence with $g = \lvert f \rvert$, integrable because
+          $f \in L^1$: $\int h_n \, d\lambda \to 0$.
+    note: |-
+      The notes' proof of the supplementary exercise. Monotone convergence does not apply
+      directly: $h_n$ decreases.

@@ -1,0 +1,395 @@
+title: Rigid-body motions
+topic: transformations
+lecture: 02-rigid-body-motions
+description: Rotation matrices, composition about current and fixed axes, Euler angles, roll-pitch-yaw and axis/angle, with small computations.
+
+cards:
+  - id: rot-rigid-body
+    q: |-
+      What is a rigid body, and why is a frame attached to it?
+    a: |-
+      An idealised object whose internal distances stay constant: motion changes its
+      placement but does not stretch or bend it. A frame attached to it describes every
+      point of the body through one position and one orientation.
+
+  - id: rot-nsa
+    q: |-
+      Name the three axes of the end-effector frame and the relation that makes the frame
+      right-handed.
+    a: |-
+      $\boldsymbol{n}$ normal (across the jaws), $\boldsymbol{s}$ sliding, $\boldsymbol{a}$
+      approach (along the fingers toward the object), with
+      $\boldsymbol{n} \times \boldsymbol{s} = \boldsymbol{a}$.
+    note: |-
+      Niku writes $\boldsymbol{o}$ for the second axis. The physical alignment is a
+      modelling convention that must be stated for the particular tool.
+
+  - id: rot-aligned-translation
+    q: |-
+      When may you write $\boldsymbol{p}^0 = \boldsymbol{d}^0 + \boldsymbol{p}^1$, and why
+      does it fail otherwise?
+    a: |-
+      Only when the local axes are parallel to the global axes. If they are rotated, the
+      two columns are expressed in different frames, and their components cannot be added
+      until the local ones are converted to global components.
+
+  - id: rot-planar-matrix
+    hy: true
+    q: |-
+      Write the planar rotation matrix $\boldsymbol{R}(\theta)$ and say what its columns
+      are.
+    a: |-
+      $$\boldsymbol{R}(\theta) = \begin{bmatrix} \cos\theta & -\sin\theta \\ \sin\theta & \cos\theta \end{bmatrix}$$
+
+      First column: the local $\boldsymbol{n}$ axis expressed globally. Second column: the
+      local $\boldsymbol{s}$ axis expressed globally.
+    hook: |-
+      The lonely minus sits top right: $\boldsymbol{s}$ leans back over the $y$ axis.
+
+  - id: rot-planar-compute
+    q: |-
+      A local frame is rotated by $30^\circ$ relative to the global frame, origins
+      coincident. A point has local coordinates $\boldsymbol{p}^1 = (2, 0)$. Find
+      $\boldsymbol{p}^0$.
+    a: |-
+      $\boldsymbol{p}^0 = \boldsymbol{R}(30^\circ)\boldsymbol{p}^1 = (2\cos 30^\circ,\ 2\sin 30^\circ) = (\sqrt3,\ 1)$
+    note: |-
+      The point lies two units along local $\boldsymbol{n}$, so the answer is twice the
+      first column.
+
+  - id: rot-columns-rows
+    hy: true
+    cloze: |-
+      In a rotation matrix, read {{columns}} as the local axes expressed in the global
+      frame, and {{rows}} as the global components of any local vector.
+
+  - id: rot-direction-cosines
+    q: |-
+      Why is a rotation matrix also called a direction cosine matrix?
+    a: |-
+      Each entry is the projection of a local unit axis on a global unit axis, and the
+      projection of one unit vector on another is the cosine of the angle between them:
+      $n_x = \boldsymbol{i}^\top\boldsymbol{n} = \cos\angle(x, \boldsymbol{n})$, and so on
+      for all nine.
+
+  - id: rot-point-transform
+    hy: true
+    q: |-
+      Write the conversion of a point from a local frame to the global frame when the
+      origins differ, and its inverse.
+    a: |-
+      $$\boldsymbol{p}^0 = \boldsymbol{d}^0 + \boldsymbol{R}\boldsymbol{p}^1, \qquad \boldsymbol{p}^1 = \boldsymbol{R}^\top(\boldsymbol{p}^0 - \boldsymbol{d}^0)$$
+    note: |-
+      Rotate the local displacement into global components first, then add the origin
+      displacement $\boldsymbol{d}^0$.
+
+  - id: rot-orthogonal
+    hy: true
+    q: |-
+      Prove that $\boldsymbol{R}^{-1} = \boldsymbol{R}^\top$ for a rotation matrix.
+    steps:
+      - do: |-
+          The columns $\boldsymbol{n}, \boldsymbol{s}, \boldsymbol{a}$ are unit length and
+          mutually perpendicular: each dot product with itself is $1$, each mixed dot
+          product is $0$.
+        why: |-
+          They are the axes of an orthonormal frame.
+      - do: |-
+          The $(i, j)$ entry of $\boldsymbol{R}^\top\boldsymbol{R}$ is the dot product of
+          column $i$ with column $j$.
+        why: |-
+          Definition of the matrix product.
+      - do: |-
+          Hence $\boldsymbol{R}^\top\boldsymbol{R} = \boldsymbol{I}$, so
+          $\boldsymbol{R}^{-1} = \boldsymbol{R}^\top$.
+        why: |-
+          A matrix that multiplies $\boldsymbol{R}$ to the identity is its inverse.
+
+  - id: rot-so3
+    hy: true
+    cloze: |-
+      $SO(3)$ is the set of $3 \times 3$ real matrices with
+      {{$\boldsymbol{R}^\top\boldsymbol{R} = \boldsymbol{I}$}} and
+      {{$\det(\boldsymbol{R}) = 1$}}.
+
+  - id: rot-reflection
+    q: |-
+      Is $\operatorname{diag}(1, 1, -1)$ a rotation matrix?
+    a: |-
+      No. Its columns are perpendicular unit vectors, but its determinant is $-1$: it
+      reverses the handedness of the frame, so it is a reflection.
+
+  - id: rot-preserves
+    q: |-
+      Show that a rotation preserves lengths and angles.
+    a: |-
+      $(\boldsymbol{R}\boldsymbol{u})^\top(\boldsymbol{R}\boldsymbol{v}) = \boldsymbol{u}^\top\boldsymbol{R}^\top\boldsymbol{R}\boldsymbol{v} = \boldsymbol{u}^\top\boldsymbol{v}$.
+      Dot products are unchanged, so lengths ($\boldsymbol{u} = \boldsymbol{v}$) and angles
+      are unchanged.
+
+  - id: rot-rz
+    hy: true
+    q: |-
+      Write $\boldsymbol{R}_z(\theta)$.
+    a: |-
+      $$\boldsymbol{R}_z(\theta) = \begin{bmatrix} \cos\theta & -\sin\theta & 0 \\ \sin\theta & \cos\theta & 0 \\ 0 & 0 & 1 \end{bmatrix}$$
+    note: |-
+      The planar matrix in the $xy$ block, with $\boldsymbol{a}$ left on $z$.
+
+  - id: rot-rx
+    hy: true
+    q: |-
+      Write $\boldsymbol{R}_x(\theta)$.
+    a: |-
+      $$\boldsymbol{R}_x(\theta) = \begin{bmatrix} 1 & 0 & 0 \\ 0 & \cos\theta & -\sin\theta \\ 0 & \sin\theta & \cos\theta \end{bmatrix}$$
+    note: |-
+      $\boldsymbol{n}$ stays on $x$; $\boldsymbol{s}$ turns from $y$ toward $z$,
+      $\boldsymbol{a}$ from $z$ toward $-y$.
+
+  - id: rot-ry
+    hy: true
+    q: |-
+      Write $\boldsymbol{R}_y(\theta)$. Where is the minus sign, and why?
+    a: |-
+      $$\boldsymbol{R}_y(\theta) = \begin{bmatrix} \cos\theta & 0 & \sin\theta \\ 0 & 1 & 0 \\ -\sin\theta & 0 & \cos\theta \end{bmatrix}$$
+
+      Bottom left. A positive turn about $y$ takes $\boldsymbol{n}$ from $x$ toward $-z$
+      and $\boldsymbol{a}$ from $z$ toward $x$.
+    hook: |-
+      $y$ is the odd one out: its minus sign drops to the bottom-left corner.
+
+  - id: rot-elementary-checks
+    q: |-
+      Give two quick checks for any elementary rotation matrix.
+    a: |-
+      $\boldsymbol{R}_j(0) = \boldsymbol{I}$ and
+      $\boldsymbol{R}_j(-\theta) = \boldsymbol{R}_j^\top(\theta)$, for $j \in \{x, y, z\}$.
+
+  - id: rot-passive-active
+    q: |-
+      Distinguish a passive from an active rotation.
+    a: |-
+      **Passive:** the point stays and its coordinates are converted between two frames,
+      $\boldsymbol{p}^0 = \boldsymbol{R}\boldsymbol{p}^1$.
+
+      **Active:** the vector physically turns while the frame stays fixed,
+      $\boldsymbol{v}^0_{\text{after}} = \boldsymbol{R}\,\boldsymbol{v}^0_{\text{before}}$.
+    note: |-
+      Same numbers, different meaning. Always say what moves and which frame expresses
+      each vector.
+
+  - id: rot-active-compute
+    q: |-
+      Rotate $\boldsymbol{v} = [1, 0, 0]^\top$ actively through $45^\circ$ about the fixed
+      global $z$ axis.
+    a: |-
+      $\boldsymbol{R}_z(45^\circ)\boldsymbol{v} = \big[\tfrac{\sqrt2}{2},\ \tfrac{\sqrt2}{2},\ 0\big]^\top$
+    note: |-
+      The first column of $\boldsymbol{R}_z(45^\circ)$. Length stays $1$.
+
+  - id: rot-frame-chain
+    q: |-
+      Write $\boldsymbol{R}^0_N$ in terms of the matrices between neighbouring frames, and
+      the inverse conversion.
+    a: |-
+      $$\boldsymbol{R}^0_N = \boldsymbol{R}^0_1 \boldsymbol{R}^1_2 \cdots \boldsymbol{R}^{N-1}_N, \qquad \boldsymbol{R}^N_0 = (\boldsymbol{R}^0_N)^\top$$
+    note: |-
+      Neighbouring indices name the intermediate frame. Acting on a vector, read from
+      right to left: from $\{N\}$ step by step down to $\{0\}$.
+
+  - id: rot-current-fixed
+    hy: true
+    cloze: |-
+      A rotation about a current (body-fixed) axis is applied by {{postmultiplication}}:
+      $\boldsymbol{R}_{\text{new}} = \boldsymbol{R}\boldsymbol{Q}_{\text{local}}$. A rotation
+      about a fixed (world) axis is applied by {{premultiplication}}:
+      $\boldsymbol{R}_{\text{new}} = \boldsymbol{Q}_{\text{global}}\boldsymbol{R}$.
+    hook: |-
+      Current goes after, fixed goes first.
+
+  - id: rot-order-compute
+    q: |-
+      Start aligned. Turn $90^\circ$ about global $z$, then $90^\circ$ about $x$. Give the
+      final approach direction if the second axis is (a) the current $x$, (b) the fixed
+      $x$.
+    a: |-
+      (a) $\boldsymbol{R}_z(90^\circ)\boldsymbol{R}_x(90^\circ)$, third column
+      $\boldsymbol{a} = [1, 0, 0]^\top$.
+
+      (b) $\boldsymbol{R}_x(90^\circ)\boldsymbol{R}_z(90^\circ)$, third column
+      $\boldsymbol{a} = [0, -1, 0]^\top$.
+    note: |-
+      Example 4 of the lecture. Same elementary matrices, different physical second axis.
+
+  - id: rot-same-axis
+    q: |-
+      When do two rotations commute?
+    a: |-
+      When they are about the same axis:
+      $\boldsymbol{R}_z(\alpha)\boldsymbol{R}_z(\beta) = \boldsymbol{R}_z(\alpha + \beta)$.
+      Rotations about different spatial axes generally do not commute.
+
+  - id: rot-similarity
+    q: |-
+      A rotation has matrix $\boldsymbol{Q}_{\text{local}}$ in local coordinates. What is
+      its matrix in global coordinates, and what is this relation called?
+    a: |-
+      $\boldsymbol{Q}_{\text{global}} = \boldsymbol{R}\,\boldsymbol{Q}_{\text{local}}\,\boldsymbol{R}^\top$,
+      a similarity transformation.
+    note: |-
+      Convert to local coordinates, rotate, convert back. It makes the two update rules
+      agree:
+      $\boldsymbol{Q}_{\text{global}}\boldsymbol{R} = \boldsymbol{R}\boldsymbol{Q}_{\text{local}}$.
+
+  - id: rot-three-parameters
+    q: |-
+      A rotation matrix has nine entries. Why do three parameters suffice to describe an
+      orientation?
+    a: |-
+      The unit-length and perpendicularity conditions on the columns are six independent
+      constraints, leaving $9 - 6 = 3$ degrees of freedom. The determinant condition only
+      selects the right-handed branch.
+    note: |-
+      No three-angle description is globally unique and free of singularities.
+
+  - id: rot-atan2
+    q: |-
+      What does $\operatorname{atan2}(y, x)$ return, and what is the trap?
+    a: |-
+      The angle of the planar pair $(x, y)$ in the correct quadrant. The argument order is
+      $y$ first, $x$ second. It is undefined when both are zero.
+
+  - id: rot-zyz-definition
+    hy: true
+    q: |-
+      Define the intrinsic ZYZ Euler angles and write the resulting matrix product.
+    a: |-
+      Turn by $\phi$ about $z$, then by $\theta$ about the current $y$, then by $\psi$ about
+      the current $z$:
+
+      $$\boldsymbol{R}_{ZYZ} = \boldsymbol{R}_z(\phi)\boldsymbol{R}_y(\theta)\boldsymbol{R}_z(\psi)$$
+    note: |-
+      Every step is about a current axis, so every new factor goes on the right.
+
+  - id: rot-zyz-approach
+    q: |-
+      Write the third column of $\boldsymbol{R}_{ZYZ}$. Why does it not contain $\psi$?
+    a: |-
+      $\boldsymbol{a} = [c_\phi s_\theta,\ s_\phi s_\theta,\ c_\theta]^\top$. The last turn
+      is about the approach axis itself, so it spins $\boldsymbol{n}$ and $\boldsymbol{s}$
+      without moving $\boldsymbol{a}$.
+
+  - id: rot-zyz-recover
+    hy: true
+    q: |-
+      Recover the ZYZ Euler angles from a rotation matrix, for $0 < \theta < \pi$.
+    steps:
+      - do: |-
+          $\theta = \operatorname{atan2}\!\big(\sqrt{a_x^2 + a_y^2},\ a_z\big)$
+        why: |-
+          The third column is $(c_\phi s_\theta, s_\phi s_\theta, c_\theta)$, so
+          $a_x^2 + a_y^2 = s_\theta^2$ and $a_z = c_\theta$, with $s_\theta \ge 0$ in the
+          chosen range.
+      - do: |-
+          $\phi = \operatorname{atan2}(a_y, a_x)$
+        why: |-
+          Both carry the same positive factor $s_\theta$, which does not change the
+          quadrant.
+      - do: |-
+          $\psi = \operatorname{atan2}(s_z, -n_z)$
+        why: |-
+          The last row is $(-s_\theta c_\psi,\ s_\theta s_\psi,\ c_\theta)$.
+
+  - id: rot-zyz-singular
+    q: |-
+      What happens to the ZYZ Euler angles at $\theta = 0$ and at $\theta = \pi$?
+    a: |-
+      At $\theta = 0$: $\boldsymbol{R} = \boldsymbol{R}_z(\phi + \psi)$, only the sum
+      $\phi + \psi$ can be recovered. At $\theta = \pi$: only the difference $\phi - \psi$.
+    note: |-
+      The first and third rotation axes coincide. The rotation matrix itself is still
+      valid.
+
+  - id: rot-rpy-definition
+    hy: true
+    q: |-
+      Define roll, pitch and yaw as used in this course and write the matrix product.
+    a: |-
+      Roll $\alpha$ about $x$, pitch $\beta$ about $y$, yaw $\gamma$ about $z$, applied
+      about the **fixed** axes in the order $x$, $y$, $z$:
+
+      $$\boldsymbol{R}_{RPY} = \boldsymbol{R}_z(\gamma)\boldsymbol{R}_y(\beta)\boldsymbol{R}_x(\alpha)$$
+    note: |-
+      Fixed axes, so each new factor goes on the left. The same matrix is the intrinsic
+      ZYX sequence: yaw, then pitch, then roll about current axes. Other books name and
+      order the angles differently.
+
+  - id: rot-rpy-recover
+    q: |-
+      Recover roll, pitch and yaw from a rotation matrix, for $-\pi/2 < \beta < \pi/2$.
+    a: |-
+      $$\beta = \operatorname{atan2}\!\Big(-n_z,\ \sqrt{n_x^2 + n_y^2}\Big), \qquad \gamma = \operatorname{atan2}(n_y, n_x), \qquad \alpha = \operatorname{atan2}(s_z, a_z)$$
+    note: |-
+      From the first column $(c_\gamma c_\beta,\ s_\gamma c_\beta,\ -s_\beta)$ and the last
+      row entries $s_z = c_\beta s_\alpha$, $a_z = c_\beta c_\alpha$.
+
+  - id: rot-gimbal-lock
+    hy: true
+    q: |-
+      What is gimbal lock in the roll-pitch-yaw representation?
+    a: |-
+      At $\beta = \pm 90^\circ$ the cosine of the pitch vanishes and roll and yaw can no
+      longer be recovered separately: only $\alpha - \gamma$ (at $+90^\circ$) or
+      $\alpha + \gamma$ (at $-90^\circ$) is determined.
+    note: |-
+      The object still has a well-defined orientation. It is the coordinates that become
+      ambiguous, and near these configurations small changes of the matrix give large
+      changes of the recovered angles.
+
+  - id: rot-singularity-kind
+    q: |-
+      Does a parameterization singularity mean the robot cannot move?
+    a: |-
+      No. The rotation matrix stays valid; only the uniqueness of the angle description
+      fails. It must not automatically be read as a singularity of a particular mechanism.
+
+  - id: rot-axis-angle
+    q: |-
+      State Euler's rotation theorem and the equation that characterises the rotation
+      axis.
+    a: |-
+      Any proper rotation in three dimensions is a single angle $\vartheta$ about a single
+      unit axis $\boldsymbol{u}$. The axis is left unchanged:
+      $\boldsymbol{R}\boldsymbol{u} = \boldsymbol{u}$, that is
+      $(\boldsymbol{R} - \boldsymbol{I})\boldsymbol{u} = \boldsymbol{0}$ with
+      $\boldsymbol{u}^\top\boldsymbol{u} = 1$.
+
+  - id: rot-axis-angle-trace
+    hy: true
+    q: |-
+      Give the rotation angle in terms of the rotation matrix, and say why the formula
+      holds.
+    a: |-
+      $$\vartheta = \arccos\!\left(\frac{\operatorname{tr}(\boldsymbol{R}) - 1}{2}\right), \qquad 0 \le \vartheta \le \pi$$
+
+      In a frame whose third axis is $\boldsymbol{u}$ the rotation is planar, with trace
+      $1 + 2\cos\vartheta$, and the trace does not change with the frame.
+
+  - id: rot-axis-angle-compute
+    q: |-
+      Find the axis and angle of $\boldsymbol{R}_z(90^\circ)$ from the matrix.
+    a: |-
+      Trace $= 0 + 0 + 1 = 1$, so $\vartheta = \arccos(0) = 90^\circ$.
+      $(\boldsymbol{R} - \boldsymbol{I})\boldsymbol{u} = \boldsymbol{0}$ gives
+      $u_x = u_y = 0$, so $\boldsymbol{u} = \pm\boldsymbol{k}$; the matrix sends
+      $\boldsymbol{i}$ to $\boldsymbol{j}$, a positive turn about $+\boldsymbol{k}$.
+
+  - id: rot-axis-vs-approach
+    q: |-
+      Why is the approach axis $\boldsymbol{a}$ generally different from the rotation axis
+      $\boldsymbol{u}$?
+    a: |-
+      $\boldsymbol{a} = \boldsymbol{R}\boldsymbol{k}$ is where the frame's third axis ends
+      up; $\boldsymbol{u}$ is the direction that does not move,
+      $\boldsymbol{R}\boldsymbol{u} = \boldsymbol{u}$. They coincide only when
+      $\boldsymbol{k}$ is aligned with $\boldsymbol{u}$ to begin with.

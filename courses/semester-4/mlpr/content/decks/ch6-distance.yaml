@@ -1,0 +1,250 @@
+title: Distance-based classification
+topic: distance
+description: Metrics, prototypes, and three boundary derivations revealed step by step.
+
+cards:
+  - id: minkowski
+    hy: true
+    q: |-
+      Give the Minkowski distance and its three named special cases.
+    a: |-
+      $$d_\rho(x, z) = \Big( \sum_j |x_j - z_j|^\rho \Big)^{1/\rho}$$
+
+      $\rho = 1$ Manhattan (diamond contours), $\rho = 2$ Euclidean (circle),
+      $\rho = \infty$ maximum coordinate (square).
+    note: |-
+      L1 blunts one large discrepancy, L∞ cares only about the worst coordinate, L2 is
+      rotationally natural. In 3-D the contours are octahedron, sphere and cube.
+    hook: |-
+      As rho grows, the ball inflates: diamond, circle, square.
+
+  - id: mahalanobis
+    hy: true
+    q: |-
+      Give the Mahalanobis distance and say what it does geometrically.
+    a: |-
+      $$d_M(x, \mu) = \sqrt{(x - \mu)^\top \Sigma^{-1} (x - \mu)}$$
+
+      It measures displacement in standard-deviation units.
+    note: |-
+      It shrinks high-variance directions and stretches low-variance ones. Its unit contours
+      are exactly the class's own covariance ellipses.
+    hook: |-
+      Distance measured in sigmas.
+
+  - id: nn-incomplete
+    q: |-
+      Why is "nearest neighbour" an incomplete specification of a classifier?
+    a: |-
+      The point distance is not named. A point-to-class distance always needs both a point
+      distance and a prototype.
+    note: |-
+      One query against one set of points can give three different answers under L1, L2 and
+      L∞.
+
+  - id: prototypes
+    hy: true
+    q: |-
+      Name the four class prototypes and the trade-off of each.
+    a: |-
+      **Mean:** fixed and fast; assumes a compact class.
+
+      **Nearest neighbour:** follows any shape, but one outlier can own a region; expensive.
+
+      **k nearest neighbours:** the compromise; larger $k$ is more robust but less local.
+
+      **Furthest neighbour:** conservative; close to the class only if close even to its
+      furthest member.
+    hook: |-
+      Mean is fast, NN is faithful, kNN is the compromise, furthest is paranoid.
+
+  - id: med-straight
+    hy: true
+    q: |-
+      Is the MED boundary always a straight line?
+    a: |-
+      For two classes, mean prototypes and Euclidean distance: yes, always. The $x^\top x$
+      terms cancel, whatever the covariances.
+    note: |-
+      It stops being one straight line when there are more than two classes (piecewise-linear
+      Voronoi partition), when the prototype is not the mean (NN gives Voronoi edges), when
+      the metric is L1 or L∞, or with Mahalanobis distance and unequal covariances (quadratic,
+      possibly two branches).
+    hook: |-
+      Two classes, mean prototype, Euclidean metric. Change any one of the three and it stops
+      being a single straight line.
+
+  - id: boundary-shapes
+    q: |-
+      Compare the boundary shapes of MED, MMD and nearest-neighbour (Euclidean).
+    a: |-
+      **MED:** a straight perpendicular bisector.
+
+      **MMD:** quadratic when the covariances differ, linear when they are shared.
+
+      **NN:** piecewise-linear Voronoi edges between labelled samples; can be very irregular
+      and disconnected.
+
+  - id: med-mmd-same
+    cloze: |-
+      MED and MMD give the same classifier exactly when every class has the same
+      {{spherical}} covariance, {{$\Sigma_\kappa = cI$}}.
+
+  - id: knn-k
+    q: |-
+      What happens when $k$ in kNN is too small, and when it is too large?
+    a: |-
+      **Too small:** the classifier follows sampling noise and isolated outliers; regions are
+      jagged and unstable.
+
+      **Too large:** local shape is averaged away; at $k = N$ every query gets the majority
+      class.
+
+  - id: nn-not-always-better
+    q: |-
+      True or false: nearest-neighbour classification is always more accurate than a
+      mean-prototype classifier.
+    a: |-
+      **False.** NN can follow a single mislabelled point or outlier and create an incorrect
+      local region.
+    note: |-
+      For compact classes with occasional outliers a mean-prototype classifier can be more
+      accurate, and it is far cheaper.
+
+  - id: inverse-2x2
+    hy: true
+    q: |-
+      Invert a $2 \times 2$ matrix.
+    a: |-
+      $$\begin{pmatrix} a & b \\ c & d \end{pmatrix}^{-1} = \frac{1}{ad - bc} \begin{pmatrix} d & -b \\ -c & a \end{pmatrix}$$
+    note: |-
+      Needed in every Fisher and Mahalanobis question.
+    hook: |-
+      Swap the main, flip the off, over the det.
+
+  - id: monotonic
+    q: |-
+      Why can a non-monotonic transformation of distance flip a classification?
+    a: |-
+      Only monotonic transformations preserve the ordering of distances.
+    note: |-
+      With $\varphi(d) = (d - 1)^2$: $d_1 = 0.2 < d_2 = 0.8$, but
+      $\varphi(0.2) = 0.64 > \varphi(0.8) = 0.04$, so the decision reverses.
+
+  - id: med-derive
+    hy: true
+    q: |-
+      Derive the MED decision boundary between two classes with mean prototypes.
+    steps:
+      - do: |-
+          Set the squared distances equal:
+          $\lVert x - \mu_1 \rVert^2 = \lVert x - \mu_2 \rVert^2$
+        why: |-
+          MED puts $x$ with the nearer mean, so the boundary is where the distances tie.
+          Squaring is monotonic, so the boundary is unchanged and the square roots are gone.
+      - do: |-
+          Expand both sides:
+
+          $$x^\top x - 2x^\top \mu_1 + \mu_1^\top \mu_1 = x^\top x - 2x^\top \mu_2 + \mu_2^\top \mu_2$$
+        why: |-
+          $\lVert a - b \rVert^2 = a^\top a - 2a^\top b + b^\top b$.
+      - do: |-
+          Cancel $x^\top x$ from both sides.
+        why: |-
+          **This is the step that matters.** The quadratic term is identical on both sides
+          because both distances are Euclidean. What survives is linear in $x$, which is the
+          whole reason the boundary is straight. Say it explicitly.
+      - do: |-
+          Rearrange:
+
+          $$2x^\top(\mu_2 - \mu_1) = \lVert \mu_2 \rVert^2 - \lVert \mu_1 \rVert^2$$
+        why: |-
+          Collect the $x$ terms on one side, the constants on the other. This is a hyperplane
+          $a^\top x = b$.
+      - do: |-
+          Read off the geometry: normal vector $\mu_2 - \mu_1$, passing through the midpoint
+          $\tfrac{1}{2}(\mu_1 + \mu_2)$.
+        why: |-
+          Substitute the midpoint to check. So the boundary is the perpendicular bisector of
+          the segment joining the means, regardless of the covariances.
+    a: |-
+      Check with numbers: $\mu_A = (1, 1)$, $\mu_B = (3, 2)$ give $2x^\top(2, 1) = 13 - 2$,
+      so $2x_1 + x_2 = 5.5$. The midpoint $(2, 1.5)$ satisfies it.
+    hook: |-
+      Square, expand, cancel, bisect.
+
+  - id: mmd-two-boundaries
+    hy: true
+    q: |-
+      Show that MMD with unequal covariances can give **two** boundaries, for
+
+      $\mu_A = (0, 0)^\top$, $\Sigma_A = I$ and $\mu_B = (4, 0)^\top$,
+      $\Sigma_B = \operatorname{diag}(4, 1)$.
+    steps:
+      - do: |-
+          Squared Mahalanobis distance to A: $d_A^2 = x_1^2 + x_2^2$
+        why: |-
+          $\Sigma_A^{-1} = I$, so this is plain squared Euclidean distance.
+      - do: |-
+          Squared Mahalanobis distance to B: $d_B^2 = \dfrac{(x_1 - 4)^2}{4} + x_2^2$
+        why: |-
+          The covariance is diagonal, so each squared coordinate difference is divided by its
+          own variance.
+      - do: |-
+          Set them equal; the $x_2^2$ terms cancel: $x_1^2 = \dfrac{(x_1 - 4)^2}{4}$
+        why: |-
+          Both classes have variance $1$ vertically, so $x_2$ carries no information. The
+          boundaries will be vertical lines.
+      - do: |-
+          Clear the fraction: $4x_1^2 = x_1^2 - 8x_1 + 16$, so $3x_1^2 + 8x_1 - 16 = 0$
+        why: |-
+          Here the quadratic term does **not** cancel, because the covariances differ. That is
+          exactly what MED avoids and MMD does not.
+      - do: |-
+          Solve: $x_1 = \dfrac{-8 \pm 16}{6}$, so $x_1 = \tfrac{4}{3}$ or $x_1 = -4$
+        why: |-
+          The discriminant is $64 + 192 = 256 = 16^2$. Two real roots, two boundaries.
+      - do: |-
+          Test a point. At $x_1 = 0$: $d_A^2 = 0$ and $d_B^2 = 4$, so A wins there.
+        why: |-
+          A owns only the strip $-4 < x_1 < \tfrac{4}{3}$. The wider class B owns both outer
+          regions, including the one behind A's own mean. Always test a point.
+    a: |-
+      On the same means MED gives the single line $x_1 = 2$. One straight line against two:
+      that contrast is the answer to "is the boundary always straight?".
+    hook: |-
+      Different covariance, no cancellation, curved boundary.
+
+  - id: med-three-class
+    q: |-
+      Find the full three-class MED boundary for $\mu_A = (0, 0)$, $\mu_B = (4, 0)$,
+      $\mu_C = (2, 4)$.
+    steps:
+      - do: |-
+          Use the two-class result on each pair:
+          $2x^\top(\mu_j - \mu_i) = \lVert \mu_j \rVert^2 - \lVert \mu_i \rVert^2$
+        why: |-
+          Three classes means three pairwise bisectors. Do them one at a time.
+      - do: |-
+          A and B: $2x^\top(4, 0) = 16$, so $x_1 = 2$
+        why: |-
+          A vertical line, as expected for two means on a horizontal axis.
+      - do: |-
+          A and C: $2x^\top(2, 4) = 20$, so $x_1 + 2x_2 = 5$
+        why: |-
+          $4x_1 + 8x_2 = 20$, divided by $4$.
+      - do: |-
+          B and C: $\mu_C - \mu_B = (-2, 4)$ and $20 - 16 = 4$, so $-x_1 + 2x_2 = 1$
+        why: |-
+          Watch the constant: it is the difference of the squared norms, not zero.
+      - do: |-
+          Triple point: put $x_1 = 2$ into A and C to get $x_2 = 1.5$. Check B and C:
+          $-2 + 3 = 1$. All three meet at $(2, 1.5)$.
+        why: |-
+          They must meet in one point: it is equidistant from all three means. If your lines
+          do not meet, there is an arithmetic error.
+      - do: |-
+          Keep only the three rays leaving $(2, 1.5)$.
+        why: |-
+          Along the discarded part of each line a third class is closer, so that piece is not
+          a boundary. The result is a piecewise-linear Voronoi partition.

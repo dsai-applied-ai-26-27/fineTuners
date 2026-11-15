@@ -1,0 +1,163 @@
+# Ids are permanent: people's progress is keyed by them.
+title: 'Room 11 · Attic: Sequences: RNNs and 1D CNNs'
+topic: sequences
+encodes: |-
+  The highest room, where things happen in order and the roof remembers what came before. 7 stops, one exam-ready code pattern or idea at each.
+intro: |-
+  Room 11 of 12 on the walk from the front door to the roof: your own attic, or whatever you substituted for it. Put each scene on the object itself, in this order: the rafters, the spirit level, the strongbox, the small safe, the skylight, the ladder, the nail in the beam. The method is in [](guide:memory-palace).
+
+loci:
+  - id: s11-1
+    place: 'The rafters'
+    image: |-
+      **Rafters that pass a note along the roof.** Each rafter receives a note from the rafter before it, adds its own line, and passes it on. Twenty little hands per rafter. The **last** rafter can either hand you one final note, or — if you ask it to — hand you a copy of the note at **every single beam**. And a stencil at the end stamps the same ten-number form onto every one of those notes.
+    means: |-
+      **A deep RNN and the Keras skeleton.** Keras convention, unchanging: `keras.models.Sequential([layers])` → `model.compile(loss, optimizer, metrics=[])` → `history = model.fit(X, y, epochs=..., validation_data=...)`. Learn that skeleton once and every network question becomes 'which layers, in which order'.
+
+      ```python
+      import tensorflow as tf
+      from tensorflow import keras
+
+      model = keras.models.Sequential([
+          keras.layers.SimpleRNN(20, return_sequences=True, input_shape=[None, 1]),
+          keras.layers.SimpleRNN(20, return_sequences=True),
+          keras.layers.TimeDistributed(keras.layers.Dense(10))
+      ])
+
+      model.compile(loss="mse", optimizer="adam", metrics=[last_time_step_mse])
+      history = model.fit(X_train, Y_train, epochs=20,
+                          validation_data=(X_valid, Y_valid))
+      ```
+
+      - `20` (dial): Units (neurons) in the recurrent layer — the size of its memory.
+      - `return_sequences=True` (structural): Output at EVERY time step instead of only the last. REQUIRED on any recurrent layer that feeds another recurrent layer, and on the last one too if you want a sequence-to-sequence output. Leave it off (default False) on the final layer when you want a single vector for the whole sequence.
+      - `input_shape=[None, 1]` (structural): [time steps, features per step]. None = any sequence length. Only the FIRST layer takes it.
+      - `TimeDistributed(Dense(10))` (structural): Applies the same Dense layer independently at every time step. 10 units = forecast 10 steps ahead from each position.
+    refs: ["guide:11-sequences"]
+
+  - id: s11-2
+    place: 'The spirit level'
+    image: |-
+      **A level bolted between the rafters.** Between the rafters someone has bolted a spirit level that re-centres everything passing through. There are two places to bolt it: **between** the rafters, or **inside** each rafter's own hand — and for a roof this shape, inside works better.
+    means: |-
+      **Batch and layer normalisation in RNNs.** **Batch Normalization** normalises across the batch; between recurrent layers it helps only mildly, because it cannot be applied sensibly across time steps. **Layer Normalization** normalises across the features of a single instance, which suits RNNs much better — in the lab it is applied inside a custom `LNSimpleRNNCell` wrapped by `keras.layers.RNN(cell, return_sequences=True)`.
+
+      ```python
+      model = keras.models.Sequential([
+          keras.layers.SimpleRNN(20, return_sequences=True, input_shape=[None, 1]),
+          keras.layers.BatchNormalization(),
+          keras.layers.SimpleRNN(20, return_sequences=True),
+          keras.layers.BatchNormalization(),
+          keras.layers.TimeDistributed(keras.layers.Dense(10))
+      ])
+      ```
+    refs: ["guide:11-sequences"]
+
+  - id: s11-3
+    place: 'The strongbox'
+    image: |-
+      **A strongbox with three gates and two keys.** In the corner sits a heavy strongbox with **three gates**: one decides what to forget, one what to let in, one what to reveal. It carries **two** things between steps — a working note and a long-term ledger — and it remembers things from the far end of the attic that the rafters lost long ago.
+    means: |-
+      **LSTM.** **LSTM**: forget / input / output gates and **two states** — the short-term h and the long-term c. It solves the vanishing memory of SimpleRNN over long sequences. Drop-in replacement: same arguments, same position in the Sequential list.
+
+      ```python
+      model = keras.models.Sequential([
+          keras.layers.LSTM(20, return_sequences=True, input_shape=[None, 1]),
+          keras.layers.LSTM(20, return_sequences=True),
+          keras.layers.TimeDistributed(keras.layers.Dense(10))
+      ])
+      model.compile(loss="mse", optimizer="adam", metrics=[last_time_step_mse])
+      ```
+    refs: ["guide:11-sequences"]
+
+  - id: s11-4
+    place: 'The small safe'
+    image: |-
+      **The lighter safe with two gates and one key.** Beside the strongbox is a smaller, lighter safe. **Two** gates instead of three, **one** state instead of two — and in practice it holds the door just as well.
+    means: |-
+      **GRU.** **GRU** is a simplified LSTM: the forget and input gates are merged into one update gate and the two states are merged into one. Fewer parameters, comparable performance. In code, `SimpleRNN` / `LSTM` / `GRU` are interchangeable names in the same slot.
+
+      ```python
+      model = keras.models.Sequential([
+          keras.layers.GRU(20, return_sequences=True, input_shape=[None, 1]),
+          keras.layers.GRU(20, return_sequences=True),
+          keras.layers.TimeDistributed(keras.layers.Dense(10))
+      ])
+      ```
+    refs: ["guide:11-sequences"]
+
+  - id: s11-5
+    place: 'The skylight'
+    image: |-
+      **A skylight that reads four slats at a time, skipping every other one.** A sliding skylight scans the roof **four slats at a time** and then jumps **two** slats forward. It comes back with half as many readings as there are slats — so the answer sheet has to be cut down to match, starting from the fourth slat.
+    means: |-
+      **Conv1D in front of recurrent layers.** A **hybrid architecture**: the 1D convolution shortens and summarises the sequence before the recurrent layers see it, which makes training faster and lets the GRUs cover a longer effective history.
+
+      ```python
+      model = keras.models.Sequential([
+          keras.layers.Conv1D(filters=20, kernel_size=4, strides=2, padding="valid",
+                              input_shape=[None, 1]),
+          keras.layers.GRU(20, return_sequences=True),
+          keras.layers.GRU(20, return_sequences=True),
+          keras.layers.TimeDistributed(keras.layers.Dense(10))
+      ])
+
+      model.compile(loss="mse", optimizer="adam", metrics=[last_time_step_mse])
+      history = model.fit(X_train, Y_train[:, 3::2], epochs=20,
+                          validation_data=(X_valid, Y_valid[:, 3::2]))
+      ```
+
+      - `filters=20` (dial): Number of feature maps the convolution learns.
+      - `kernel_size=4` (dial): Width of the window in time steps.
+      - `strides=2` (structural): Jump size. Stride 2 HALVES the output sequence length — which is why the targets must be downsampled.
+      - `padding="valid"` (structural): No padding: the output is shorter and the first few steps are dropped. "same" pads to keep the length.
+      - `Y_train[:, 3::2]` (structural): Not arbitrary: 'from step 3, every 2nd step'. The 2 matches strides=2; the 3 accounts for the steps lost to valid padding, so targets line up with outputs.
+    refs: ["guide:11-sequences"]
+
+  - id: s11-6
+    place: 'The ladder'
+    image: |-
+      **A ladder whose rungs double in spacing.** A ladder leans against the wall, and the gaps between its rungs **double** each time: 1, 2, 4, 8. Four rungs and you can already see the whole attic. Every rung is blindfolded on the right-hand side, so it can only look **backwards in time**, never forwards.
+    means: |-
+      **WaveNet: causal dilated convolutions.** **WaveNet** stacks causal dilated convolutions. The full paper version adds gated activation units and residual + skip connections (`wavenet_residual_block` in the lab); the simplified stack above is what an exam asks for.
+
+      ```python
+      model = keras.models.Sequential()
+      model.add(keras.layers.InputLayer(input_shape=[None, 1]))
+
+      for rate in (1, 2, 4, 8) * 2:
+          model.add(keras.layers.Conv1D(filters=20, kernel_size=2,
+                                        padding="causal", activation="relu",
+                                        dilation_rate=rate))
+
+      model.add(keras.layers.Conv1D(filters=10, kernel_size=1))
+      model.compile(loss="mse", optimizer="adam", metrics=[last_time_step_mse])
+      history = model.fit(X_train, Y_train, epochs=20,
+                          validation_data=(X_valid, Y_valid))
+      ```
+
+      - `padding="causal"` (structural): Pads only on the LEFT, so an output at time t depends only on inputs up to t. No peeking at the future — mandatory for forecasting and generation.
+      - `dilation_rate=1,2,4,8` (structural): Gaps between the kernel's taps. Doubling each layer makes the receptive field grow EXPONENTIALLY with depth, so a handful of layers covers a long history.
+      - `(1,2,4,8) * 2` (structural): Python list repetition: the block of four dilations runs twice, giving eight layers.
+      - `kernel_size=1` (structural): The final 1-wide convolution is just a Dense layer applied per time step — it produces the 10 outputs.
+    refs: ["guide:11-sequences"]
+
+  - id: s11-7
+    place: 'The nail in the beam'
+    image: |-
+      **Train on every rafter, but judge only the last.** A custom brass gauge is nailed to the final beam. The whole roof is trained on all the notes at once — more feedback, faster learning — but the gauge only ever reads **the very last one**, because that is the forecast anyone cares about.
+    means: |-
+      **A metric on the last time step.** Training the model to predict at **every** time step gives far more error gradients and stabilises training, but the metric that matters is the error at the final step. `Y[:, -1]` selects the last time step of every sequence in the batch.
+
+      ```python
+      def last_time_step_mse(Y_true, Y_pred):
+          return keras.metrics.mean_squared_error(Y_true[:, -1], Y_pred[:, -1])
+
+      model.compile(loss="mse", optimizer="adam", metrics=[last_time_step_mse])
+
+      # a custom optimizer instance when a learning rate is requested
+      model.compile(loss="mse",
+                    optimizer=keras.optimizers.Adam(learning_rate=0.01),
+                    metrics=[last_time_step_mse])
+      ```
+    refs: ["guide:11-sequences"]

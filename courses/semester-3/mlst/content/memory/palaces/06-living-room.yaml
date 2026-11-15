@@ -1,0 +1,117 @@
+# Ids are permanent: people's progress is keyed by them.
+title: 'Room 6 · Living Room: The classifier zoo'
+topic: classifiers
+encodes: |-
+  Six guests on the sofas, each with a different theory about how to tell people apart. 7 stops, one exam-ready code pattern or idea at each.
+intro: |-
+  Room 6 of 12 on the walk from the front door to the roof: your own living room, or whatever you substituted for it. Put each scene on the object itself, in this order: the two armchairs, the dimmer switch, the three-way lamp, the twin sofas, the gossiping guests, the front window, the bookshelf. The method is in [](guide:memory-palace).
+
+loci:
+  - id: s6-1
+    place: 'The two armchairs'
+    image: |-
+      **Two armchairs facing opposite directions.** Two armchairs face away from each other. The one facing the door asks every visitor **"what is the best guess for you?"** and draws a line on the carpet. The one facing the fireplace asks **"what do people from each family usually look like?"**, builds a portrait of each family, and works backwards.
+    means: |-
+      **Discriminant and generative approaches.** **Discriminant approach**: optimise the decision boundary directly via a loss function and ERM. Logistic Regression, SVM. **Generative approach**: model the feature distribution of each class separately, then use **Bayes' theorem** to get the posterior. Naive Bayes, LDA/QDA.
+    refs: ["guide:06-classifiers"]
+
+  - id: s6-2
+    place: 'The dimmer switch'
+    image: |-
+      **A dimmer that never quite reaches 0 or 1.** The living-room lamp has a dimmer with a strange S-shaped travel: shove it hard either way and the brightness flattens out, approaching but never touching off or full. Halfway on the dial is the decision boundary.
+    means: |-
+      **Logistic regression.** A **probabilistic discriminant** method for binary classification. The **logistic (sigmoid)** function squashes the linear score into (0,1). Trained by minimising **negative log-likelihood**, also called log loss or cross-entropy. It is still a **linear classifier**: the boundary p=0.5 corresponds to score=0, which is an affine function of the features.
+
+      ```python
+      from sklearn.linear_model import LogisticRegression
+      log_reg = LogisticRegression(solver="lbfgs", random_state=42)
+      log_reg.fit(X, y)
+
+      y_proba = log_reg.predict_proba(X_new)     # probabilities
+      y_pred  = log_reg.predict(X_new)           # hard labels at p = 0.5
+      ```
+
+      - `solver="lbfgs"` (ritual): The default optimiser. It appears in every logistic regression in this course; treat it as boilerplate.
+      - `C` (dial): INVERSE regularisation strength — the opposite direction to alpha. Small C = strong regularisation.
+    refs: ["guide:06-classifiers"]
+
+  - id: s6-3
+    place: 'The three-way lamp'
+    image: |-
+      **One lamp, three bulbs, sharing one power supply.** A lamp with three bulbs that always share exactly 100% of the power between them. Brighten one and the others dim; they can never all be bright at once.
+    means: |-
+      **Softmax regression.** **Softmax regression** generalises logistic regression to multi-class: each class gets a score, and softmax normalises the exponentials so they sum to 1. Alternatives for making a binary model multi-class: `OneVsRestClassifier`, one-vs-one.
+
+      ```python
+      softmax_reg = LogisticRegression(multi_class="multinomial", solver="lbfgs",
+                                       C=10, random_state=42)
+      softmax_reg.fit(X, y)
+      ```
+
+      - `multi_class="multinomial"` (structural): True softmax across all classes at once, instead of one-vs-rest binary models.
+      - `C=10` (dial): Weak regularisation here (remember: inverse).
+    refs: ["guide:06-classifiers"]
+
+  - id: s6-4
+    place: 'The twin sofas'
+    image: |-
+      **Twin sofas — same cushions, or their own.** Two sofas that look identical. One pair has been supplied with **the exact same set of cushions**, so the boundary between them is a straight line on the carpet. The other pair each brought **their own cushions**, and the line between them curves.
+    means: |-
+      **LDA and QDA.** **GDA** assumes each class is multivariate Gaussian. **LDA**: all classes share one covariance matrix ⇒ the quadratic terms cancel ⇒ **linear** boundary. **QDA**: each class keeps its own covariance ⇒ **quadratic, curved** boundary, more parameters, more data needed.
+
+      ```python
+      from sklearn.discriminant_analysis import (LinearDiscriminantAnalysis,
+                                                QuadraticDiscriminantAnalysis)
+      lda = LinearDiscriminantAnalysis(store_covariance=True)
+      qda = QuadraticDiscriminantAnalysis(store_covariance=True)
+      lda.fit(X, y); qda.fit(X, y)
+      ```
+
+      - `store_covariance=True` (ritual): Keeps the estimated covariance matrices so you can plot the ellipses. Nothing to do with the model's behaviour.
+    refs: ["guide:06-classifiers"]
+
+  - id: s6-5
+    place: 'The gossiping guests'
+    image: |-
+      **Guests who never talk to each other.** Five guests sit in a row and each one describes the host without ever consulting the others. They are obviously wrong to assume nobody influences anybody — and yet, pooled together, their verdict is uncannily good, especially when there are thousands of them.
+    means: |-
+      **Naive Bayes.** **Naive Bayes** is generative and assumes **conditional independence of features given the class**. That turns an intractable joint density into a product of one-dimensional ones. Wrong in principle, effective in practice — especially high-dimensional text like spam filtering.
+
+      ```python
+      from sklearn.naive_bayes import GaussianNB
+      nb = GaussianNB()
+      nb.fit(X_train, y_train)
+
+      # text pipeline, as in the SMS spam lecture
+      from sklearn.feature_extraction.text import TfidfVectorizer
+      vec = TfidfVectorizer(ngram_range=(1, 2))
+      X = vec.fit_transform(corpus)
+      ```
+    refs: ["guide:06-classifiers"]
+
+  - id: s6-6
+    place: 'The front window'
+    image: |-
+      **The five nearest neighbours pressed against the glass.** Someone new arrives and the **five closest neighbours** press their faces to the window and vote on who they are. Nobody trained for this; all the work happens the moment the stranger appears. And if one neighbour is measured in metres and another in thousands of euros, the euros drown everyone out.
+    means: |-
+      **k-nearest neighbours.** **k-NN** predicts from the k most similar training points: majority vote for classification, (weighted) average for regression. It is a **lazy, non-parametric, non-linear** method — no training phase, all cost at prediction time. **Feature scaling is mandatory**, because everything is distances.
+
+      ```python
+      from sklearn.neighbors import KNeighborsClassifier
+      knn = KNeighborsClassifier(n_neighbors=5)
+      knn.fit(X_train_scaled, y_train)     # SCALED features
+      y_pred = knn.predict(X_test_scaled)
+      ```
+
+      - `n_neighbors=5` (dial): Small k = jagged boundary, low bias, HIGH variance (overfit). Large k = smooth, HIGH bias, low variance.
+      - `weights="distance"` (dial): Closer neighbours count more (w = 1/d). Default "uniform" treats all k equally; weighted gives smoother transitions and better local detail.
+      - `metric` (dial): Euclidean is typical for continuous data; Manhattan and the general Minkowski are alternatives; Gower handles mixed numeric + categorical.
+    refs: ["guide:06-classifiers"]
+
+  - id: s6-7
+    place: 'The bookshelf'
+    image: |-
+      **One shelf for straight spines, one for bent.** A bookshelf sorted not by author but by shape of spine. The top shelf holds everything whose boundary is a flat plane; the bottom shelf holds everything that bends.
+    means: |-
+      **Linear and non-linear classifiers.** A classifier is **linear** if its decision boundary — the hypersurface where the model is undecided — is an affine linear function of the features. It carves the space into half-spaces. **Linear:** logistic regression, perceptron, linear SVM. **Non-linear:** k-NN, decision trees, RBF-kernel SVM. Applying a sigmoid does not break linearity: what matters is whether the ranking of classes depends on an affine combination of features.
+    refs: ["guide:06-classifiers"]

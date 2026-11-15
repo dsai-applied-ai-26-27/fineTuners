@@ -1,0 +1,104 @@
+sections:
+  - title: Describing a dynamic system
+    topic: dynamic-systems
+    rows:
+      - id: f-general-model
+        name: General state and output equations
+        formula: |-
+          $$\dot x = f(x, u, d, p), \qquad y = h(x, u, d, p)$$
+        note: |-
+          $x$ state, $u$ input, $d$ disturbance, $p$ parameters, $y$ output.
+      - id: f-lti-state-space
+        name: LTI state-space model
+        formula: |-
+          $$\dot x = Ax + Bu, \qquad y = Cx + Du$$
+        note: |-
+          Constant $A, B, C, D$; vector $u, y$ for MIMO systems.
+      - id: f-discrete-time
+        name: Discrete-time model
+        formula: |-
+          $$x[k+1] = F(x[k], u[k], k)$$
+        note: |-
+          Updated at instants $k$; sampled data and digital controllers.
+      - id: f-equilibrium
+        name: Equilibrium
+        formula: |-
+          $$f(x_e, u_e) = 0$$
+        note: |-
+          The state stays constant while the input does.
+      - id: f-free-first-order
+        name: Free first-order decay
+        formula: |-
+          $$\dot x = -ax \implies x(t) = x(0)e^{-at}$$
+        note: |-
+          $a > 0$. The trajectory depends on the initial state.
+      - id: f-room-model
+        name: Room temperature
+        formula: |-
+          $$C\,\frac{dT}{dt} = P_h - \frac{T - T_o}{R}$$
+        note: |-
+          $C$ thermal capacitance, $R$ thermal resistance, $P_h$ heater power, $T_o$
+          outside temperature. Time constant $RC$.
+
+  - title: First-order systems
+    topic: matlab
+    rows:
+      - id: f-first-order-tf
+        name: First-order transfer function
+        formula: |-
+          $$T\dot y + y = Ku \iff G(s) = \frac{K}{Ts + 1}$$
+        note: |-
+          Laplace transform with zero initial conditions.
+      - id: f-first-order-step
+        name: Step response
+        formula: |-
+          $$y(t) = K\big(1 - e^{-t/T}\big)$$
+        note: |-
+          Final value $K$; 63% at $t = T$, 95% at $3T$, half at $t = T\ln 2$.
+      - id: f-least-squares-error
+        name: Fit error used in Lab 2
+        formula: |-
+          $$J(T_c) = \sum_i \big(y_i - y_m(t_i; K, T_c)\big)^2$$
+        note: |-
+          The identified $T$ minimises $J$ over the candidates.
+
+  - title: Mass-spring-damper
+    topic: simulink
+    rows:
+      - id: f-msd-equation
+        name: Equation of motion
+        formula: |-
+          $$m\ddot x + B\dot x + kx = F(t)$$
+        note: |-
+          Newton's second law with spring force $-kx$ and damper force $-B\dot x$. The
+          lecture writes $c$ for $B$.
+      - id: f-msd-state-space
+        name: State-space form
+        formula: |-
+          $$\dot x_1 = x_2, \qquad \dot x_2 = -\frac{k}{m}x_1 - \frac{B}{m}x_2 + \frac{1}{m}F$$
+        note: |-
+          $x_1 = x$, $x_2 = \dot x = v$.
+      - id: f-msd-tf
+        name: Transfer function
+        formula: |-
+          $$G(s) = \frac{X(s)}{F(s)} = \frac{1}{ms^2 + Bs + k}$$
+        note: |-
+          Zero initial conditions.
+      - id: f-msd-natural-damping
+        name: Natural frequency and damping ratio
+        formula: |-
+          $$\omega_n = \sqrt{\frac{k}{m}}, \qquad \zeta = \frac{B}{2\sqrt{mk}}$$
+        note: |-
+          Underdamped (oscillating) for $\zeta < 1$; $m = B = k = 1$ gives $\zeta = 0.5$.
+      - id: f-msd-energies
+        name: Stored energies and dissipated power
+        formula: |-
+          $$E_p = \tfrac12 kx^2, \qquad E_k = \tfrac12 mv^2, \qquad p_d = Bv^2$$
+        note: |-
+          Spring, mass, damper.
+      - id: f-msd-energy-balance
+        name: Energy balance
+        formula: |-
+          $$E_p + E_k + \int_0^t Bv^2\,d\sigma = E_s(0) + \int_0^t F v\,d\sigma$$
+        note: |-
+          Only the external force changes the total; with $F = 0$ it stays at $E_s(0)$.

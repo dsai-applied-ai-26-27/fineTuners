@@ -1,0 +1,200 @@
+title: Lab 3 Preparation practice
+topic: simulink
+instructions: |-
+  Quiz-style questions on what Lab 3 assumes: Newton's second law for a mass, spring and
+  damper, the integrator chain, and the energy bookkeeping. The real Lab Preparation is not
+  available; these are written from the lab sheet and lecture 1.
+
+  Practise it as in the session: about 10 minutes, no notes, no AI tools.
+
+questions:
+  - id: l3prep-q1
+    type: mcq
+    title: The equation
+    points: 1
+    q: |-
+      A mass $m$ on a spring $k$ and a damper $B$ is pushed by $F(t)$. Which equation does
+      Newton's second law give?
+    choices:
+      - text: $m\ddot x + B\dot x + kx = F$
+        correct: true
+      - text: $m\ddot x - B\dot x - kx = F$
+        why: The spring and damper forces are $-kx$ and $-B\dot x$; moved to the left side they become $+kx$ and $+B\dot x$.
+      - text: $m\dot x + Bx + k\ddot x = F$
+        why: The derivatives are attached to the wrong elements.
+      - text: $m\ddot x + kx = F$
+        why: The damper force is missing.
+
+  - id: l3prep-q2
+    type: mcq
+    title: Damper force
+    points: 1
+    q: |-
+      The damper force is proportional to:
+    choices:
+      - text: The displacement $x$
+        why: That is the spring.
+      - text: The velocity $\dot x$
+        correct: true
+        why: $F_{damper} = -B\dot x$; it resists motion.
+      - text: The acceleration $\ddot x$
+        why: That is the inertia, $m\ddot x$.
+      - text: The external force
+        why: The damper does not see $F$ directly.
+
+  - id: l3prep-q3
+    type: mcq
+    title: Initial conditions in the chain
+    points: 1
+    q: |-
+      In the two-integrator model, where is $v(0)$ set?
+    choices:
+      - text: In the first integrator, whose output is the velocity
+        correct: true
+      - text: In the second integrator, whose output is the displacement
+        why: That one holds $x(0)$.
+      - text: In the Sum block
+        why: A Sum has no initial condition.
+      - text: In the Gain $1/m$
+        why: A Gain has no state.
+
+  - id: l3prep-q4
+    type: mcq
+    title: Isolating the acceleration
+    points: 1
+    q: |-
+      Which signal must the Sum (followed by a Gain $1/m$) compute?
+    choices:
+      - text: $F - Bv - kx$
+        correct: true
+        why: Then $\ddot x = \frac{1}{m}(F - Bv - kx)$.
+      - text: $F + Bv + kx$
+        why: The feedback terms are subtracted.
+      - text: $F - Bx - kv$
+        why: $B$ goes with $v$ and $k$ with $x$.
+      - text: $mF - Bv - kx$
+        why: The $1/m$ comes after the Sum, not an $m$ before it.
+
+  - id: l3prep-q5
+    type: mcq
+    title: Kinetic energy
+    points: 1
+    q: |-
+      The kinetic energy stored in the mass is:
+    choices:
+      - text: $\tfrac12 m v^2$
+        correct: true
+      - text: $\tfrac12 k x^2$
+        why: That is the potential energy in the spring.
+      - text: $Bv^2$
+        why: That is the power dissipated in the damper.
+      - text: $mv$
+        why: That is momentum.
+
+  - id: l3prep-q6
+    type: tf
+    title: Dissipated power
+    points: 1
+    q: |-
+      The damper turns energy into heat at the rate $p_d = Bv^2$, so the energy dissipated
+      up to time $t$ is $\int_0^t Bv^2 \, d\sigma$.
+    correct: true
+    solution: |-
+      True. In Simulink it is one more Integrator with initial condition 0.
+
+  - id: l3prep-q7
+    type: tf
+    title: Energy without a force
+    points: 1
+    q: |-
+      With $F = 0$, the total $E = E_p + E_k + E_d$ stays constant.
+    correct: true
+    solution: |-
+      True. Only the external force can change $E$, through its power $Fv$. With $F = 0$,
+      energy only moves from storage into the damper.
+
+  - id: l3prep-q8
+    type: mcq
+    title: Energy at the start
+    points: 1
+    q: |-
+      $m = k = 1$, $x(0) = 1$ m, $v(0) = 1$ m/s. What is $E_s(0)$?
+    choices:
+      - text: 0.5 J
+        why: That counts only one of the two stores.
+      - text: 1 J
+        correct: true
+        why: $\tfrac12 \cdot 1 \cdot 1^2 + \tfrac12 \cdot 1 \cdot 1^2 = 1$ J.
+      - text: 2 J
+        why: Each term has a factor $\tfrac12$.
+      - text: 0 J
+        why: Only a system at rest at equilibrium starts with no energy.
+
+  - id: l3prep-q9
+    type: mcq
+    title: A pulse from two steps
+    points: 1
+    q: |-
+      How do you make a 1 N force acting only from 0 to 7 s?
+    choices:
+      - text: Two Step blocks, at 0 and 7 s, into a Sum with signs `+-`
+        correct: true
+      - text: One Step block with step time 7
+        why: That switches on at 7 s and stays on.
+      - text: A Pulse Generator with period 7 s
+        why: That repeats every 7 s.
+      - text: A Constant block with value 7
+        why: A constant force of 7 N for the whole simulation.
+
+  - id: l3prep-q10
+    type: mcq
+    title: The Sine Wave frequency
+    points: 1
+    q: |-
+      For $F(t) = \sin(2\pi t)$, what goes in the Sine Wave block's frequency field?
+    choices:
+      - text: '`1`'
+        why: The field is in rad/s, not Hz.
+      - text: '`2*pi`'
+        correct: true
+        why: $\omega = 2\pi$ rad/s, i.e. 1 Hz.
+      - text: '`pi`'
+        why: That is $\sin(\pi t)$.
+      - text: '`2`'
+        why: That is $\sin(2t)$.
+
+  - id: l3prep-q11
+    type: mcq
+    title: Static deflection
+    points: 1
+    q: |-
+      A constant force $F$ acts for a long time. Where does the mass settle?
+    choices:
+      - text: $x = F/k$
+        correct: true
+        why: At rest $\dot x = \ddot x = 0$, so $kx = F$.
+      - text: $x = F/B$
+        why: The damper force vanishes at rest.
+      - text: $x = F/m$
+        why: That is an acceleration, and it is zero at rest.
+      - text: $x = 0$
+        why: Only when the force is zero.
+
+  - id: l3prep-q12
+    type: multi
+    title: Parameters and oscillation
+    points: 2
+    q: |-
+      Starting from $m = B = k = 1$, which single changes make the free response oscillate
+      less (smaller overshoot)?
+    choices:
+      - text: Increase $B$
+        correct: true
+        why: The damping ratio $\frac{B}{2\sqrt{mk}}$ grows.
+      - text: Increase $m$
+        why: The damping ratio falls, so there is more overshoot.
+      - text: Increase $k$
+        why: The damping ratio falls, and the oscillation gets faster.
+      - text: Decrease $k$
+        correct: true
+        why: The damping ratio grows (and the oscillation slows).

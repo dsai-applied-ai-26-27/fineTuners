@@ -1,0 +1,208 @@
+title: Lab 2 Preparation practice
+topic: matlab
+instructions: |-
+  Quiz-style questions on what Lab 2 assumes: the MATLAB on the sheet, transfer functions
+  in MATLAB, and the step response of a first-order system. Lab Preparations can also ask
+  about the lectures, so drill [](deck:dynamic-systems) too.
+
+  Practise it as in the session: about 10 minutes, no notes, no AI tools.
+
+questions:
+  - id: l2prep-q1
+    type: mcq
+    title: Indexing
+    points: 1
+    q: |-
+      `t = 0:1:10;` What does `t(1)` return?
+    choices:
+      - text: '`0`'
+        correct: true
+        why: Indexing starts at 1, and the first element of `t` is `0`.
+      - text: '`1`'
+        why: That is `t(2)`. MATLAB indexes from 1, not 0.
+      - text: An error
+        why: Index 1 is valid; index 0 would be the error.
+      - text: '`10`'
+        why: That is `t(end)`.
+
+  - id: l2prep-q2
+    type: mcq
+    title: linspace
+    points: 1
+    q: |-
+      How many elements does `linspace(0, 20, 1000)` have?
+    choices:
+      - text: '20'
+        why: The second argument is the last value, not the count.
+      - text: '1000'
+        correct: true
+        why: The third argument of `linspace` is the number of points.
+      - text: '1001'
+        why: That would be `0:0.02:20`, which includes both ends with step 0.02.
+      - text: '50'
+        why: Not related to the arguments.
+
+  - id: l2prep-q3
+    type: mcq
+    title: Element-wise product
+    points: 1
+    q: |-
+      `t` is a row vector. Which line computes $t^2 e^{-t}$ for every element?
+    choices:
+      - text: '`t^2 * exp(-t)`'
+        why: '`^` and `*` are matrix operations; for a row vector they fail.'
+      - text: '`t.^2 .* exp(-t)`'
+        correct: true
+      - text: '`t.^2 * exp(-t)`'
+        why: The product still needs a dot.
+      - text: '`(t*t) .* exp(-t)`'
+        why: '`t*t` is a matrix product of two row vectors and fails.'
+
+  - id: l2prep-q4
+    type: tf
+    title: Closing blocks
+    points: 1
+    q: |-
+      In MATLAB, every `for`, `while`, `if` and `switch` block must be closed with `end`.
+    correct: true
+    solution: |-
+      True, and a function file closes its function with `end` as well.
+
+  - id: l2prep-q5
+    type: mcq
+    title: diff and max
+    points: 1
+    q: |-
+      `x = [0, 1, 3, 10, 11, 15]; [val, idx] = max(diff(x))`. What are `val` and `idx`?
+    choices:
+      - text: '`val = 7`, `idx = 3`'
+        correct: true
+        why: '`diff(x)` is `[1, 2, 7, 1, 4]`; the largest is 7, in position 3.'
+      - text: '`val = 15`, `idx = 6`'
+        why: That is `max(x)`, without `diff`.
+      - text: '`val = 7`, `idx = 4`'
+        why: '`diff` has one element fewer than `x`; 7 is its third element.'
+      - text: '`val = 4`, `idx = 5`'
+        why: That is the last difference, not the largest.
+
+  - id: l2prep-q6
+    type: mcq
+    title: A transfer function in MATLAB
+    points: 1
+    q: |-
+      Which line builds $G(s) = \dfrac{2}{3s + 1}$?
+    choices:
+      - text: '`G = tf([2], [3, 1]);`'
+        correct: true
+      - text: '`G = tf([3, 1], [2]);`'
+        why: Numerator and denominator swapped.
+      - text: '`G = tf([2], [1, 3]);`'
+        why: Coefficients go in descending powers of $s$; this is $\frac{2}{s+3}$.
+      - text: '`G = 2 / (3*t + 1);`'
+        why: That is a function of time, not a transfer function; use `s = tf('s')`.
+
+  - id: l2prep-q7
+    type: mcq
+    title: Responses
+    points: 1
+    q: |-
+      Which command gives the response of `G` to an arbitrary input vector `u` over `t`?
+    choices:
+      - text: '`step(G, t)`'
+        why: Only for a unit step input.
+      - text: '`impulse(G, t)`'
+        why: Only for an impulse.
+      - text: '`lsim(G, u, t)`'
+        correct: true
+      - text: '`plot(G, u)`'
+        why: '`plot` draws vectors; it does not simulate a system.'
+
+  - id: l2prep-q8
+    type: tf
+    title: Plotting from step
+    points: 1
+    q: |-
+      `x = step(G, t);` both stores the response in `x` and draws the plot.
+    correct: false
+    solution: |-
+      False. With an output argument, `step` only returns the values; plot them yourself
+      with `plot(t, x)`.
+
+  - id: l2prep-q9
+    type: mcq
+    title: Final value
+    points: 1
+    q: |-
+      What value does the unit step response of $G(s) = \dfrac{2}{3s+1}$ settle to?
+    choices:
+      - text: '1'
+        why: Only when the gain (numerator over the constant term) is 1.
+      - text: '2'
+        correct: true
+        why: $K = 2$ for $\frac{K}{Ts+1}$.
+      - text: '3'
+        why: 3 is the time constant, in seconds.
+      - text: $\frac{2}{3}$
+        why: Dividing by the $s$ coefficient is not how the gain is read.
+
+  - id: l2prep-q10
+    type: mcq
+    title: Half the final value
+    points: 1
+    q: |-
+      For $y(t) = K\big(1 - e^{-t/T}\big)$, when is $y = K/2$ first reached?
+    choices:
+      - text: $t = T$
+        why: At $t = T$ the response is at 63%.
+      - text: $t = T \ln 2$
+        correct: true
+        why: $e^{-t/T} = \frac12$ gives $t = T\ln 2 \approx 0.69\,T$.
+      - text: $t = T/2$
+        why: $1 - e^{-1/2} \approx 0.39$, not 0.5.
+      - text: $t = 2T$
+        why: At $2T$ it is at 86%.
+
+  - id: l2prep-q11
+    type: tf
+    title: Faster or slower
+    points: 1
+    q: |-
+      $\dfrac{2}{s+1}$ responds faster than $\dfrac{2}{3s+1}$.
+    correct: true
+    solution: |-
+      True. The time constants are 1 s and 3 s; the half-way times are about 0.69 s and
+      2.08 s. The final value is 2 for both.
+
+  - id: l2prep-q12
+    type: mcq
+    title: Logical vectors
+    points: 1
+    q: |-
+      `x2` is a vector. What does `find(x2 < 0, 1)` return?
+    choices:
+      - text: The first negative value of `x2`
+        why: '`find` returns indices, not values.'
+      - text: The index of the first negative element
+        correct: true
+      - text: The number of negative elements
+        why: That would be `sum(x2 < 0)`.
+      - text: A vector of 0s and 1s
+        why: That is `x2 < 0` on its own.
+
+  - id: l2prep-q13
+    type: mcq
+    title: Choosing a time constant from data
+    points: 1
+    q: |-
+      In Task 4 you compute `sum((y - ym).^2)` for many candidates $T_c$. Which $T_c$ do you
+      keep?
+    choices:
+      - text: The one with the smallest sum
+        correct: true
+        why: The model that is closest to the data in the least-squares sense.
+      - text: The one with the largest sum
+        why: That is the worst fit.
+      - text: The first one where the sum is below 1
+        why: The threshold is arbitrary and depends on the noise.
+      - text: The largest candidate
+        why: The grid's end has nothing to do with the data.

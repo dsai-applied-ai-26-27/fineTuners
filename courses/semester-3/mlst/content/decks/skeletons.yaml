@@ -1,0 +1,206 @@
+# Ids are permanent: people's progress is keyed by them.
+title: 'Code skeletons'
+topic: preprocessing
+description: 'Every answer starts as one of these shapes. Write them cold.'
+
+cards:
+  - id: skel-01
+    topic: framing
+    q: |-
+      Any scikit-learn **model**, from nothing. Three lines.
+    a: |-
+      ```python
+      model = SomeModel(hyperparameters)
+      model.fit(X_train, y_train)
+      y_pred = model.predict(X_test)
+      ```
+    note: |-
+      Every model in the course is this. The only thing that changes between questions is the constructor line.
+
+      **In plain words.** Every model in scikit-learn is the same machine with three buttons. You build it with its settings, show it the training data with **.fit()**, then ask it for answers with **.predict()**. A decision tree, an SVM and a random forest all work exactly like this — only the first line changes.
+
+      ```text
+      So when a question says 'train a Random Forest', 90% of the answer is already written. You only have to remember RandomForestClassifier(n_estimators=100).
+      ```
+
+  - id: skel-02
+    q: |-
+      Any scikit-learn **transformer** — scaler, imputer, PCA, encoder. Three lines.
+    a: |-
+      ```python
+      scaler = StandardScaler()
+      X_train_scaled = scaler.fit_transform(X_train)
+      X_test_scaled  = scaler.transform(X_test)
+      ```
+    note: |-
+      fit_transform on train (learns the statistics), transform on test (applies them). Fitting on test is leakage and loses marks.
+
+      **In plain words.** A transformer changes your data instead of predicting anything. It first has to **learn** something from the training data — an average, a standard deviation, the list of categories — and then **apply** that same learned thing to any new data. `fit_transform` = learn and apply. `transform` = only apply what was already learned.
+
+      ```text
+      Training ages average 30, so the scaler stores 30.
+      Test ages must be scaled against 30 too — not against
+      their own average, or your test score is measuring
+      the wrong thing.
+      ```
+
+  - id: skel-03
+    q: |-
+      A **Pipeline**, empty skeleton.
+    a: |-
+      ```python
+      from sklearn.pipeline import Pipeline
+
+      pipe = Pipeline([
+          ("step_name", Transformer()),
+          ("another",   Transformer()),
+          ("model",     Estimator()),
+      ])
+      pipe.fit(X_train, y_train)
+      ```
+    note: |-
+      2-tuples. Every step except the last must be a transformer.
+
+      **In plain words.** A Pipeline is a **to-do list for one set of columns, run in order**. Whatever comes out of step 1 goes straight into step 2. Once built, the whole list behaves like a single model, so `pipe.fit()` runs every step and `pipe.predict()` repeats them on new data — you can't forget a step or do them in the wrong order.
+
+      ```text
+      fill missing values  →  scale  →  fit the model
+
+      ...all wrapped in one object called pipe.
+      ```
+
+  - id: skel-04
+    q: |-
+      A **ColumnTransformer**, empty skeleton.
+    a: |-
+      ```python
+      from sklearn.compose import ColumnTransformer
+
+      full_pipeline = ColumnTransformer([
+          ("num", num_pipeline,     num_attribs),
+          ("cat", OneHotEncoder(),  cat_attribs),
+      ])
+      X_prepared = full_pipeline.fit_transform(X)
+      ```
+    note: |-
+      3-tuples: name, transformer, columns. Pipeline = same columns in sequence; ColumnTransformer = different columns in parallel.
+
+      **In plain words.** Different columns need different treatment, and a Pipeline can't do that — it applies every step to everything. A **ColumnTransformer splits the table by column**: numbers go down one route, text categories go down another, and the two results are glued back together side by side into one array.
+
+      You need it because a scaler would crash on a column containing the word "NEAR BAY", and one-hot encoding is meaningless on a salary. So: numbers get their gaps filled and their scales evened out, categories get turned into yes/no columns.
+
+      ```text
+      income, age        →  fill median  →  scale
+      ocean_proximity    →  one-hot
+
+              both results joined side by side  =  X_prepared
+
+      Pipeline           = steps one after another (vertical)
+      ColumnTransformer  = columns side by side  (horizontal)
+      ```
+
+  - id: skel-05
+    topic: sequences
+    q: |-
+      A **Keras Sequential** model, all the way to training.
+    a: |-
+      ```python
+      model = keras.models.Sequential([
+          keras.layers.SomeLayer(...),
+          keras.layers.SomeLayer(...),
+      ])
+
+      model.compile(loss="mse", optimizer="adam", metrics=["accuracy"])
+      history = model.fit(X_train, y_train, epochs=20,
+                          validation_data=(X_valid, y_valid))
+      ```
+    note: |-
+      Build → compile → fit. Every network question is only asking you which layers go in the list.
+
+      **In plain words.** Sequential means a **straight stack**: data enters the top layer and falls through each layer in order. You hand it the list of layers, `compile()` says what to minimise and with which optimiser, and `fit()` actually trains it. Nearly every network question is only asking which layers go in the list — the three lines around them never change.
+
+      ```text
+      Build the list  →  compile  →  fit.
+      If you can write those three lines cold, you can
+      start any Keras question even if you're unsure
+      about the layers.
+      ```
+
+  - id: skel-06
+    topic: nlp
+    q: |-
+      A **Keras Functional** model — needed whenever there are two inputs or a state handoff.
+    a: |-
+      ```python
+      inputs  = keras.layers.Input(shape=[None, 1])
+      z       = keras.layers.SomeLayer(...)(inputs)
+      outputs = keras.layers.Dense(n, activation="softmax")(z)
+
+      model = keras.models.Model(inputs=[inputs], outputs=[outputs])
+      ```
+    note: |-
+      Each layer is called on the previous tensor. Use it for encoder–decoder, WaveNet residuals, multi-input models.
+
+      **In plain words.** Sequential can only do a straight line. When the network **branches, joins, has two inputs, or hands a state from one part to another** — encoder to decoder, WaveNet skip connections — you write it as function calls instead. Each layer is called on the tensor before it, and at the end you tell Model where the graph starts and ends.
+
+      ```text
+      z = keras.layers.Dense(64)(inputs)
+
+      reads as: "put inputs through this Dense layer,
+      call the result z".
+      ```
+
+  - id: skel-07
+    topic: framing
+    q: |-
+      The **end-to-end task** shape: raw data in, one printed number out. (This is exactly what 2b asks for.)
+    a: |-
+      ```python
+      X_train, X_test, y_train, y_test = train_test_split(
+          X, y, test_size=0.2, random_state=42)
+
+      scaler = StandardScaler()
+      X_train_scaled = scaler.fit_transform(X_train)
+      X_test_scaled  = scaler.transform(X_test)
+
+      model = SomeModel(random_state=42)
+      model.fit(X_train_scaled, y_train)
+
+      y_pred = model.predict(X_test_scaled)
+      print(mean_squared_error(y_test, y_pred))
+      ```
+    note: |-
+      Split → scale → fit → predict → metric. Six steps, always in that order. Learn this and 2b writes itself.
+
+      **In plain words.** This is the entire shape of a **"given this dataset, train a model and report the error"** question — which is exactly what 2b was. Six steps, always this order. Split first so the test set can never influence anything, scale using only the training statistics, fit, predict, then compare the predictions with the true test values.
+
+      ```text
+      split → scale → fit → predict → measure
+
+      Memorise the order. Scaling before splitting is a
+      classic mark-loser: the test data leaks into the mean.
+      ```
+
+  - id: skel-08
+    q: |-
+      **GridSearchCV**, skeleton.
+    a: |-
+      ```python
+      param_grid = {"max_leaf_nodes": list(range(2, 100)),
+                    "min_samples_split": [2, 3, 4]}
+
+      grid_search = GridSearchCV(DecisionTreeClassifier(random_state=42),
+                                 param_grid, cv=3)
+      grid_search.fit(X_train, y_train)
+      print(grid_search.best_params_)
+      ```
+    note: |-
+      best_estimator_ is already refitted on the whole training set — no second fit needed.
+
+      **In plain words.** Rather than guessing hyperparameters, you hand over a **menu of values** and it tries every combination, scoring each one with cross-validation. `best_params_` is the winning combination; `best_estimator_` is that model already retrained on the full training set.
+
+      ```text
+      98 values of max_leaf_nodes × 3 values of
+      min_samples_split × cv=3  =  882 model fits.
+      That's why grids get slow fast.
+      ```

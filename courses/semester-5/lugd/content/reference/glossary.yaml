@@ -1,0 +1,520 @@
+# Terms of lecture 1 and of the two readings of week one. Definitions follow the slides
+# and, where a term is only named there, the introduction of the Recommender Systems
+# Handbook (2022).
+terms:
+  - id: g-recommender-system
+    term: Recommender system (RS)
+    topic: intro
+    definition: |-
+      A software tool or technique that provides suggestions for items that are most
+      likely of interest to a particular user, to support decisions such as what to buy,
+      listen to or read.
+    see: [g-item, g-information-overload]
+
+  - id: g-item
+    term: Item
+    topic: intro
+    definition: |-
+      The general term for what a recommender system recommends: a product, a service, a
+      document, a person.
+
+  - id: g-information-overload
+    term: Information overload
+    topic: intro
+    definition: |-
+      The state of having too much information to make a decision or to remain informed
+      about a topic.
+    see: [g-paradox-of-choice]
+
+  - id: g-paradox-of-choice
+    term: Paradox of choice
+    topic: decision
+    definition: |-
+      The observation that more choice, which should increase freedom and well-being, is
+      accompanied by decreased well-being, because choosing has a cost.
+    see: [g-information-overload]
+
+  - id: g-explicit-feedback
+    term: Explicit feedback
+    topic: intro
+    definition: |-
+      A preference the user states on purpose, such as a rating, a like or a pairwise
+      comparison. More reliable than implicit feedback, but sparse and biased.
+    see: [g-implicit-feedback, g-rating]
+
+  - id: g-implicit-feedback
+    term: Implicit feedback
+    topic: intro
+    definition: |-
+      A preference inferred from the user's observed actions, such as clicking, buying or
+      visiting. Available for many more items than explicit feedback, but noisy: an
+      action is hard to interpret, and a missing interaction is not a negative signal.
+    see: [g-explicit-feedback]
+
+  - id: g-rating
+    term: Rating
+    topic: intro
+    definition: |-
+      The most common form of explicit feedback: a user's evaluation of an item, given as
+      a numerical value (1 to 5 stars), an ordinal value (strongly agree to strongly
+      disagree) or a binary value (good or bad). Implicit interactions count as unary
+      ratings.
+    see: [g-explicit-feedback, g-rating-matrix]
+
+  - id: g-rating-matrix
+    term: Rating matrix
+    topic: cf
+    definition: |-
+      The matrix with one row per user and one column per item, holding the known ratings.
+      Most of its entries are missing, and predicting them is the core task of
+      collaborative filtering.
+    see: [g-collaborative-filtering]
+
+  - id: g-pairwise-preference
+    term: Pairwise preference
+    topic: intro
+    definition: |-
+      A preference stated between two items, "A is preferred to B", instead of a score for
+      each.
+    see: [g-cp-network]
+
+  - id: g-cp-network
+    term: CP-network
+    topic: intro
+    definition: |-
+      A conditional preference network: a model of preferences that hold only under
+      conditions on other attributes, such as "a red shirt is preferred to a white shirt
+      if jacket and pants are black".
+    see: [g-pairwise-preference]
+
+  - id: g-peak-end-rule
+    term: Peak-end rule
+    topic: decision
+    definition: |-
+      Kahneman's finding that what we remember of an experience is determined by how it
+      felt at its peak and how it felt at its end, which makes remembered preferences
+      imprecise.
+
+  - id: g-user-model
+    term: User model
+    topic: intro
+    definition: |-
+      The data a recommender system holds about a user, encoding her preferences and
+      needs. In collaborative filtering it is simply the list of her ratings.
+
+  - id: g-collaborative-filtering
+    term: Collaborative filtering (CF)
+    topic: cf
+    definition: |-
+      Recommending to the active user on the basis of what users with similar tastes liked
+      in the past, where similarity of taste is computed from the rating histories. The
+      term was coined by the developers of Tapestry, the first recommender system.
+    see: [g-item-to-item, g-user-to-user, g-matrix-factorization]
+
+  - id: g-user-to-user
+    term: User-to-user collaborative filtering
+    topic: cf
+    definition: |-
+      A neighbourhood method that predicts a user's rating of an item as the
+      similarity-weighted average of the ratings that the most similar users gave to that
+      item.
+    see: [g-item-to-item]
+
+  - id: g-item-to-item
+    term: Item-to-item collaborative filtering
+    topic: cf
+    definition: |-
+      A neighbourhood method that predicts a user's rating of an item as the
+      similarity-weighted average of the same user's ratings of the most similar items.
+    see: [g-user-to-user]
+
+  - id: g-latent-factor
+    term: Latent factor model
+    topic: cf
+    definition: |-
+      A model that maps both users and items to the same space of hidden features, which
+      are inferred automatically from the feedback, and explains ratings by the positions
+      in that space.
+    see: [g-matrix-factorization]
+
+  - id: g-matrix-factorization
+    term: Matrix factorization (MF)
+    topic: cf
+    definition: |-
+      A latent factor method that approximates the rating matrix by the product of a
+      user-factor matrix and an item-factor matrix, so that a rating is predicted as the
+      dot product of a user vector and an item vector.
+    see: [g-latent-factor, g-rating-matrix]
+
+  - id: g-content-based
+    term: Content-based recommendation
+    topic: content
+    definition: |-
+      Recommending items similar to the ones the user liked in the past, where similarity
+      is computed from the features of the items.
+    see: [g-collaborative-filtering, g-hybrid]
+
+  - id: g-knowledge-based
+    term: Knowledge-based recommendation
+    topic: content
+    definition: |-
+      Recommending items using specific domain knowledge about how item features meet
+      users' needs. Such systems tend to work well at the start of deployment, before
+      interaction logs exist.
+
+  - id: g-community-based
+    term: Community-based recommendation
+    topic: cf
+    definition: |-
+      Recommending items based on the preferences of the user's friends; also called a
+      social recommender system.
+
+  - id: g-hybrid
+    term: Hybrid recommender system
+    topic: content
+    definition: |-
+      A system that combines techniques so that the advantages of one fix the
+      disadvantages of another, for instance content-based prediction for new items that
+      collaborative filtering cannot yet recommend.
+    see: [g-cold-start]
+
+  - id: g-cold-start
+    term: Cold start
+    topic: cf
+    definition: |-
+      The situation of a new item or a new user for which the system has too few
+      interactions to make good recommendations.
+    see: [g-hybrid]
+
+  - id: g-context-aware
+    term: Context-aware recommender system
+    topic: context
+    definition: |-
+      A system that uses contextual information, such as time, location or company, when
+      recommending. The context can filter the data before prediction (pre-filtering),
+      adjust the output after it (post-filtering), or enter the prediction model itself
+      (contextual modelling).
+
+  - id: g-session-based
+    term: Session-based recommendation
+    topic: context
+    definition: |-
+      Recommendation tailored to the short-term needs and intents of a user that are
+      learned only from the interactions of the current session, as for anonymous or
+      unregistered users.
+
+  - id: g-group-rs
+    term: Group recommender system
+    topic: group
+    definition: |-
+      A system that recommends to a group of users instead of an individual, which
+      requires combining the preference models of the group members.
+
+  - id: g-ab-testing
+    term: A/B testing
+    topic: evaluation
+    definition: |-
+      An online experiment in which two groups of real users receive two versions of the
+      system, a control and a variation, and their behaviour is compared.
+    see: [g-offline-evaluation]
+
+  - id: g-offline-evaluation
+    term: Offline evaluation
+    topic: evaluation
+    definition: |-
+      Running recommendation algorithms on stored datasets of user interactions and
+      comparing their output with the withheld true values. It cannot tell whether users
+      will be satisfied with the system.
+    see: [g-ab-testing]
+
+  - id: g-anchoring
+    term: Anchoring
+    topic: decision
+    definition: |-
+      The effect by which a presented value becomes the reference against which the other
+      options are judged, as when expensive bicycles in a list make a mid-priced one seem
+      reasonable.
+    see: [g-attraction-effect]
+
+  - id: g-attraction-effect
+    term: Attraction effect
+    topic: decision
+    definition: |-
+      The effect by which adding an option that is clearly worse than another makes that
+      other option more likely to be chosen.
+    see: [g-anchoring]
+
+  - id: g-diversity
+    term: Diversity
+    topic: evaluation
+    definition: |-
+      A property of recommendations. Individual diversity is the variety within the
+      recommendations given to one user; aggregate diversity is the variety of items
+      recommended across all users.
+    see: [g-fairness]
+
+  - id: g-fairness
+    term: Fairness
+    topic: evaluation
+    definition: |-
+      The requirement that different users, or other stakeholders, are not treated
+      unequally by the system, for example by receiving recommendations of systematically
+      lower quality.
+    see: [g-diversity, g-stakeholder]
+
+  - id: g-stakeholder
+    term: Recommendation stakeholder
+    topic: intro
+    definition: |-
+      Any group or individual that can affect, or is affected by, the delivery of
+      recommendations to users. The three main ones are consumers (users), providers
+      (suppliers of the items) and the system owner.
+    see: [g-fairness]
+
+  - id: g-utility
+    term: Utility of an item
+    topic: intro
+    definition: |-
+      The degree to which an item is useful to a user, modelled as a function $R(u, i)$ of
+      user and item. A recommender system estimates it and recommends the items with the
+      largest predicted value.
+
+  - id: g-irreducible-error
+    term: Irreducible error
+    topic: classification
+    definition: |-
+      $\mathrm{Var}(\varepsilon)$, the part of the test error that comes from noise in $y$
+      not explained by $x$. No method can remove it, not even one that knows the true $f$.
+    see: [g-bias-variance]
+
+  - id: g-bias-variance
+    term: Bias-variance trade-off
+    topic: classification
+    definition: |-
+      More flexible methods have lower bias (they approximate reality with fewer
+      simplifications) but higher variance (they change more with the training set). The
+      test error is lowest at a flexibility that balances the two.
+    see: [g-irreducible-error, g-knn]
+
+  - id: g-bayes-classifier
+    term: Bayes classifier
+    topic: classification
+    definition: |-
+      The classifier that assigns each observation to its most probable class,
+      $\arg\max_j \Pr(Y = j \mid X = x_0)$. It has the lowest possible test error but needs
+      the true conditional probabilities, so it cannot be built for real data. Not the same
+      as Naive Bayes.
+    see: [g-bayes-error, g-bayes-boundary]
+
+  - id: g-bayes-boundary
+    term: Bayes decision boundary
+    topic: classification
+    definition: |-
+      In a two-class problem, the points where $\Pr(Y = 1 \mid X = x) = 0.5$. The Bayes
+      classifier predicts one class on each side.
+    see: [g-bayes-classifier]
+
+  - id: g-bayes-error
+    term: Bayes error rate
+    topic: classification
+    definition: |-
+      The test error of the Bayes classifier, $1 - E\big[\max_j \Pr(Y = j \mid X)\big]$: the
+      lowest error any classifier can reach. It is above zero whenever the classes overlap.
+    see: [g-bayes-classifier, g-irreducible-error]
+
+  - id: g-knn
+    term: K-nearest neighbours (KNN) classifier
+    topic: classification
+    definition: |-
+      Estimates each class probability at $x_0$ as the share of that class among the $K$
+      nearest training points, and predicts the class with the largest share. Small $K$
+      overfits, large $K$ underfits.
+    see: [g-bias-variance, g-bayes-classifier]
+
+  - id: g-naive-bayes
+    term: Naive Bayes
+    topic: classification
+    definition: |-
+      A sample-based classifier that estimates the class probabilities from training data,
+      assuming the features are independent given the class. Unlike the Bayes classifier it
+      can be built, and it can be far from it when the independence assumption fails.
+    see: [g-bayes-classifier]
+
+  - id: g-active-user
+    term: Active (target) user
+    topic: cf
+    definition: |-
+      The user for whom a collaborative filtering prediction or recommendation is being
+      made.
+    see: [g-collaborative-filtering]
+
+  - id: g-co-rated
+    term: Co-rated items
+    topic: cf
+    definition: |-
+      $I_{uv} = I_u \cap I_v$, the items rated by both users $u$ and $v$. Similarities are
+      computed on them, and few co-rated items make a similarity unreliable.
+    see: [g-significance-weighting, g-shrinkage]
+
+  - id: g-mean-centring
+    term: Mean-centring
+    topic: cf
+    definition: |-
+      Subtracting each user's average rating from their ratings, so that users who use the
+      scale differently become comparable. The standard CF prediction adds neighbours'
+      deviations to the target user's mean.
+    see: [g-pearson]
+
+  - id: g-pearson
+    term: Pearson correlation (of users)
+    topic: cf
+    definition: |-
+      A similarity of two users from their deviations from their means on the co-rated
+      items, between $-1$ and $1$. It ignores a constant shift of the ratings.
+    see: [g-cosine, g-mean-centring]
+
+  - id: g-cosine
+    term: Cosine similarity
+    topic: cf
+    definition: |-
+      A similarity of two users as the cosine of the angle between their raw rating
+      vectors. Borrowed from information retrieval; it does not remove each user's mean.
+    see: [g-pearson]
+
+  - id: g-long-tail
+    term: Long tail
+    topic: cf
+    definition: |-
+      The economic model in which the market for many low-volume non-hits can be as large as,
+      or larger than, the market for a few hits. Recommenders help sell it.
+
+  - id: g-memory-based
+    term: Memory-based CF
+    topic: cf
+    definition: |-
+      Collaborative filtering that stores the ratings and computes predictions from the
+      neighbours at query time, like k-NN: a lazy learner.
+    see: [g-model-based, g-lazy-learning]
+
+  - id: g-model-based
+    term: Model-based CF
+    topic: cf
+    definition: |-
+      Collaborative filtering that first builds and stores a (probabilistic) model, for
+      example a classifier giving $P(r_{uj} = r \mid \text{user's ratings})$, and predicts
+      the expected rating with it.
+    see: [g-memory-based]
+
+  - id: g-lazy-learning
+    term: Lazy and eager learning
+    topic: classification
+    definition: |-
+      A lazy learner (k-NN, case-based reasoning) only stores examples and generalises when a
+      query arrives; an eager learner (neural network, decision tree, Naive Bayes, SVM)
+      builds a global model beforehand.
+    see: [g-knn, g-memory-based]
+
+  - id: g-sparsity
+    term: Sparsity
+    topic: cf
+    definition: |-
+      The proportion of missing ratings among all possible user-item ratings. Typically
+      above 0.9, which makes it hard to find neighbours with co-rated items.
+
+  - id: g-most-frequent-item
+    term: Most-frequent-item recommendation
+    topic: cf
+    definition: |-
+      Recommending the products bought by the most neighbours of the target user and not
+      yet in their profile. It produces a list without estimating any rating.
+
+  - id: g-association-rule
+    term: Association rule
+    topic: cf
+    definition: |-
+      A rule $X \to Y$ between non-overlapping sets of products: in the transactions, if the
+      products in $X$ are present, those in $Y$ are likely present too. Scored by support and
+      confidence.
+    see: [g-support, g-confidence]
+
+  - id: g-support
+    term: Support (of a rule)
+    topic: cf
+    definition: |-
+      The share of all transactions that contain both $X$ and $Y$: how often the pattern is
+      observed.
+    see: [g-confidence]
+
+  - id: g-confidence
+    term: Confidence (of a rule)
+    topic: cf
+    definition: |-
+      The share of the transactions containing $X$ that also contain $Y$: the conditional
+      probability of $Y$ given $X$, $S(X \to Y)/S(X)$. Never below the support.
+    see: [g-support]
+
+  - id: g-significance-weighting
+    term: Significance weighting
+    topic: cf
+    definition: |-
+      Scaling a user-to-user similarity by $\min\{|I_{uv}|, \gamma\}/\gamma$, so that
+      similarities based on fewer than $\gamma$ co-rated items count less.
+    see: [g-shrinkage, g-co-rated]
+
+  - id: g-shrinkage
+    term: Shrinkage (of a similarity)
+    topic: cf
+    definition: |-
+      Pulling a similarity towards 0 by the factor $|I_{uv}|/(|I_{uv}| + \beta)$: the fewer
+      the co-rated items, the more it is shrunk.
+    see: [g-significance-weighting, g-co-rated]
+
+  - id: g-iuf
+    term: Inverse user frequency
+    topic: cf
+    definition: |-
+      The weight $\log(|U|/|U_i|)$ of an item in a similarity: items rated by few users are
+      taken as more informative.
+
+  - id: g-mae
+    term: MAE and RMSE
+    topic: evaluation
+    definition: |-
+      Mean absolute error and root mean square error of predicted against true test
+      ratings. RMSE is never below MAE and punishes large errors more.
+
+  - id: g-precision-recall
+    term: Precision and recall
+    topic: evaluation
+    definition: |-
+      Precision is the share of recommended items that are relevant; recall the share of
+      relevant items that are recommended. Their harmonic mean is $F_1$.
+    see: [g-hit-set]
+
+  - id: g-hit-set
+    term: Hit set
+    topic: evaluation
+    definition: |-
+      The intersection of a user's recommendation list with their relevant test items.
+    see: [g-precision-recall]
+
+  - id: g-ndcg
+    term: NDCG
+    topic: evaluation
+    definition: |-
+      Normalised discounted cumulative gain: the gains of the relevant items in a ranked list,
+      discounted by $\log_2(1 + \text{rank})$ and normalised so that a perfect ranking scores 1.
+
+  - id: g-arhr
+    term: Average reciprocal hit-rank (ARHR)
+    topic: evaluation
+    definition: |-
+      With one held-out item per user, the average of one over its rank in the user's list,
+      0 when it is missing.
+
+  - id: g-novelty-coverage
+    term: Novelty and coverage
+    topic: evaluation
+    definition: |-
+      Novelty: recommending items the user did not already know. Coverage: the share of the
+      items for which the system can make a prediction.

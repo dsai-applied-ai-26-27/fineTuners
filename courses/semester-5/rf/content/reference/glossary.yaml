@@ -1,0 +1,429 @@
+# Terminology of lecture 1. Definitions follow the lecture notes.
+terms:
+  - id: g-robot
+    term: Robot
+    topic: intro
+    definition: |-
+      A programmable physical machine that uses actuators and a control system to perform
+      actions in its environment. Its actions may follow a stored program, respond to
+      sensor information, or be guided by a human operator.
+    see: [g-manipulator, g-automation]
+
+  - id: g-manipulator
+    term: Robotic manipulator
+    topic: intro
+    definition: |-
+      A mechanism of connected bodies (links) and joints that allows a tool or object to be
+      positioned and oriented.
+    see: [g-link, g-joint, g-end-effector]
+
+  - id: g-automation
+    term: Automation
+    topic: intro
+    definition: |-
+      The use of machines and control systems to carry out tasks with reduced human
+      intervention. Broader than robotics: a thermostat is automation but not a robot.
+    see: [g-autonomy]
+
+  - id: g-autonomy
+    term: Autonomy
+    topic: intro
+    definition: |-
+      The ability to perform a task without continuous human direction. Its extent depends
+      on both the task and the environment.
+    see: [g-automation]
+
+  - id: g-link
+    term: Link
+    topic: intro
+    definition: |-
+      One of the structural bodies of a manipulator. Neighbouring links are connected by
+      joints.
+    see: [g-joint]
+
+  - id: g-joint
+    term: Joint
+    topic: intro
+    definition: |-
+      A connection between neighbouring links that allows some relative motions and
+      restricts others. The main kinds are revolute (rotation about one axis) and prismatic
+      (translation along one axis).
+    see: [g-link, g-dof]
+
+  - id: g-end-effector
+    term: End effector
+    topic: intro
+    definition: |-
+      The device at the end of the arm that performs the task, such as a gripper, suction
+      cup, welding torch, screwdriver or measurement probe.
+    see: [g-tcp]
+
+  - id: g-tcp
+    term: Tool center point (TCP)
+    topic: intro
+    definition: |-
+      A selected point on the end effector, often the tool tip, whose motion is specified.
+    see: [g-end-effector, g-pose]
+
+  - id: g-actuator
+    term: Actuator
+    topic: sensors
+    definition: |-
+      A device that converts supplied energy into motion or force, such as an electric
+      motor or a hydraulic or pneumatic cylinder.
+
+  - id: g-proprioceptive
+    term: Proprioceptive sensor
+    topic: sensors
+    definition: |-
+      An internal sensor that measures the robot's own state, such as joint position or
+      motor current.
+    see: [g-exteroceptive]
+
+  - id: g-exteroceptive
+    term: Exteroceptive sensor
+    topic: sensors
+    definition: |-
+      A sensor that measures the environment or the robot's interaction with it, such as a
+      camera, a range sensor, or a touch or force sensor.
+    see: [g-proprioceptive]
+
+  - id: g-spherical-wrist
+    term: Spherical wrist
+    topic: intro
+    definition: |-
+      A wrist whose three rotation axes intersect at a common point. With it, the first
+      three joints of a six-axis arm mainly position the wrist and the last three mainly
+      orient the tool.
+
+  - id: g-dof
+    term: Degree of freedom (DoF)
+    topic: intro
+    definition: |-
+      An independent freedom of motion. The DoF count of a mechanism is the number of
+      independent continuous variables needed to describe its configuration locally. A
+      rigid body has 3 in a plane and 6 in space.
+    see: [g-configuration, g-redundancy]
+
+  - id: g-configuration
+    term: Configuration
+    topic: intro
+    definition: |-
+      The arrangement of all the links of a robot, described for a serial arm by the vector
+      $\boldsymbol{q}$ of its joint coordinates.
+    see: [g-pose, g-configuration-space]
+
+  - id: g-pose
+    term: Pose
+    topic: intro
+    definition: |-
+      The position of a selected point of the tool together with the orientation of the
+      tool.
+    see: [g-configuration, g-tcp]
+
+  - id: g-redundancy
+    term: Redundancy
+    topic: intro
+    definition: |-
+      A robot is redundant for a task when it has more independent joint variables than the
+      task requires. It can then change its posture while still fulfilling the task.
+    see: [g-dof]
+
+  - id: g-workspace
+    term: Workspace
+    topic: intro
+    definition: |-
+      The region the end effector can reach. The reachable workspace contains every tool
+      position attainable by at least one admissible configuration; the dexterous workspace
+      contains the positions where every required tool orientation is attainable.
+    see: [g-configuration-space]
+
+  - id: g-configuration-space
+    term: Configuration space
+    topic: intro
+    definition: |-
+      The space of all the robot's independent configuration variables. Each point of it is
+      one complete posture of the robot.
+    see: [g-configuration, g-workspace]
+
+  - id: g-reference-frame
+    term: Reference frame
+    topic: transformations
+    definition: |-
+      An origin together with a set of coordinate axes. It says where a coordinate
+      description is anchored and how its axes are oriented. Common frames are the world,
+      base, tool, workpiece and sensor frames.
+
+  - id: g-forward-kinematics
+    term: Forward kinematics
+    topic: kinematics
+    definition: |-
+      The calculation of the tool pose from the joint coordinates and the robot's geometry.
+    see: [g-inverse-kinematics]
+
+  - id: g-inverse-kinematics
+    term: Inverse kinematics
+    topic: kinematics
+    definition: |-
+      The search for joint values that achieve a desired tool pose. It may have no
+      solution, several solutions, or a continuous family of solutions.
+    see: [g-forward-kinematics]
+
+  - id: g-jacobian
+    term: Geometric Jacobian
+    topic: diffkin
+    definition: |-
+      The matrix $\boldsymbol{J}(\boldsymbol{q})$ that maps joint velocities to the linear
+      velocity of the TCP and the angular velocity of the tool. Each column is the
+      contribution of one joint, so it depends on the posture.
+    see: [g-singularity]
+
+  - id: g-singularity
+    term: Kinematic singularity
+    topic: diffkin
+    definition: |-
+      A configuration at which the Jacobian for the selected task loses rank relative to
+      its maximum, so that fewer independent task-velocity directions are available.
+    see: [g-jacobian, g-manipulability]
+
+  - id: g-manipulability
+    term: Manipulability
+    topic: diffkin
+    definition: |-
+      A description of how the robot's posture affects the conversion of joint velocities
+      into tool velocities.
+    see: [g-singularity]
+
+  - id: g-path
+    term: Path
+    topic: planning
+    definition: |-
+      A geometric route for the robot, without timing, such as $\boldsymbol{q}(s)$ for
+      $s \in [0, 1]$.
+    see: [g-trajectory]
+
+  - id: g-trajectory
+    term: Trajectory
+    topic: planning
+    definition: |-
+      A path with timing added: the joint coordinates as functions of time, with their
+      velocities and accelerations.
+    see: [g-path]
+
+  - id: g-impedance-control
+    term: Impedance control
+    topic: control
+    definition: |-
+      Control that shapes the relationship between motion and interaction force, so that
+      the robot behaves with a chosen compliance and damping. Force control, by contrast,
+      regulates the interaction force itself.
+
+  - id: g-payload
+    term: Payload
+    topic: intro
+    definition: |-
+      The rated load of a robot under stated conditions, normally including both the tool
+      and the carried object.
+
+  - id: g-accuracy
+    term: Accuracy
+    topic: intro
+    definition: |-
+      How close an achieved pose is to the intended pose.
+    see: [g-repeatability, g-calibration]
+
+  - id: g-repeatability
+    term: Repeatability
+    topic: intro
+    definition: |-
+      How closely repeated executions reproduce the same pose under stated conditions.
+      Often called precision elsewhere.
+    see: [g-accuracy, g-resolution]
+
+  - id: g-resolution
+    term: Resolution
+    topic: intro
+    definition: |-
+      The smallest increment represented, measured or commanded by a specified subsystem.
+    see: [g-repeatability]
+
+  - id: g-calibration
+    term: Calibration
+    topic: intro
+    definition: |-
+      Estimating and correcting model or measurement parameters so that different
+      descriptions of the robot and its surroundings agree more closely.
+    see: [g-accuracy]
+
+  - id: g-cobot
+    term: Cobot
+    topic: intro
+    definition: |-
+      A robot designed for collaborative use, that is, for cooperating with people on a
+      shared task in a shared workspace.
+
+  - id: g-policy
+    term: Policy
+    topic: ai
+    definition: |-
+      A mapping from the information available to the robot to an action, for example from
+      an image and a task instruction to the next movement command.
+    see: [g-sim-to-real]
+
+  - id: g-sim-to-real
+    term: Sim-to-real gap
+    topic: ai
+    definition: |-
+      The difference between simulated and real conditions, because of which behaviour that
+      works in simulation can fail on the real robot.
+    see: [g-policy]
+
+  - id: g-rigid-body
+    term: Rigid body
+    topic: transformations
+    definition: |-
+      An idealised object whose internal distances remain constant, so that its motion
+      changes its placement without stretching or bending it.
+    see: [g-reference-frame]
+
+  - id: g-rotation-matrix
+    term: Rotation matrix
+    topic: transformations
+    definition: |-
+      The $3 \times 3$ matrix $\boldsymbol{R} = [\boldsymbol{n}\ \boldsymbol{s}\ \boldsymbol{a}]$
+      whose columns are the unit axes of a local frame expressed in the global frame. It
+      is orthogonal with determinant $+1$ and converts local coordinates into global ones.
+      Also called a direction cosine matrix, because each entry is the cosine of the angle
+      between a local and a global axis.
+    see: [g-so3, g-approach-direction]
+
+  - id: g-so3
+    term: Special orthogonal group SO(3)
+    topic: transformations
+    definition: |-
+      The set of $3 \times 3$ real matrices with
+      $\boldsymbol{R}^\top\boldsymbol{R} = \boldsymbol{I}$ and $\det(\boldsymbol{R}) = 1$,
+      which is exactly the set of rotation matrices.
+    see: [g-rotation-matrix]
+
+  - id: g-approach-direction
+    term: Normal, sliding and approach directions
+    topic: transformations
+    definition: |-
+      The three axes $\boldsymbol{n}$, $\boldsymbol{s}$, $\boldsymbol{a}$ of the
+      end-effector frame. For a gripper, $\boldsymbol{n}$ is normal to the jaws,
+      $\boldsymbol{s}$ is the direction along which a contact could slide, and
+      $\boldsymbol{a}$ points along the fingers toward the object, with
+      $\boldsymbol{n} \times \boldsymbol{s} = \boldsymbol{a}$.
+    see: [g-rotation-matrix]
+
+  - id: g-passive-rotation
+    term: Passive rotation
+    topic: transformations
+    definition: |-
+      A change of coordinates: the point stays where it is and its components are
+      re-expressed in another frame.
+    see: [g-active-rotation]
+
+  - id: g-active-rotation
+    term: Active rotation
+    topic: transformations
+    definition: |-
+      A physical rotation: the vector itself turns while the frame expressing it stays
+      fixed.
+    see: [g-passive-rotation]
+
+  - id: g-similarity-transformation
+    term: Similarity transformation
+    topic: transformations
+    definition: |-
+      The relation
+      $\boldsymbol{Q}_{\text{global}} = \boldsymbol{R}\boldsymbol{Q}_{\text{local}}\boldsymbol{R}^\top$
+      between the matrices of one and the same rotation expressed in two different frames.
+
+  - id: g-euler-angles
+    term: Euler angles (ZYZ)
+    topic: transformations
+    definition: |-
+      Three angles $\phi, \theta, \psi$ describing an orientation as successive rotations
+      about the current $z$ axis, the current $y$ axis and the current $z$ axis again.
+    see: [g-rpy, g-parameterization-singularity]
+
+  - id: g-rpy
+    term: Roll, pitch, yaw
+    topic: transformations
+    definition: |-
+      Three angles describing an orientation by rotations about three different principal
+      axes. In this course roll $\alpha$ is about $x$, pitch $\beta$ about $y$ and yaw
+      $\gamma$ about $z$, applied about the fixed axes in that order.
+    see: [g-euler-angles, g-gimbal-lock]
+
+  - id: g-gimbal-lock
+    term: Gimbal lock
+    topic: transformations
+    definition: |-
+      The loss of independent angle coordinates in the roll-pitch-yaw representation at a
+      pitch of $\pm 90^\circ$, where only the difference or the sum of roll and yaw can be
+      recovered from the rotation matrix.
+    see: [g-rpy, g-parameterization-singularity]
+
+  - id: g-parameterization-singularity
+    term: Parameterization singularity
+    topic: transformations
+    definition: |-
+      A configuration at which a three-angle description of orientation stops being
+      unique, although the rotation matrix itself remains valid. It is a property of the
+      chosen coordinates, not of a mechanism.
+    see: [g-gimbal-lock, g-singularity]
+
+  - id: g-axis-angle
+    term: Axis/angle representation
+    topic: transformations
+    definition: |-
+      The description of a rotation by a single angle $\vartheta$ about a single unit axis
+      $\boldsymbol{u}$, which by Euler's rotation theorem exists for every proper rotation
+      in three dimensions.
+
+  - id: g-homogeneous-transformation
+    term: Homogeneous transformation
+    topic: transformations
+    definition: |-
+      A 4-by-4 matrix combining a rotation block and a translation column, with last row
+      (0, 0, 0, 1). Acting on a point with final coordinate 1 it rotates and translates in
+      one product; on a direction with final coordinate 0 it only rotates.
+    see: [g-se3, g-forward-kinematics]
+
+  - id: g-se3
+    term: Special Euclidean group SE(3)
+    topic: transformations
+    definition: |-
+      The set of homogeneous transformations whose rotation block is a proper rotation:
+      all rigid placements in space, with three translational and three rotational degrees
+      of freedom.
+    see: [g-homogeneous-transformation, g-so3]
+
+  - id: g-dh-convention
+    term: Denavit-Hartenberg convention
+    topic: kinematics
+    definition: |-
+      A rule for placing link frames on a serial robot so that each neighbouring pair is
+      related by four parameters (joint angle, joint offset, link length, link twist). In the
+      standard version the axis of joint i is the third axis of frame i-1.
+    see: [g-common-normal, g-forward-kinematics]
+
+  - id: g-common-normal
+    term: Common normal
+    topic: kinematics
+    definition: |-
+      A line perpendicular to two axis lines and meeting both. In standard DH the first axis
+      of a link frame lies along the common normal of the neighbouring joint axes.
+    see: [g-dh-convention]
+
+  - id: g-tool-transform
+    term: Tool transformation
+    topic: kinematics
+    definition: |-
+      The fixed transform from the last DH frame to the actual tool frame. It places the TCP
+      and the gripper's normal, sliding and approach directions, which need not coincide with
+      the last link frame.
+    see: [g-forward-kinematics]

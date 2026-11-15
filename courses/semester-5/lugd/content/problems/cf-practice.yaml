@@ -1,0 +1,205 @@
+title: Recommender basics practice
+topic: intro
+instructions: |-
+  Short exercises on lecture 1, in the shape of its two collaborative filtering slides and
+  its closing questions. The written exam is announced as "questions like those asked
+  during the lectures and like the exercises in the labs"; no lab sheet exists yet, so the
+  numbers here are new and the shapes are the slides'. Work each one before opening the
+  solution.
+
+questions:
+  - id: cf-p1
+    title: Item-to-item prediction
+    topic: cf
+    points: 4
+    q: |-
+      Predict Ana's rating of the film *Arrival* with item-to-item collaborative filtering
+      and two neighbour items. The items most similar to *Arrival* are *Interstellar*
+      (similarity $0.8$) and *Contact* (similarity $0.4$). Ana rated *Interstellar* $3$ and
+      *Contact* $5$.
+    solution: |-
+      Item-to-item uses the target user's own ratings of the neighbouring items, weighted
+      by their similarity to the target item:
+
+      $$r^*_{\text{ana, arrival}} = \frac{0.8 \cdot 3 + 0.4 \cdot 5}{0.8 + 0.4} = \frac{2.4 + 2.0}{1.2} = 3.67 .$$
+
+      The prediction sits closer to $3$ than to $5$ because the film rated $3$ is twice as
+      similar to the target.
+    answer: |-
+      $3.67$
+
+  - id: cf-p2
+    title: User-to-user prediction
+    topic: cf
+    points: 4
+    q: |-
+      Predict Ana's rating of *Arrival* with user-to-user collaborative filtering and two
+      neighbour users. The users most similar to Ana are Ben (similarity $0.9$), who rated
+      *Arrival* $5$, and Cara (similarity $0.6$), who rated it $2$.
+    solution: |-
+      User-to-user uses the neighbours' ratings of the target item, weighted by their
+      similarity to the target user:
+
+      $$r^*_{\text{ana, arrival}} = \frac{0.9 \cdot 5 + 0.6 \cdot 2}{0.9 + 0.6} = \frac{4.5 + 1.2}{1.5} = 3.8 .$$
+    answer: |-
+      $3.8$
+
+  - id: cf-p3
+    title: Checking a prediction on the lecture's table
+    topic: cf
+    points: 4
+    q: |-
+      Use the rating table of the lecture:
+
+      | | The Matrix | Titanic | Die Hard | Forrest Gump | Wall-E |
+      |---|---|---|---|---|---|
+      | John | 5 | 1 | | 2 | 2 |
+      | Lucy | 1 | 5 | 2 | 5 | 5 |
+      | Eric | 2 | ? | 3 | 5 | 4 |
+      | Diane | 4 | 3 | 5 | 3 | |
+
+      With Lucy as Eric's single nearest neighbour ($w = 0.9$), predict Eric's ratings of
+      *The Matrix*, *Die Hard*, *Forrest Gump* and *Wall-E*, compare them with his real
+      ratings, and compute the mean absolute error.
+    solution: |-
+      With one neighbour the weight cancels, so each prediction equals Lucy's rating.
+
+      | Item | Predicted | Real | Absolute error |
+      |---|---|---|---|
+      | The Matrix | 1 | 2 | 1 |
+      | Die Hard | 2 | 3 | 1 |
+      | Forrest Gump | 5 | 5 | 0 |
+      | Wall-E | 5 | 4 | 1 |
+
+      Mean absolute error $= (1 + 1 + 0 + 1)/4 = 0.75$.
+
+      The slide makes the same point with Die Hard alone: the method predicts $2$ where the
+      correct value is $3$. Holding back known ratings and predicting them is how a
+      recommender is tested offline.
+    answer: |-
+      MAE $= 0.75$
+    source: |-
+      Rating table from lecture 1, slides 29 and 30. The slide checks only Die Hard; the
+      other three checks and the error measure are added here.
+
+  - id: cf-p4
+    title: Matrix factorization by hand
+    topic: cf
+    points: 4
+    q: |-
+      A matrix factorization model with three latent factors has learned the user vector
+      $(0.5, 2, 1)$ for Dan and the item vectors $(2, 1, 1)$ for film A and $(4, 0.5, 0)$
+      for film B.
+    parts:
+      - q: |-
+          Predict Dan's rating of each film. Which one is recommended first?
+        points: 2
+        solution: |-
+          Film A: $0.5 \cdot 2 + 2 \cdot 1 + 1 \cdot 1 = 1 + 2 + 1 = 4$.
+
+          Film B: $0.5 \cdot 4 + 2 \cdot 0.5 + 1 \cdot 0 = 2 + 1 + 0 = 3$.
+
+          Film A has the higher predicted rating and is ranked first.
+      - q: |-
+          The service has $10^6$ users and $10^4$ items and uses 20 factors. How many
+          numbers does the full rating matrix have, and how many does the factorization
+          store?
+        points: 2
+        solution: |-
+          Full matrix: $10^6 \times 10^4 = 10^{10}$ entries.
+
+          Factorization: $10^6 \cdot 20 + 10^4 \cdot 20 = 2 \times 10^7 + 2 \times 10^5 = 2.02 \times 10^7$
+          numbers, about 500 times fewer.
+    answer: |-
+      Film A ($4$) before film B ($3$); $10^{10}$ entries against $2.02 \times 10^7$.
+
+  - id: cf-p5
+    title: Model size
+    points: 2
+    q: |-
+      A recommender model has $5 \times 10^9$ parameters, each stored as a 32-bit number.
+      How much memory do the parameters take?
+    solution: |-
+      32 bits are 4 bytes. $5 \times 10^9 \times 4 = 2 \times 10^{10}$ bytes $= 20$ GB.
+    answer: |-
+      20 GB
+
+  - id: cf-p6
+    type: mcq
+    title: Implicit preference
+    points: 1
+    q: |-
+      Which of these is an implicit preference signal?
+    choices:
+      - text: A four-star rating given to a hotel
+        why: An explicit evaluation, entered by the user as such.
+      - text: A "like" reaction on a post
+        why: Still an explicit reaction the user chose to give.
+      - text: A click on a link to an article
+        correct: true
+        why: An action the system has to interpret; the user never stated a preference.
+      - text: Choosing A over B when asked which one is preferred
+        why: A pairwise preference, stated explicitly.
+
+  - id: cf-p7
+    type: multi
+    title: Why explicit ratings mislead
+    points: 2
+    q: |-
+      Which of these are reasons the lecture gives for doubting explicit preferences?
+      Select all that apply.
+    choices:
+      - text: They cover only a small part of the catalogue.
+        correct: true
+      - text: They depend on a context that the system does not know.
+        correct: true
+      - text: People tend to rate what they chose, and they choose what they expect to like.
+        correct: true
+      - text: Ratings cannot be stored in a matrix.
+        why: They can; the rating matrix is the standard representation.
+      - text: Memory of an experience is imprecise.
+        correct: true
+        why: The peak-end rule. We remember the peak and the end, not the whole.
+
+  - id: cf-p8
+    type: mcq
+    title: The decoy
+    points: 1
+    q: |-
+      In Ariely's experiment, removing the print-only subscription changed the share
+      choosing "print and web" from 84% to 32%. What is this an example of?
+    choices:
+      - text: Anchoring
+        why: Anchoring is about a reference value, such as a high price making others look reasonable.
+      - text: The attraction effect
+        correct: true
+        why: A dominated option makes the option that beats it look better; remove it and the appeal goes.
+      - text: The peak-end rule
+        why: That concerns how experiences are remembered, not how options are compared.
+      - text: Information overload
+        why: Three options are not too many to process.
+
+  - id: cf-p9
+    type: tf
+    title: More options
+    points: 1
+    q: |-
+      Adding options can only make a decision maker better off, because unwanted options
+      can simply be ignored.
+    correct: false
+    solution: |-
+      False. That is the classical argument, and the lecture sets the evidence against it:
+      increased affluence comes with decreased well-being, because processing and deciding
+      have a cost (the paradox of choice).
+
+  - id: cf-p10
+    type: tf
+    title: Fair and diverse
+    points: 1
+    q: |-
+      According to the lecture, making recommendations more diverse across users tends to
+      make the system fairer.
+    correct: false
+    solution: |-
+      False. Fairness and diversity are typically negatively correlated: the more the
+      recommendations differ between users, the more differently the users are treated.

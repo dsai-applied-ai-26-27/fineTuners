@@ -1,0 +1,123 @@
+title: Randomized algorithms
+topic: randomized
+description: Pseudorandom generators and seeds, expected running time, Las Vegas against Monte Carlo, and randomized quicksort, quickselect and Karger's min-cut.
+
+cards:
+  - id: rnd-prng
+    hy: true
+    q: |-
+      Why do computers use pseudorandom number generators, and what determines their output?
+    a: |-
+      A computer is deterministic and cannot produce true randomness in software. A PRNG is a
+      deterministic algorithm whose output looks random; the **seed** determines the whole
+      sequence.
+
+  - id: rnd-why-pseudo
+    q: |-
+      Why do pseudorandom numbers dominate over true (hardware) randomness?
+    a: |-
+      PRNGs are fast, portable and reproducible (same seed, same run, which helps debugging);
+      hardware randomness is slow, expensive and needs special devices.
+
+  - id: rnd-entropy
+    q: |-
+      Where does true randomness come from, and what is an entropy pool?
+    a: |-
+      Physical phenomena: radioactive decay, thermal noise, hardware timing variations, mouse
+      and keyboard timing. An entropy pool collects these unpredictable inputs (Linux:
+      `/dev/random`, `/dev/urandom`) to seed generators.
+
+  - id: rnd-lcg
+    hy: true
+    q: |-
+      Give the linear congruential generator and its weakness.
+    a: |-
+      $$X_{n+1} = (aX_n + c) \bmod m$$
+      Simple and fast, but statistically weak (patterns in higher dimensions) and predictable,
+      unfit for serious simulation or security.
+
+  - id: rnd-mersenne
+    hy: true
+    q: |-
+      What are the period and the weakness of the Mersenne Twister?
+    a: |-
+      Period $2^{19937} - 1$, state of 624 32-bit integers, excellent statistics (Python's and
+      NumPy's default). Not cryptographically secure: enough outputs reveal the state.
+
+  - id: rnd-csprng
+    q: |-
+      What is a CSPRNG, and where is it needed?
+    a: |-
+      A generator for which predicting future outputs from known ones is computationally
+      infeasible, seeded from system entropy. Slower; used for passwords, keys and tokens
+      (`os.urandom`, `secrets`).
+
+  - id: rnd-good-prng
+    cloze: |-
+      A good PRNG sequence looks {{uniformly distributed}}, has statistically
+      {{independent}} values, and has a {{long period}}.
+
+  - id: rnd-why-randomize
+    q: |-
+      Why randomize an algorithm?
+    a: |-
+      To make worst-case behaviour on "unlucky" inputs very unlikely; often better average
+      performance, simpler code and fewer special cases.
+
+  - id: rnd-expected-time
+    hy: true
+    q: |-
+      Expected running time and linearity of expectation?
+    a: |-
+      $E[T] = \sum_i P_i T_i$ over execution paths $i$. $E[X + Y] = E[X] + E[Y]$, true even when
+      $X$ and $Y$ are dependent.
+
+  - id: rnd-lv-mc
+    hy: true
+    q: |-
+      Las Vegas against Monte Carlo algorithms?
+    a: |-
+      Las Vegas: always correct, random running time (randomized quicksort, quickselect).
+      Monte Carlo: bounded running time, may be wrong with small probability (π estimate,
+      Karger, Miller-Rabin).
+    hook: |-
+      Vegas always pays out, but you wait; Monte Carlo is on time, but may lose.
+
+  - id: rnd-pi
+    q: |-
+      How do you estimate π by Monte Carlo?
+    a: |-
+      Sample points uniformly in a square with an inscribed circle:
+      $\frac{N_{circle}}{N_{total}} \approx \frac{\pi r^2}{4r^2} = \frac{\pi}{4}$, so
+      $\pi \approx 4N_{circle}/N_{total}$.
+
+  - id: rnd-quicksort
+    hy: true
+    q: |-
+      Randomized quicksort: what is randomized, and the expected and worst-case time?
+    a: |-
+      The pivot, chosen uniformly at random. Expected $O(n\log n)$; worst case still $O(n^2)$,
+      just very unlikely.
+
+  - id: rnd-quickselect
+    q: |-
+      Randomized selection (quickselect): what does it do, what kind is it, how fast?
+    a: |-
+      Finds the $k$-th smallest element by random pivot and partition, recursing into one side.
+      Las Vegas; expected $O(n)$, worst case $O(n^2)$.
+
+  - id: rnd-karger
+    hy: true
+    q: |-
+      Describe Karger's min-cut algorithm.
+    a: |-
+      Repeatedly contract a random edge (merge its endpoints, remove self-loops) until two
+      vertices remain; their edges form a candidate cut. One run rarely succeeds; repeating it
+      makes failure exponentially unlikely.
+
+  - id: rnd-cut
+    q: |-
+      What is a cut, and its size?
+    a: |-
+      A partition of the vertices into two non-empty sets; its size is the number of edges
+      between them.

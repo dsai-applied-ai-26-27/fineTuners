@@ -1,0 +1,180 @@
+# Ids are permanent: people's progress is keyed by them.
+title: 'Correlation & χ²'
+topic: 'stats'
+cards:
+  - id: 'st01'
+    hy: true
+    q: |-
+      Which method determines the association between exercise and heart disease, and why?
+    a: |-
+      **χ² (chi-square) test of independence.**\
+      \
+      **Why:** both variables are **categorical** — heart disease is nominal (yes/no) and exercise is recorded as categories. **Pearson** requires two continuous numeric variables and measures only a *linear* relationship, which is undefined on a nominal label. **Spearman** requires at least **ordinal** variables, and you cannot rank 'has disease' above 'does not'. χ² is **non-parametric** and built for counts in a contingency table.
+    note: |-
+      The extra line that shows understanding rather than recall: if exercise were given as a **number** (minutes/week) with disease still binary, χ² still works after binning, but point-biserial correlation or logistic regression would be cleaner.
+
+  - id: 'st02'
+    hy: true
+    q: |-
+      Write the χ² formula with every element defined, including the expected count and the degrees of freedom.
+    a: |-
+      **χ² = Σᵢ Σⱼ (Oᵢⱼ − Eᵢⱼ)² / Eᵢⱼ**\
+      \
+      **Oᵢⱼ** = the **observed** count in row i, column j.\
+      **Eᵢⱼ** = the count **expected under independence**.\
+      **i, j** range over the r categories of variable 1 and the c categories of variable 2.\
+      \
+      **Eᵢⱼ = (row totalᵢ × column totalⱼ) / n**, with n the grand total.\
+      \
+      **df = (r − 1)(c − 1)**. For a 2×2 table df = 1, critical value 3.841 at α = 0.05.
+    note: |-
+      Two sentences that carry marks: **the larger the χ², the more likely the variables are related**, and **the cells contributing most are those whose observed count differs most from the expected count**. Then: correlation does not imply causality.
+
+  - id: 'st03'
+    hy: true
+    q: |-
+      Compute χ² for the lecture's table: sci-fi/chess 250, 200 / 50, 1000.
+    steps:
+      - do: |-
+          **Add the margins.** Rows: 450 and 1050. Columns: 300 and 1200. Grand total n = **1500**.
+        why: |-
+          Every expected count is built from the margins, so they come first. Sanity check: rows and columns must both sum to n.
+
+      - do: |-
+          **Expected counts** E = row×col/n: E₁₁ = 450·300/1500 = **90**, E₁₂ = 450·1200/1500 = **360**, E₂₁ = 1050·300/1500 = **210**, E₂₂ = 1050·1200/1500 = **840**.
+        why: |-
+          Under independence, the probability of being in row i and column j is the product of the marginal probabilities, so the expected count is n·(rowᵢ/n)·(colⱼ/n) = rowᵢ·colⱼ/n.
+
+      - do: |-
+          **Notice each |O − E| is 160** — so every numerator is 160² = 25600.
+        why: |-
+          In a 2×2 table the four deviations are always equal in magnitude, because the margins are fixed. Spotting it saves three subtractions under exam pressure.
+
+      - do: |-
+          **Per-cell contributions:** 25600/90 = 284.44 · 25600/210 = 121.90 · 25600/360 = 71.11 · 25600/840 = 30.48
+        why: |-
+          Keep them separate — the question may ask which cell contributes most, and it is the one with the smallest expected count.
+
+      - do: |-
+          **Sum: χ² = 507.93.** df = (2−1)(2−1) = 1, critical value 3.841 ≪ 507.93, so **reject independence**: like\_science\_fiction and play\_chess are correlated.
+        why: |-
+          χ² far above the critical value means the observed table would be wildly unlikely if the variables were independent.
+
+  - id: 'st04'
+    hy: true
+    q: |-
+      Covariance vs correlation — what is the difference?
+    a: |-
+      **Covariance** measures only the **direction** of a linear relationship and is **scale-dependent**, so its magnitude means nothing on its own.\
+      \
+      **Correlation** is **standardised covariance**: it measures both **strength and direction**, is scale-independent, and is always between **−1 and 1**.\
+      \
+      r\_(A,B) = Cov(A,B) / (σ\_A σ\_B)
+    note: |-
+      Cov > 0: A and B both tend to be larger than their expected values together. Cov \< 0: when A is above its expectation, B tends to be below. **Cov = 0 does not imply independence** — the converse holds only under extra assumptions such as multivariate normality.
+
+  - id: 'st05'
+    hy: true
+    q: |-
+      Write Pearson's correlation coefficient and define every symbol.
+    a: |-
+      r\_(A,B) = Σ\_(i=1..n) (aᵢ − Ā)(bᵢ − B̄) / \[ (n − 1) σ\_A σ\_B ]\
+      \
+      **n** = number of tuples · **aᵢ, bᵢ** = the i-th values of A and B · **Ā, B̄** = their means · **σ\_A, σ\_B** = their standard deviations.\
+      \
+      r > 0 positively correlated · r = 0 independent (no *linear* relationship) · r \< 0 negatively correlated.
+    note: |-
+      Equivalent construction from the lecture: **standardise** both variables — a′ₖ = (aₖ − mean(A))/std(A) — and take the **dot product**. That is why correlation is sometimes described as a cosine on centred data.
+
+  - id: 'st06'
+    hy: false
+    q: |-
+      When is correlation a good tool for determining a relationship, and when does it fail?
+    a: |-
+      **Good when:** both variables are **numeric**; the relationship is **linear** (Pearson) or at least **monotone** (Spearman); there are no dominant outliers; and you want a standardised, comparable measure of strength and direction.\
+      \
+      **Fails when:** the relationship is **non-linear** — Pearson on a U-shaped relationship returns about 0 even though the variables are perfectly dependent; when a **single outlier** creates or destroys the correlation; and when either variable is **categorical**.\
+      \
+      **And always:** correlation does not imply causation.
+    note: |-
+      The lecture's causation example: the number of hospitals and the number of car thefts in a city are correlated. Say it — it's on the slide.
+
+  - id: 'st07'
+    hy: false
+    q: |-
+      Name the four data types with an example of each.
+    a: |-
+      **Nominal** — categories with no order. Blood type; heart disease yes/no.\
+      **Ordinal** — ordered categories, gaps not meaningful. Exercise level low/medium/high; disease stage I/II/III.\
+      **Interval** — numeric, no true zero. Temperature in °C.\
+      **Ratio** — numeric with a true zero. Minutes of exercise per week; income.
+    note: |-
+      Both papers open Q2 by asking the data type before asking for the method — so the type is the reasoning, not a preliminary.
+
+  - id: 'st08'
+    hy: false
+    q: |-
+      Spearman vs Pearson — when do you choose Spearman?
+    a: |-
+      Choose **Spearman** when the variables are **ordinal**, when the relationship is **monotone but not linear**, or when the data has **outliers** that would distort Pearson.\
+      \
+      Spearman is simply **Pearson computed on the ranks**, which is why it measures monotone rather than linear association and is robust to outliers.
+
+  - id: 'st09'
+    hy: false
+    q: |-
+      200 people: low exercise 30 with disease / 70 without; high exercise 60 / 40. Test independence.
+    steps:
+      - do: |-
+          **Margins.** Row totals: 100 and 100. Column totals: 90 and 110. n = **200**.
+        why: |-
+          Always first — everything else is built from them.
+
+      - do: |-
+          **Expected counts.** E₁₁ = 100·90/200 = **45**, E₁₂ = 100·110/200 = **55**, E₂₁ = **45**, E₂₂ = **55**.
+        why: |-
+          Under independence, the disease rate would be the same 90/200 = 45% in both exercise groups.
+
+      - do: |-
+          **Contributions.** (30−45)²/45 = 5.000 · (70−55)²/55 = 4.091 · (60−45)²/45 = 5.000 · (40−55)²/55 = 4.091
+        why: |-
+          Each |O − E| is 15, as it must be in a 2×2 table with fixed margins.
+
+      - do: |-
+          **χ² = 18.18.** df = 1; critical value at α = 0.05 is 3.841.
+        why: |-
+          df = (r−1)(c−1) = 1×1.
+
+      - do: |-
+          **18.18 > 3.841, so reject independence** — exercise and heart disease are associated in this sample. But this is association, **not** evidence that exercise causes the difference.
+        why: |-
+          The test only rules out independence. Confounders (age, income, baseline health) are untouched by it.
+
+  - id: 'st10'
+    hy: false
+    q: |-
+      What are the measures of data quality?
+    a: |-
+      **Accuracy · Completeness · Consistency · Timeliness · Trustworthiness · Interpretability.**
+    note: |-
+      Paired with the preprocessing tasks: **data cleaning · data integration · data reduction · data transformation and discretization**.
+
+  - id: 'st11'
+    hy: false
+    q: |-
+      How do you detect redundant attributes?
+    a: |-
+      **Redundant attributes may be detected by correlation analysis and covariance analysis.**\
+      \
+      For **numeric** attributes: the correlation matrix, flagging pairs with high |r|.\
+      For **nominal** attributes: the **χ²** test — a very large χ² means one attribute is largely predictable from the other.\
+      For **rows**: duplicate detection, `df.duplicated()`.
+
+  - id: 'st12'
+    hy: false
+    q: |-
+      What is noise, what causes it, and how is noisy data handled?
+    a: |-
+      **Noise** is random error or variance in a measured variable. **Causes:** faulty instruments, data-entry problems, data-transmission problems, technology limitations, inconsistency in naming conventions.\
+      \
+      **Handled by:** moving/rolling window (mean, median) · **binning** — sort the data into bins, then smooth by bin means, bin medians or bin boundaries · regression · clustering · combined computer and human inspection.

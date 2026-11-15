@@ -1,0 +1,121 @@
+# Ids are permanent: people's progress is keyed by them.
+title: 'Evaluation metrics'
+topic: 'eval'
+cards:
+  - id: 'ev01'
+    hy: true
+    q: |-
+      Confusion matrix: TP=45, FN=15, FP=10, TN=30. Compute accuracy, precision, recall and specificity.
+    steps:
+      - do: |-
+          **Lay out the matrix and total it.** Actual positive row = 45 + 15 = 60. Actual negative row = 10 + 30 = 40. n = **100**.
+        why: |-
+          Every metric is a ratio of these cells; getting the row/column orientation right first prevents the classic precision/recall swap.
+
+      - do: |-
+          **Accuracy** = (TP + TN)/n = (45 + 30)/100 = **0.75**
+        why: |-
+          The proportion of all predictions that were right — it uses the whole table, which is exactly why it hides class-specific failure.
+
+      - do: |-
+          **Precision** = TP/(TP + FP) = 45/55 = **0.818**
+        why: |-
+          Of the positive *predictions*, how many were right — so the denominator is the predicted-positive **column**.
+
+      - do: |-
+          **Recall** = TP/(TP + FN) = 45/60 = **0.75**
+        why: |-
+          Of the actual positives, how many were found — so the denominator is the actual-positive **row**. Row vs column is the whole distinction.
+
+      - do: |-
+          **Specificity** = TN/(TN + FP) = 30/40 = **0.75**
+        why: |-
+          Recall for the negative class: of the actual negatives, how many were correctly identified.
+
+      - do: |-
+          **Interpret it.** Recall 0.75 means the model misses 15 of 60 true positives. In medical diagnosis or defect detection that is the number that matters, not the 0.75 accuracy.
+        why: |-
+          The exam-prep document asks for interpretation, not just calculation: 'recall may be very important if missing positive cases is costly'.
+
+    note: |-
+      **State which class you are treating as positive before computing** — precision, recall and specificity all flip if you swap it. Lab 5 defines TP as correctly recognised *normal sinus rhythm*, making normal the positive class, so the convention is not always what you'd guess.
+
+  - id: 'ev02'
+    hy: true
+    q: |-
+      Why is accuracy a bad metric for imbalanced problems? Give the lecture's example.
+    a: |-
+      Because a model that ignores the minority class entirely can still score high. **The lecture's example:** a fraud-detection algorithm that predicts every transaction valid, on data with 5% fraud, scores **95% accuracy** — and the model is useless.
+    note: |-
+      Replacements: confusion matrix, precision, recall, F1, and **precision–recall AUC**, which is the curve appropriate for imbalanced data. ROC is better for balanced data.
+
+  - id: 'ev03'
+    hy: false
+    q: |-
+      Write precision, recall, specificity and F1, and say why F1 uses a harmonic mean.
+    a: |-
+      **Precision** = TP/(TP+FP) — of the positive predictions, how many were actually positive.\
+      **Recall (sensitivity)** = TP/(TP+FN) — of the actual positives, how many did the model find.\
+      **Specificity** = TN/(TN+FP).\
+      **F1** = 2·P·R/(P+R).\
+      \
+      **Harmonic mean because it punishes extreme values** — a model with precision 1.0 and recall 0.01 gets an F1 near 0.02, whereas the arithmetic mean would flatter it at 0.5.
+    note: |-
+      Higher sensitivity ⇒ lower type II error rate. Higher specificity ⇒ lower type I error rate. In critical systems we may deliberately favour recall so as not to miss any positive results.
+
+  - id: 'ev04'
+    hy: false
+    q: |-
+      Holdout vs cross-validation — describe both and when each is right.
+    a: |-
+      **Holdout:** divide into train / validation / test, usually **60/20/20** — but with a lot of data smaller test proportions suffice (e.g. 98/1/1 on a million rows). The model learns on train, is tested on validation, and after enough rounds is finally tested **once** on test.\
+      \
+      **k-fold cross-validation:** divide into k folds; leave one out for testing, train on the k−1 others; repeat for all combinations; average the results. **Useful when data is limited.**
+    note: |-
+      The lecture's analogy for holdout: study → practice test → refocus studying → repeat → final exam. Validation and test must come from the **same distribution**, reflecting future data.
+
+  - id: 'ev05'
+    hy: false
+    q: |-
+      ROC vs precision–recall curve — what does each plot and when do you use it?
+    a: |-
+      **ROC** plots **true positive rate against false positive rate** as the model's threshold varies. TPR is recall; FPR is the probability of a false alarm. **Better for balanced data.**\
+      \
+      **Precision–recall curve** plots precision against recall across thresholds. **Appropriate for imbalanced data.**\
+      \
+      **AUC** summarises skill **across all thresholds**; the **F-score** summarises it **at one threshold**.
+
+  - id: 'ev06'
+    hy: false
+    q: |-
+      MAE vs MSE vs RMSE — formulas, and when to prefer each.
+    a: |-
+      **MAE** = (1/n) Σ|y − ŷ| — same units as the target, **low** outlier sensitivity. Use when all errors should be treated equally.\
+      **MSE** = (1/n) Σ(y − ŷ)² — squared units so hard to interpret, **high** outlier sensitivity. Use when large errors are particularly costly.\
+      **RMSE** = √MSE — MSE's large-error penalty but **interpretable units**. The general-purpose default.\
+      \
+      **MSE penalises large errors more than MAE.**
+    note: |-
+      Also worth one line: **R² = 1 − SSᵣₑₛ/SSₜₒₜ**, unitless, for comparing explanatory power across models — but it doesn't tell you the actual size of the prediction error.
+
+  - id: 'ev07'
+    hy: false
+    q: |-
+      How do you evaluate a clustering model, and why is it different?
+    a: |-
+      Clustering is **unsupervised — there is no ground-truth label**, so the metrics measure how **self-similar** observations are within a cluster rather than whether predictions are correct.\
+      \
+      **Silhouette** s = (b−a)/max(a,b), range −1 to 1, higher better — measures cohesion and separation. **Inertia (WCSS)**, lower better — compactness only. **Davies-Bouldin**, lower better — cluster overlap. **Calinski-Harabasz**, higher better — between-cluster over within-cluster variance.\
+      \
+      These help compare models but don't really measure validity.
+    note: |-
+      Recommended pairing from the lecture: k-means → **inertia + silhouette**; selecting k → **elbow + silhouette**; true labels available → **ARI**.
+
+  - id: 'ev08'
+    hy: false
+    q: |-
+      What is the single closing point about metrics that earns marks on any 'which metric' question?
+    a: |-
+      **One metric does NOT fit all.** The choice depends on what you want to measure, and on what each kind of error costs in the application.\
+      \
+      Follow it immediately with *which* metric and *why* — a general statement alone is not an answer.

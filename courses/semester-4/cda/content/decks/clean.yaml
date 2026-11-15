@@ -1,0 +1,114 @@
+# Ids are permanent: people's progress is keyed by them.
+title: 'Cleaning & redundancy'
+topic: 'clean'
+cards:
+  - id: 'cn01'
+    hy: false
+    q: |-
+      What is redundant data, and what are its three forms?
+    a: |-
+      Data that carries information already present elsewhere — it adds volume without adding information, and occurs most often when **integrating multiple databases**.\
+      \
+      **1. Object identification** — the same attribute or object has different names in different databases.\
+      **2. Derivable data** — one attribute is derived from another, e.g. annual revenue when the monthly figures are already stored.\
+      **3. Redundancy in rows** — duplicate records.
+    note: |-
+      Fourth practical form worth adding: **strongly correlated attributes** measuring the same underlying thing.
+
+      The slide's own conclusion: careful integration of data from multiple sources reduces redundancies and inconsistencies and **improves mining speed and quality**.
+
+  - id: 'cn02'
+    hy: false
+    q: |-
+      What do you do with redundant data, and why does it matter?
+    a: |-
+      **Do:** drop duplicate rows; for a strongly correlated pair keep one — the more interpretable or less missing; drop derived attributes; drop identifiers; for many correlated features use **PCA or attribute subset selection**; and fix it at integration time where possible.\
+      \
+      **Why it matters:** a concept appearing twice is counted twice by any **distance-based** method, so it dominates the clustering; correlated features make regression coefficients unstable; duplicate rows bias the model; and duplicates straddling a train/test split put the same record on both sides.
+    note: |-
+      The caveat that upgrades the answer: dropping is not always right. Tree-based models handle correlated features fine, and PCA buys uncorrelated components at the cost of interpretability — which is why lab 7 uses PCA for *visualisation* but profiles the clusters with the **original** variables.
+
+  - id: 'cn03'
+    hy: false
+    q: |-
+      Write the IQR outlier rule and state its limitation.
+    a: |-
+      **IQR = Q3 − Q1**, with Q1 and Q3 the 25th and 75th percentiles.\
+      **Lower fence = Q1 − 1.5 × IQR · Upper fence = Q3 + 1.5 × IQR.** Anything outside is flagged.\
+      \
+      **Limitation:** it is a purely statistical tool. It identifies values unusual relative to the rest of the data, but **cannot distinguish a data-entry error from a genuinely extreme observation**. Domain knowledge is essential before removing anything.
+    note: |-
+      Treatment options from the skripta: removal · transformation · capping (**Winsorization**) · imputation · robust modelling (median and IQR, robust regression, tree-based methods).
+
+  - id: 'cn04'
+    hy: false
+    q: |-
+      Name the data-reduction strategies.
+    a: |-
+      **Dimensionality reduction** — wavelet transforms, **PCA**, feature subset selection and feature creation.\
+      **Numerosity reduction** — regression and log-linear models, histograms, clustering, sampling, data cube aggregation.\
+      **Data compression** — string compression, audio/video compression.\
+      \
+      **Why:** a data warehouse may store terabytes, and complex analysis on the complete dataset takes too long. Data reduction obtains a much smaller representation that produces the **same or almost the same** analytical results.
+
+  - id: 'cn05'
+    hy: false
+    q: |-
+      What is PCA and what are its steps?
+    a: |-
+      A dimensionality-reduction technique that finds a **projection capturing the largest amount of variation** in the data. **Numeric data only.**\
+      \
+      **1.** Normalise the input data so each attribute falls in the same range. **2.** Compute k orthonormal (unit) vectors — the principal components. **3.** Each input vector is a linear combination of the k components. **4.** The components are sorted by decreasing significance / strength. **5.** Reduce the data by eliminating the weak components — those with low variance.
+    note: |-
+      The reconstruction claim worth a clause: using the strongest components it is possible to reconstruct a good approximation of the original data.
+
+  - id: 'cn06'
+    hy: false
+    q: |-
+      Name the four types of join and what each keeps.
+    a: |-
+      **Inner** — only rows whose key exists in **both** tables.\
+      **Left** — all rows from the left table; unmatched right columns become NaN.\
+      **Right** — all rows from the right table; unmatched left columns become NaN.\
+      **Outer** — all rows from both, with gaps filled by NaN.
+    note: |-
+      The three things to watch: **duplicate keys** (a row per matching combination, so the result can blow up), **key mismatches** from whitespace or capitalisation, and **data-type mismatches** (an int key against a string key never matches).
+
+  - id: 'cn07'
+    hy: false
+    q: |-
+      What are the major tasks in data preprocessing?
+    a: |-
+      **Data cleaning** — data is often incomplete, noisy, inconsistent, or intentionally incorrect.\
+      **Data integration** — including handling redundancy.\
+      **Data reduction.**\
+      **Data transformation and data discretization.**
+    note: |-
+      Transformation methods: smoothing · attribute/feature construction · aggregation · normalization · discretization (binning, histogram analysis, clustering analysis, decision-tree analysis, correlation analysis).
+
+  - id: 'cn08'
+    hy: false
+    q: |-
+      What are the types of sampling?
+    a: |-
+      **Simple random sampling** · sampling **without** replacement · sampling **with** replacement · **stratified** sampling.\
+      \
+      Sampling obtains a small sample s to represent the whole dataset N.
+    note: |-
+      Stratified sampling is the one that matters for the exam's debugging questions — it is what `stratify=y` does, preserving the class distribution across the split.
+
+  - id: 'cn09'
+    hy: false
+    q: |-
+      Which problems require data cleaning?
+    a: |-
+      **Missing values · duplicate records · incomplete data · inconsistent data.**
+
+  - id: 'cn10'
+    hy: false
+    q: |-
+      What is the curse of dimensionality, as it bears on clustering?
+    a: |-
+      In high-dimensional spaces, **almost all pairs of points are at about the same distance** from each other. Since clustering and nearest-neighbour methods depend on distances discriminating between near and far, they degrade as dimensionality grows.
+    note: |-
+      This is the motivation for dimensionality reduction before clustering, and part of why lab 7 uses PCA before visualising.

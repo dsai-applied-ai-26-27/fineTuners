@@ -1,0 +1,297 @@
+title: The Lebesgue integral
+topic: measure
+lecture: 02-the-lebesgue-integral
+description: Definitions, the convergence theorems and the computations of lecture 2, with the moves the tutorial uses. The proofs are in their own deck.
+
+cards:
+  - id: leb-measurable-def
+    q: |-
+      Define an $\mathcal{S}$-measurable function $f : X \to \mathbf{R}$, and give the
+      shortcut for checking it.
+    a: |-
+      $f^{-1}(B) \in \mathcal{S}$ for every Borel set $B \subset \mathbf{R}$ (2.35).
+      Shortcut (2.39): it is enough that $f^{-1}((a,\infty)) \in \mathcal{S}$ for every
+      $a \in \mathbf{R}$.
+
+  - id: leb-measurable-examples
+    q: |-
+      Which functions $X \to \mathbf{R}$ are measurable when $\mathcal{S} = \{\varnothing, X\}$?
+      When $\mathcal{S}$ is all subsets of $X$? When
+      $\mathcal{S} = \{\varnothing, (-\infty,0), [0,\infty), \mathbf{R}\}$?
+    a: |-
+      Only the constants; every function; exactly those constant on $(-\infty, 0)$ and
+      constant on $[0,\infty)$ (2.36).
+
+  - id: leb-limit-identity
+    q: |-
+      Write the set identity that proves a pointwise limit $f$ of measurable $f_k$ is
+      measurable, and say what the $\frac1j$ is for.
+    a: |-
+      $$f^{-1}\big((a,\infty)\big) = \bigcup_{j=1}^{\infty} \bigcup_{m=1}^{\infty} \bigcap_{k=m}^{\infty} f_k^{-1}\Big(\big(a + \tfrac1j, \infty\big)\Big)$$
+      "For some margin $\frac1j$, from some $m$ on, every $f_k(x)$ exceeds $a$ by the
+      margin." The margin keeps the inequality strict after the limit: $f_k(x) > a$ for
+      all $k$ would only give $f(x) \ge a$.
+    hook: |-
+      Some margin, some start, every term after.
+
+  - id: leb-chi-measurable
+    cloze: |-
+      The characteristic function $\chi_E$ is $\mathcal{S}$-measurable if and only if
+      {{$E \in \mathcal{S}$}}.
+
+  - id: leb-simple-form
+    q: |-
+      Write $f = 3\chi_{[0,2)} + \chi_{[1,4)}$ with disjoint sets, and give its integral.
+    a: |-
+      $f = 3\chi_{[0,1)} + 4\chi_{[1,2)} + 1\chi_{[2,4)}$, so
+      $\int f \, d\lambda = 3 + 4 + 2 = 9$.
+
+  - id: leb-partition
+    q: |-
+      What is an $\mathcal{S}$-partition of $X$?
+    a: |-
+      A **finite** collection $A_1, \dots, A_m$ of **disjoint** sets in $\mathcal{S}$
+      whose union is $X$ (3.1).
+
+  - id: leb-lower-sum
+    hy: true
+    q: |-
+      Define the lower Lebesgue sum $\mathcal{L}(f, P)$ and the integral of a measurable
+      $f : X \to [0,\infty]$.
+    a: |-
+      $$\mathcal{L}(f, P) = \sum_{j=1}^{m} \mu(A_j) \inf_{A_j} f, \qquad \int f \, d\mu = \sup_P \mathcal{L}(f, P)$$
+      over all $\mathcal{S}$-partitions $P = A_1, \dots, A_m$ of $X$ (3.2, 3.3).
+    hook: |-
+      Riemann's lower sum with "interval" replaced by "measurable set" and "length" by
+      $\mu$.
+
+  - id: leb-lower-sum-compute
+    q: |-
+      For $f(x) = x$ on $[0,1]$ and the partition $P_n$ into the $n$ pieces
+      $[\frac{k-1}{n}, \frac{k}{n})$ (the last one closed), compute $\mathcal{L}(f, P_n)$.
+    a: |-
+      $$\mathcal{L}(f, P_n) = \sum_{k=1}^{n} \frac1n \cdot \frac{k-1}{n} = \frac{n-1}{2n}$$
+    note: |-
+      The infimum on the $k$-th piece is $\frac{k-1}{n}$. The sums increase to
+      $\frac12 = \int_0^1 x \, dx$ (problem [](problems:convergence-theorems#ct-p9)).
+
+  - id: leb-rationals
+    q: |-
+      What are $\int \chi_{\mathbf{Q}} \, d\lambda$ and
+      $\int \chi_{[0,1]\setminus\mathbf{Q}} \, d\lambda$, and what did the Riemann integral
+      say?
+    a: |-
+      $0$ and $1$, by 3.4. $\chi_{\mathbf{Q}}$ is not Riemann integrable on $[0,1]$, and
+      the lower Riemann integral of $\chi_{[0,1]\setminus\mathbf{Q}}$ is $0$.
+
+  - id: leb-simple-integral
+    hy: true
+    q: |-
+      State the integral of a non-negative simple function.
+    a: |-
+      For **disjoint** $E_1, \dots, E_n \in \mathcal{S}$ and $c_k \in [0,\infty]$:
+      $$\int \sum_{k=1}^{n} c_k\chi_{E_k} \, d\mu = \sum_{k=1}^{n} c_k \mu(E_k) \quad (3.7).$$
+
+  - id: leb-riemann-not-additive
+    q: |-
+      Show the lower Riemann integral is not additive.
+    a: |-
+      $f = \chi_{\mathbf{Q}\cap[0,1]}$, $g = \chi_{[0,1]\setminus\mathbf{Q}}$:
+      $L(f) = L(g) = 0$ but $f + g = 1$ on $[0,1]$, so $L(f+g) = 1$. With $\lambda$:
+      $\int f = 0$, $\int g = 1$, $\int(f+g) = 1$.
+
+  - id: leb-mct
+    hy: true
+    q: |-
+      State the Monotone Convergence Theorem.
+    a: |-
+      If $0 \le f_1 \le f_2 \le \dots$ are measurable and $f = \lim_k f_k$, then
+      $$\lim_{k\to\infty} \int f_k \, d\mu = \int f \, d\mu \quad (3.11).$$
+      Both sides may be $\infty$.
+    hook: |-
+      Climbing from the floor: non-negative and increasing, nothing else.
+
+  - id: leb-parts
+    q: |-
+      Define $f^+$ and $f^-$ and the two identities they satisfy.
+    a: |-
+      $f^+ = \max(f, 0)$, $f^- = \max(-f, 0)$, both $\ge 0$;
+      $f = f^+ - f^-$ and $\lvert f \rvert = f^+ + f^-$ (3.17).
+
+  - id: leb-real-integral
+    hy: true
+    q: |-
+      When is $\int f \, d\mu$ defined for a real-valued measurable $f$, and what is it?
+    a: |-
+      When **at least one** of $\int f^+ \, d\mu$, $\int f^- \, d\mu$ is finite. Then
+      $\int f \, d\mu = \int f^+ \, d\mu - \int f^- \, d\mu$ (3.18).
+
+  - id: leb-defined-examples
+    q: |-
+      Is $\int f \, d\lambda$ defined for $f = \chi_{[0,\infty)}$? For $f = 1$ on
+      $[0,\infty)$ and $-1$ on $(-\infty,0)$?
+    a: |-
+      Yes, it is $\infty - 0 = \infty$. No: $\infty - \infty$.
+
+  - id: leb-integrable
+    q: |-
+      What does $\int \lvert f \rvert \, d\mu < \infty$ say about $f^+$ and $f^-$?
+    a: |-
+      Both have finite integrals, because $\lvert f \rvert = f^+ + f^-$. Then
+      $\int f \, d\mu$ is defined and finite.
+
+  - id: leb-ae
+    cloze: |-
+      $E \in \mathcal{S}$ contains $\mu$-almost every element of $X$ if
+      {{$\mu(X \setminus E) = 0$}}. Almost every real number is {{irrational}}, because
+      {{$\lambda(\mathbf{Q}) = 0$}}.
+
+  - id: leb-dct
+    hy: true
+    q: |-
+      State the Dominated Convergence Theorem.
+    a: |-
+      If $f_k \to f$ almost everywhere and there is a measurable $g \ge 0$ with
+      $\int g \, d\mu < \infty$ and $\lvert f_k \rvert \le g$ for every $k$ (almost
+      everywhere), then
+      $$\lim_{k\to\infty} \int f_k \, d\mu = \int f \, d\mu \quad (3.31).$$
+    hook: |-
+      One integrable roof over every $\lvert f_k \rvert$.
+
+  - id: leb-bct
+    hy: true
+    q: |-
+      State the Bounded Convergence Theorem and why it follows from dominated
+      convergence.
+    a: |-
+      If $\mu(X) < \infty$, $f_k \to f$ pointwise and $\lvert f_k \rvert \le c$ for a
+      constant $c$, then $\int f_k \to \int f$ (3.26). Take $g = c$:
+      $\int g = c\,\mu(X) < \infty$.
+
+  - id: leb-which-theorem
+    hy: true
+    q: |-
+      You must compute $\lim_k \int f_k$. How do you choose between MCT, BCT and DCT?
+    a: |-
+      - $f_k \ge 0$ and increasing → monotone.
+      - $\mu(X) < \infty$ and $\lvert f_k \rvert \le c$ → bounded.
+      - Otherwise find an integrable $g \ge \lvert f_k \rvert$ for all $k$ → dominated.
+
+  - id: leb-escaping-height
+    q: |-
+      $f_n = n\chi_{(0,1/n)}$. Limit of the integrals against integral of the limit, and
+      why no theorem applies?
+    a: |-
+      $\int f_n = 1$ for all $n$, the limit is $0$. Not increasing (MCT); no constant
+      bound and $\lambda(\mathbf{R}) = \infty$ (BCT); any dominating $g$ is at least about
+      $\frac{1}{2x}$ near $0$, not integrable (DCT).
+
+  - id: leb-escaping-infinity
+    q: |-
+      $f_n = \chi_{[n, n+1]}$ on $\mathbf{R}$. Compare $\lim_n \int f_n \, d\lambda$ with
+      $\int \lim_n f_n \, d\lambda$, and say why no convergence theorem applies.
+    a: |-
+      $\int f_n = 1$ for all $n$, while $f_n \to 0$ everywhere. Not increasing (MCT);
+      $\lambda(\mathbf{R}) = \infty$ (BCT); any $g \ge f_n$ for all $n$ is at least $1$ on
+      $[1, \infty)$, so $\int g = \infty$ (DCT).
+    note: |-
+      The bump keeps its shape and walks off to infinity. Compare
+      [escaping height](card:leb-escaping-height) (it grows taller) and [spreading out](card:leb-spreading) (it
+      flattens out).
+
+  - id: leb-spreading
+    q: |-
+      $f_n = \frac1n\chi_{[0,n]}$ converges to $0$ uniformly. Does $\int f_n \to 0$?
+    a: |-
+      No: $\int f_n \, d\lambda = 1$ for all $n$. Uniform convergence does not help on a
+      set of infinite measure. (Last year's homework 2, problem 6.)
+
+  - id: leb-riemann-bridge
+    hy: true
+    q: |-
+      State 3.34: when is a function Riemann integrable, and what does it say about the
+      two integrals?
+    a: |-
+      A **bounded** $f : [a,b] \to \mathbf{R}$ is Riemann integrable iff its set of
+      discontinuities has Lebesgue measure $0$. Then $f$ is Lebesgue measurable and
+      $\int_a^b f = \int_{[a,b]} f \, d\lambda$.
+
+  - id: leb-cutoff
+    hy: true
+    q: |-
+      How do you compute $\int_{(0,1]} x^{-1/2} \, d\lambda$?
+    steps:
+      - do: |-
+          $f_n = x^{-1/2}\chi_{[1/n,1]}$: measurable, $0 \le f_1 \le f_2 \le \dots$,
+          $f_n \to x^{-1/2}$ pointwise.
+        why: |-
+          The hypotheses of monotone convergence.
+      - do: |-
+          $\int f_n \, d\lambda = \int_{1/n}^1 x^{-1/2} dx = 2 - \frac{2}{\sqrt n}$.
+        why: |-
+          3.34: bounded and continuous on $[1/n, 1]$.
+      - do: |-
+          Limit: $2$.
+    a: |-
+      $2$. The same pattern with $\chi_{[0,n)}$ gives $\int_{[0,\infty)} xe^{-x} \, d\lambda = 1$.
+
+  - id: leb-unbounded-domain
+    q: |-
+      Compute $\int_{[0,\infty)} x e^{-x} \, d\lambda(x)$, naming each theorem.
+    steps:
+      - do: |-
+          $f_n = xe^{-x}\chi_{[0,n)}$: measurable, $0 \le f_1 \le f_2 \le \dots$, and
+          $f_n(x) = xe^{-x}$ once $n > x$.
+        why: |-
+          The hypotheses of monotone convergence (3.11).
+      - do: |-
+          $\int f_n \, d\lambda = \int_0^n x e^{-x} \, dx = \Big[ -(x+1)e^{-x} \Big]_0^n = 1 - (n+1)e^{-n}$.
+        why: |-
+          3.34: continuous and bounded on $[0,n]$; the point $n$ has measure $0$.
+      - do: |-
+          $(n+1)e^{-n} \to 0$, so the integral is $1$.
+    note: |-
+      Tutorial example 2.
+
+  - id: leb-sin-bound
+    q: |-
+      Which inequality dominates $f_n(x) = \dfrac{n \sin(x/n)}{x(1+x^2)}$ on $(0,\infty)$,
+      and what is the limit of $\int f_n \, d\lambda$?
+    a: |-
+      $\lvert \sin t \rvert \le \lvert t \rvert$ gives $\lvert f_n \rvert \le \frac{1}{1+x^2}$,
+      whose integral is $\frac\pi2$. $f_n \to \frac{1}{1+x^2}$, so by DCT the limit is
+      $\frac{\pi}{2}$.
+
+  - id: leb-bounded-example
+    q: |-
+      Compute $\lim_{n\to\infty} \int_{[0,1]} \big( 1 + \frac{x}{n} \big)^{-n} \, d\lambda(x)$.
+    steps:
+      - do: |-
+          $\lambda([0,1]) = 1 < \infty$, and each $f_n$ is continuous, hence measurable.
+      - do: |-
+          $(1 + \frac{x}{n})^n \to e^x$, so $f_n(x) \to e^{-x}$.
+      - do: |-
+          $1 + \frac{x}{n} \ge 1$ on $[0,1]$, so $0 < f_n \le 1$: the constant $c = 1$
+          bounds every $f_n$.
+      - do: |-
+          Bounded convergence (3.26), then 3.34:
+          $\lim_n \int_{[0,1]} f_n \, d\lambda = \int_0^1 e^{-x} \, dx = 1 - e^{-1}$.
+    a: |-
+      $1 - e^{-1} \approx 0.632$.
+    note: |-
+      Tutorial example 4. On $[1, \infty)$ the measure is infinite and a constant no longer
+      works: see [](problems:convergence-theorems#ct-p3).
+
+  - id: leb-improper
+    q: |-
+      Is every improper Riemann integral a Lebesgue integral? Give the standard example.
+    a: |-
+      No. $\int_0^\infty \frac{\sin x}{x} dx$ exists as an improper Riemann integral, but
+      $\frac{\sin x}{x}$ is not Lebesgue integrable on $[0,\infty)$:
+      $\int \frac{\lvert \sin x \rvert}{x} = \infty$.
+
+  - id: leb-subset
+    cloze: |-
+      Integration on $E \in \mathcal{S}$ is defined by $\int_E f \, d\mu =$
+      {{$\int \chi_E f \, d\mu$}}, and $\big\lvert \int_E f \, d\mu \big\rvert \le$
+      {{$\mu(E) \sup_E \lvert f \rvert$}}.

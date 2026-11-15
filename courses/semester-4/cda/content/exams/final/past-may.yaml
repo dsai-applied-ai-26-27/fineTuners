@@ -1,0 +1,214 @@
+# Ids are permanent: people's progress is keyed by them.
+title: 'Past final: May / August paper'
+kind: 'past'
+instructions: |-
+  Reconstructed from photos of the paper, so some wording is approximate. Question 1 survives only as a heading, so its exact format is unknown — see the note there. The code snippets of Question 8 are not preserved; its solution works from a student's draft answer key.
+questions:
+  - id: 'may-q1'
+    title: 'Question 1: Classification ML Tasks (−0.2 per incorrect answer)'
+    q: |-
+      Classification ML Tasks (−0.2 per incorrect answer)
+    solution: |-
+      **If it is the matching exercise**, the six categories and their discriminators:
+
+      Classification → predict a category · Regression → predict a number · Clustering → group without labels · Association rules → items that co-occur · Anomaly detection → rare/suspicious cases · Summarization → compress into a description.
+
+      The lecture's own set: spam or not spam → classification · estimate selling price → regression · discover similar buying profiles → clustering · bread and milk bought together → association rules · unusual transactions → anomaly detection · concise trends dashboard → summarization.
+
+      **If it is multiple-choice on classification concepts**, the exam-prep document's own worked example is the model: "*Which statement is correct?* A. Accuracy is always the best metric. B. K-Means automatically determines the optimal number of clusters. C. **Scaling is important for distance-based methods such as K-Means.** D. PCA components are always easier to interpret." — **C is correct**, because K-Means is based on distances and variables on larger scales dominate the result.
+
+      **Strategy:** with −0.2 per wrong answer, guessing on a 4-option item has negative expected value. Eliminate to one or leave it blank.
+    source: |-
+      Only the heading and the penalty survive — no options, so the exact format is unknown. Judging by the lecture-1 exercise and the exam-prep document's MCQ examples, it is either a matching exercise over the six task types or multiple-choice on classification concepts. Prepared for both below.
+
+  - id: 'may-q2'
+    title: 'Question 2: Association between exercise and heart disease'
+    q: |-
+      Association between exercise and heart disease
+    solution: |-
+      **A) χ² (chi-square) test of independence.**
+
+      **B)** Both variables are **categorical**. Heart disease is nominal (yes/no) and exercise is recorded as categories. **Pearson** requires two continuous numeric variables and measures only a *linear* relationship — neither is defined on a nominal label. **Spearman** requires at least **ordinal** variables, and "has disease" cannot be ranked above "does not have disease". χ² is **non-parametric**, built for counts in a contingency table, and assumes nothing about distribution or linearity.
+
+      *Add one line for the extra mark:* if exercise were given numerically (minutes/week) with disease still binary, χ² would still work after binning, but point-biserial correlation or logistic regression would be cleaner.
+
+      **C)** χ² = ΣᵢΣⱼ (Oᵢⱼ − Eᵢⱼ)² / Eᵢⱼ
+
+      **Oᵢⱼ** = observed count in row i, column j · **Eᵢⱼ** = count expected under independence · **i, j** range over the r and c categories of the two variables.\
+      **Eᵢⱼ = (row totalᵢ × column totalⱼ) / n**, with n the grand total.\
+      **df = (r−1)(c−1)**; for a 2×2 table df = 1 and the α = 0.05 critical value is 3.841.
+
+      Then: the larger the χ², the more likely the variables are related; the cells contributing most are those where observed differs most from expected; and **association is not causation**.
+
+      **D)** Correlation is a good tool when both variables are **numeric**, the relationship is **linear** (Pearson) or at least **monotone** (Spearman), and there are no dominant outliers. It fails on non-linear relationships — Pearson on a U-shape returns ≈ 0 despite perfect dependence — and is sensitive to a single extreme point, so look at the scatter plot first.
+
+      **Metrics:** **Pearson r** for linear numeric, range \[−1,1]; **Spearman ρ** for monotone/ordinal; **covariance** for direction only (scale-dependent); **χ²** for categorical, with **Cramér's V** as the 0–1 strength measure; **R²** for variance explained.
+    source: |-
+      A) Which method is suitable (answers offered: Pearson correlation, Spearman, or chi-squared)? B) Explain why it is suitable (because of the type of data…). C) Write its formula and define all elements. D) In general, when is correlation good for determining a relationship between variables, and what metric can be used to measure the relationship?
+
+  - id: 'may-q3'
+    title: 'Question 3: Redundant data'
+    q: |-
+      Redundant data
+    solution: |-
+      **A)** Data carrying information already present elsewhere — it adds volume without adding information. It occurs most often when **integrating multiple databases**, in three forms: **object identification** (the same attribute or object under different names in different databases); **derivable data** (one attribute derived from others, e.g. annual revenue when the monthly figures are stored); and **redundancy in rows** (duplicate records). A fourth practical form is **strongly correlated attributes** measuring the same underlying thing.
+
+      **B)** The slide's own answer: **redundant attributes may be detected by correlation analysis and covariance analysis**.
+
+      In practice: for **numeric** attributes, the correlation matrix, flagging |r| above a threshold; for **nominal** attributes, the **χ²** test — a large χ² means one attribute is largely predictable from the other; for **rows**, duplicate detection; plus VIF for multicollinearity that pairwise correlation misses.
+
+      **C)** Drop duplicate rows; for a correlated pair keep the one that is more interpretable or has fewer missing values; drop derived attributes and identifiers; where there are many correlated features use **PCA** or **attribute subset selection**; and fix it at integration time — careful integration "may help reduce/avoid redundancies and inconsistencies and improve mining speed and quality".
+
+      **Why it matters** (say this, it is the "so what"): a concept appearing twice is counted twice by any **distance-based** method, so it dominates the clustering; correlated features destabilise regression coefficients; and duplicates straddling a train/test split put the same record on both sides.
+    source: |-
+      A) What is redundant data? B) How to detect it? C) What to do with redundant data?
+
+  - id: 'may-q4'
+    title: 'Question 4: Clustering — BFR'
+    q: |-
+      Clustering — BFR
+    solution: |-
+      **A)** **BFR (Bradley–Fayyad–Reina)** is a variant of k-means designed to handle very large, **disk-resident** datasets. It assumes clusters are **normally distributed around a centroid** in Euclidean space, with standard deviations that may vary per dimension — so clusters look like **axis-aligned ellipses**.
+
+      Points are read from disk **one main-memory-full at a time**, and most points from previous loads are summarised by simple statistics. Initial centroids come from the first load (k random points, or a small sample clustered optimally, or a far-apart selection).
+
+      **Three classes of points:** **DS** (discard set) — close enough to a centroid to be summarised, and the points are then discarded; **CS** (compression set) — groups close to each other but not to any centroid, summarised but not assigned to a cluster; **RS** (retained set) — isolated points, held as actual points.
+
+      **Each summary is (N, SUM, SUMSQ)** — 2d+1 numbers for a cluster of any size, giving centroidᵢ = SUMᵢ/N and varianceᵢ = SUMSQᵢ/N − (SUMᵢ/N)².
+
+      **Processing a memory-load:** (1) points sufficiently close to a centroid join that cluster and the DS; (2) cluster the remaining points and the old RS with any in-memory algorithm — clusters go to CS, outlying points to RS; (3) adjust the DS statistics by adding the Ns, SUMs and SUMSQs; (4) consider merging compressed sets in the CS; (5) on the last round, merge all CS and RS into their nearest cluster.
+
+      **"Close enough"** means **Mahalanobis distance below a threshold** — d(x,c) = √(Σᵢ((xᵢ−cᵢ)/σᵢ)²), accepted at e.g. **2 standard deviations**. Two CS sets are merged if the **combined variance** is below a threshold, which N/SUM/SUMSQ make instant to compute.
+
+      **B)** **The shape assumption.** Clusters must be normally distributed and **axis-aligned** — an ellipse at an angle is not allowed, and neither is anything non-convex. Dropping the assumption would require storing a full d×d covariance matrix per cluster instead of a d-vector, which is too big. Secondary: k must be fixed in advance; a single pass means a discarded point can never be reassigned; and it needs feature scaling.
+
+      **C) No — BFR is not suitable for the plotted data.**
+
+      *What the plot shows:* the sketch is smudged, but it reads as **two interleaving crescents** — one arc opening right with a second curving into its concavity. The 26.8 paper asks this same question and describes its figure as "2 crescent shaped clusters", which supports that reading. Either way — one crescent or two — the verdict and the reasoning are identical, because both are **non-convex**.
+
+      *Why:* BFR models each cluster as an axis-aligned normal distribution. Fit that to a crescent and the **centroid lands in the hollow where there is no data**, and the 2σ ellipse covers large regions belonging to the other crescent. There is no axis-aligned ellipse that contains one crescent and excludes the other, so the recovered clusters cut *across* both rather than separating them.
+
+      *Use instead:* **CURE**, which represents a cluster by several dispersed representative points and so admits any shape — or a density-based method such as DBSCAN.
+    source: |-
+      A) What is it and how it works. B) What is its main drawback? C) From the image, determine whether BFR is suitable for clustering. (Hand-drawn scatter plot.)
+
+  - id: 'may-q5'
+    title: 'Question 5: Recommender systems — content-based'
+    q: |-
+      Recommender systems — content-based
+    solution: |-
+      *Reading note: "CR" is the paper's shorthand for the content-based recommender, given the question's own heading.*
+
+      **A)** **Recommend items to customer x similar to previous items rated highly by the same customer x**, using **item features** rather than other users' ratings. The four steps: build **item profiles** (feature vectors — actors, director, genre; for text the high-TF-IDF words); build a **user profile** as the weighted average of the profiles of items that user rated; **predict** with cosine similarity; **recommend** the top unseen items.
+
+      **B) Applications:** movie recommendation by shared actors, director or genre; websites, blogs and **news** with similar content; music; e-commerce product similarity; job/candidate matching. Structurally it is the right choice wherever items arrive constantly and have no ratings yet — the **new item / first-rater** case — and wherever you must **explain** a recommendation.
+
+      **C) The graph** is tripartite: **user → items they rated → features**, with the recommendation being the path back out to an unseen item sharing those features. Draw U on the left, the rated items M1, M2 in the middle, feature nodes (Action, Sci-Fi) on the right, and a dashed arrow from the features to an unseen M3. Note there is **no second user anywhere in the graph** — that is the structural difference from collaborative filtering, and it is worth labelling.
+
+      **D)** Draw U with 6 edges to the six watched movies M1…M6, each of which has an edge to the feature node **Actor A**. Collapse those two-hop paths into one aggregated edge **w(U, Actor A) = 6** — that weight *is* the user profile entry.
+
+      As a vector, following Lecture 7's Example 1 ("user watched 5 movies, 2 with actor A and 3 with actor B ⇒ weights 0.4 and 0.6"): the profile weight is the **count over the total watched**. Score each unseen movie by **cos(x, i)** and recommend the highest.
+
+      **E) Pros:** no need for data on other users, so no cold-start or sparsity problem; recommends to users with **unique tastes**; recommends **new and unpopular items** — no first-rater problem, since the profile depends only on the item's own features; **provides explanations** by naming the features that caused it.
+
+      **Cons:** finding appropriate features is hard (images, movies, music); **overspecialisation** — never recommends outside the user's profile, people have multiple interests, and it cannot exploit other users' quality judgements; **no recommendations for new users**, since the profile is built by aggregating rated items.
+
+      **Which method covers the cons: collaborative filtering**, and in practice a **hybrid**. CF learns from user–item interactions rather than features, so it needs no feature engineering and can surface items unlike anything the user has seen — fixing overspecialisation — and it captures quality judgements features cannot express. The lecture's own hybrid prescription: implement two or more recommenders and combine the predictions, perhaps with a linear model; add content-based **item profiles** for the new-item problem and **demographics** for the new-user problem.
+    source: |-
+      A) What is meant by this? B) What are applications of the CR algorithm? C) Draw an example of the graph. D) Draw the CR graph: user watched movie with actor A 6 times… E) What are the pros and cons of CR and which method covers its cons?
+
+  - id: 'may-q6'
+    title: 'Question 6: Ensembles'
+    q: |-
+      Ensembles
+    solution: |-
+      **A)** Error decomposition splits the **expected test error** — the error you would get if the training set were redrawn at random — into three additive parts with different causes and different cures:
+
+      **Error = bias² + variance + noise**
+
+      **bias²** = Eₓ\[(h\*(x) − E\_D\[y(x;D)])²] — how far the average prediction is from the truth; high bias = underfitting.\
+      **variance** = E\_(D,x)\[(y(x;D) − E\_D\[y(x;D)])²] — how much the prediction changes with the training set; high variance = overfitting.\
+      **noise** = E\_(D,x,t)\[(t − h\*(x))²] — irreducible.
+
+      with **t** the true target, **D** a random training set, **y(x;D)** the model trained on D, and **h\*(x) = E\[t|x]** the Bayes-optimal predictor. The derivation inserts ±h\*(x), then ±E\_D\[y]; each cross-term vanishes because its expectation is zero.
+
+      **B)** "An ensemble of predictors is a **set of predictors whose individual decisions are combined in some way** to classify new examples." Components: **base learners** (usually decision trees, which overfit easily and are fast at inference); a source of **diversity** (different training subsets, feature subsets, example weights, or model types); and a **combination rule** (majority vote, average, or weighted vote).
+
+      **C) Bagging** — parallel training, each learner on its own bootstrap sample (sampling with replacement), combined by average or majority vote; **reduces variance**. **Boosting** — sequential training, each learner reweighting the data toward the previous ones' mistakes, combined by weighted vote; **reduces bias**. (Third: stacking, over heterogeneous classifiers.)
+
+      **D)** For an average of m base learners:
+
+      independent: Var((1/m)Σxᵢ) = σ²/m\
+      correlated: Var((1/m)Σxᵢ) = (1−ρ)σ²/m + ρσ²
+
+      Averaging divides variance by m — but only if the learners are independent, and bootstrap samples overlap heavily, so they are not. As m → ∞ the variance **floors at ρσ²**. At ρ = 0.5, going from 10 to 100 learners moves variance only from 0.550σ² to 0.505σ². **The bias does not move at all** — which is why bagging cannot fix underfitting, and why Random Forest adds feature subsampling: to push ρ down so the (1−ρ)/m term can work.
+
+      **E)** **Random Forest** (bagging + random feature subset at each split; each tree votes, most popular class wins), **bagged decision trees**, **AdaBoost**, **Gradient Boosting / XGBoost**, **stacking**, **voting classifiers**, **mixture of experts**.
+
+      Two free extras: **bootstrapping** = sampling with replacement, and bagging = **B**ootstrap **agg**regat**ing**; **out-of-bag estimation** predicts each training example using only the trees that never saw it (each is left out of ≈ 1/e ≈ 37% of bags), giving a free test-error estimate that reduces the need for a validation set.
+    source: |-
+      A) What is error decomposition? B) What are they and what are their main components? C) What are two main strategies used in ensemble learning? D) Compute error decomposition for ensemble. E) Name examples of ensembles.
+
+  - id: 'may-q7'
+    title: 'Question 7: Mining associations'
+    q: |-
+      Mining associations
+    solution: |-
+      **A)** The market-basket model: a large set of items, a large set of baskets, each basket a small subset of items.
+
+      **Definitions first.** **support(I)** = the number of baskets containing all of I (or that count as a fraction of all baskets); itemsets with support ≥ s are **frequent**. **conf(I → j) = support(I ∪ \{j}) / support(I)**. **Interest(I → j) = conf(I → j) − Pr\[j]**, where Pr\[j] is the fraction of all baskets containing j — interesting rules have high positive or negative interest, usually above 0.5.
+
+      **The process.** **Step 1: find all frequent itemsets** — the hard part. **Step 2: rule generation** — for every subset A of a frequent itemset I, generate A → I \\ A. Since I is frequent, A is frequent too, so both supports are already counted and the confidence needs **no extra pass**. Output the rules above the confidence threshold, then filter by interest.
+
+      **What makes step 1 tractable** is **monotonicity**: if I appears at least s times, so does every subset of I — contrapositive, if item i is not frequent then no itemset containing i can be frequent, so it is never counted. A-Priori uses this level by level: Cₖ is built from Lₖ₋₁, then one pass counts it to give Lₖ.
+
+      **Cost is measured in passes**, because the data is disk-resident and the true cost is disk I/O; within a pass the binding constraint is **main memory for counters**.
+
+      **B)** The lecture's own example. Items \{milk, coke, pepsi, beer, juice}, support threshold 3:
+
+      B1=\{m,c,b} B2=\{m,p,j} B3=\{m,b} B4=\{c,j} B5=\{m,p,b} B6=\{m,c,b,j} B7=\{c,b,j} B8=\{b,c}
+
+      **Pass 1:** b:6, c:5, j:4, m:5, p:2 → **L₁ = \{b},\{c},\{j},\{m}**; p is dropped, and with it every pair and triple containing p.
+
+      **Pass 2** over the 6 pairs from L₁: \{b,c}:4 ✓ \{b,j}:2 ✗ \{b,m}:4 ✓ \{c,j}:3 ✓ \{c,m}:2 ✗ \{j,m}:2 ✗ → **L₂ = \{b,c},\{b,m},\{c,j}**.
+
+      **Pass 3:** every candidate triple needs all three of its pairs in L₂ — \{b,c,m} needs \{c,m} ✗, \{b,c,j} needs \{b,j} ✗, \{b,j,m} needs \{b,j} ✗, \{c,j,m} needs \{c,m} ✗. **C₃ is empty.**
+
+      **Answer:** \{m}, \{c}, \{b}, \{j}, \{m,b}, \{b,c}, \{c,j}. **No set of 3 or more items is frequent.**
+
+      **Confidence and interest example:** \{m,b} → c has confidence 2/4 = **0.5**; c appears in 5/8 of baskets, so interest = |0.5 − 5/8| = **1/8** — **the rule is not very interesting**.
+
+      **C) A-Priori and PCY.**
+
+      **How they differ:** A-Priori's pass 1 counts only individual items, leaving most of main memory idle; its pass 2 must hold a counter for every candidate pair, which is the step that exhausts memory. **PCY uses that idle pass-1 memory**: as well as counting items, it hashes every pair in every basket into buckets and keeps the bucket counts, then collapses them to a **bitmap** (1 if count ≥ s). In pass 2 a pair is counted only if **both items are frequent AND its bucket bit is 1**.
+
+      **What PCY solves:** A-Priori's **main-memory bottleneck in pass 2**. A bucket whose count is below s cannot contain any frequent pair, so all its pairs are eliminated before they need counters. The converse fails — a frequent bucket proves nothing — so PCY gives **false positives but never false negatives**, and the answer stays exact.
+
+      *Detail worth adding:* PCY's pass 2 cannot use the triangular-matrix method (the survivors are scattered), so it needs a table of triples at 12 bytes rather than 4 — hence the hash table must eliminate about **2/3** of candidate pairs for PCY to beat A-Priori.
+
+      *Refinements:* **Multistage** (3 passes, rehash the survivors with a second independent hash function, check both bitmaps) and **Multihash** (2 passes, several hash tables in the first pass).
+    source: |-
+      A) Explain the mining association complete process. B) Given buckets, support and confidence, find frequent items (example from lectures). C) Name two algorithms. How they differ and what disadvantage does one solve for the other.
+
+  - id: 'may-q8'
+    title: 'Question 8: Detect logical errors in the code (−0.2 per incorrect error detection)'
+    q: |-
+      Detect logical errors in the code (−0.2 per incorrect error detection)
+    solution: |-
+      **The snippets themselves are not preserved**, so what follows checks a student's draft answer key rather than re-deriving it.
+
+      **Part A — assert these two:**
+
+      **1. Group-based split.** Random splitting puts segments from the same patient/record in both train and test, so the model learns source-specific patterns rather than class differences and the score is **overly optimistic**. Fix: `GroupShuffleSplit` / `StratifiedGroupKFold` keyed on patient or record id.
+
+      **2. Accuracy is the wrong metric** given imbalance or asymmetric error costs. Report the confusion matrix plus **recall** where false negatives are expensive, or F1 where they are not — and say that deciding which needs domain knowledge.
+
+      **Part A — hedge these two.** "Joining method" is only an error if the join actually duplicates or drops rows (check the row count before and after; check key types and whitespace). "Outliers dropping" is only an error if outliers are dropped from the *whole* dataset before the split — which is leakage — or if the outliers are the very events being detected. Phrase both conditionally; an asserted wrong claim costs 0.2.
+
+      **Part B — all three are solid, assert them:**
+
+      **1. Split error.** **2. Feature selection on the whole data** — the selector has seen the test labels, so the test score partly measures the test set; fit it on train only, ideally inside a `Pipeline`. **3. Forward fill error** — be precise about *which*: a global `ffill()` across group boundaries carries one entity's value into another's rows (fix: `groupby(id).ffill()` after sorting by id and time). Distinguish it from **backward** fill, which is outright leakage because it imports a future value.
+
+      **Structure each answer** as the exam-prep document requires: identify → explain why → propose corrected workflow → corrected code.
+    source: |-
+      What survives of this question is a student's draft answer key rather than the code itself. It reads — A) Errors: 1. Train test split error, split by groups instead. 2. Wrong metric used (accuracy not good). Potential errors: 3. Joining method. 4. Outliers dropping. B) Errors: 1. Split error. 2. Feature selection on the whole data. 3. Forward fill error.

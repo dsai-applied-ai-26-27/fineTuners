@@ -1,0 +1,163 @@
+# Ids are permanent: people's progress is keyed by them.
+title: 'Sample paper 2 (a colleague''s practice exam, reworded)'
+kind: mock
+instructions: |-
+  Code tasks in the shape of Section B, rebuilt from colleagues' practice exams and the lab notebooks. The original wording could not be recovered: these are the task types, worded by the study kit, under the numbering the kit kept. No point values or time limit are known.
+
+  Read the prompt, write the code on paper, then open the solution.
+questions:
+  - id: s2-1a
+    title: 'Question 1 (a)'
+    topic: regularization
+    q: |-
+      Train Ridge with alpha=1 using the cholesky solver, Lasso with alpha=0.1, and ElasticNet with alpha=0.1 and l1_ratio=0.5.
+    solution: |-
+      ```python
+      from sklearn.linear_model import Ridge, Lasso, ElasticNet
+
+      ridge_reg = Ridge(alpha=1, solver="cholesky", random_state=42)
+      ridge_reg.fit(X_train, y_train)
+
+      lasso_reg = Lasso(alpha=0.1)
+      lasso_reg.fit(X_train, y_train)
+
+      elastic_net = ElasticNet(alpha=0.1, l1_ratio=0.5, random_state=42)
+      elastic_net.fit(X_train, y_train)
+      ```
+
+      alpha is strength in all three; l1_ratio is the MIX and exists only in ElasticNet. Ridge shrinks all coefficients, Lasso zeroes some out entirely.
+    source: |-
+      Labelled "Sample paper 2 · 1a" in the study kit. The wording is the kit's summary of a colleague's practice exam, not the original.
+
+  - id: s2-1b
+    title: 'Question 1 (b)'
+    topic: linear
+    q: |-
+      Explain the manual SGD loop: what learning_schedule is for, and why gradients are computed from a single xi, yi rather than the whole matrix.
+
+      ```python
+      n_epochs = 50
+      t0, t1 = 5, 50
+
+      def learning_schedule(t):
+          return t0 / (t + t1)
+
+      theta = np.random.randn(2, 1)
+      for epoch in range(n_epochs):
+          for i in range(m):
+              random_index = np.random.randint(m)
+              xi = X_b[random_index:random_index+1]
+              yi = y[random_index:random_index+1]
+              gradients = 2 * xi.T.dot(xi.dot(theta) - yi)
+              eta = learning_schedule(epoch * m + i)
+              theta = theta - eta * gradients
+      ```
+    solution: |-
+      Single instances: each step costs O(1) instead of O(m), so the method scales to very large datasets, and the noise in the updates helps it jump out of local minima. Note there is no /m in the gradient — you are averaging over exactly one instance. The cost is that SGD never settles: with a fixed η it bounces around the optimum forever. learning_schedule(t) = t0/(t+t1) shrinks η as training progresses, so early steps are large (fast progress, still able to escape bad regions) and late steps are tiny (the parameters come to rest). It is simulated annealing; t is the global step count `epoch*m + i`, so the decay is continuous across epochs.
+    source: |-
+      Labelled "Sample paper 2 · 1b" in the study kit. The wording is the kit's summary of a colleague's practice exam, not the original.
+
+  - id: s2-1c
+    title: 'Question 1 (c)'
+    topic: evaluation
+    q: |-
+      Evaluate sgd_clf with cross-validated predictions instead of a single split: cv=3, then print the confusion matrix, precision and recall.
+    solution: |-
+      ```python
+      from sklearn.model_selection import cross_val_predict
+      from sklearn.metrics import confusion_matrix, precision_score, recall_score
+
+      y_train_pred = cross_val_predict(sgd_clf, X_train, y_train, cv=3)
+
+      print(confusion_matrix(y_train, y_train_pred))
+      print(precision_score(y_train, y_train_pred))
+      print(recall_score(y_train, y_train_pred))
+      ```
+
+      cross_val_predict, not cross_val_score — you need one out-of-fold prediction per instance to build a confusion matrix, not three fold scores.
+    source: |-
+      Labelled "Sample paper 2 · 1c" in the study kit. The wording is the kit's summary of a colleague's practice exam, not the original.
+
+  - id: s2-2a
+    title: 'Question 2 (a)'
+    topic: nlp
+    q: |-
+      Implement an encoder–decoder for sequence-to-sequence: encoder LSTM(128) returning state, decoder LSTM(128) initialised with the encoder states, Dense softmax output.
+    solution: |-
+      ```python
+      encoder_inputs = keras.layers.Input(shape=[None], dtype=np.int32)
+      decoder_inputs = keras.layers.Input(shape=[None], dtype=np.int32)
+
+      embeddings = keras.layers.Embedding(vocab_size, embed_size)
+      encoder_embeddings = embeddings(encoder_inputs)
+      decoder_embeddings = embeddings(decoder_inputs)
+
+      encoder = keras.layers.LSTM(128, return_state=True)
+      encoder_outputs, state_h, state_c = encoder(encoder_embeddings)
+      encoder_state = [state_h, state_c]
+
+      decoder_lstm = keras.layers.LSTM(128, return_sequences=True)
+      decoder_outputs = decoder_lstm(decoder_embeddings,
+                                     initial_state=encoder_state)
+
+      Y_proba = keras.layers.Dense(vocab_size, activation="softmax")(decoder_outputs)
+
+      model = keras.models.Model(inputs=[encoder_inputs, decoder_inputs],
+                                 outputs=[Y_proba])
+      ```
+
+      return_state=True on an LSTM unpacks into THREE variables. The decoder must have return_sequences=True (it emits a word at every step) and initial_state=encoder_state — that argument IS the encoder–decoder link. Functional API, because the graph has two inputs.
+    source: |-
+      Labelled "Sample paper 2 · 2a" in the study kit. The wording is the kit's summary of a colleague's practice exam, not the original.
+
+  - id: s2-2b
+    title: 'Question 2 (b)'
+    topic: ensembles
+    q: |-
+      Gradient Boosting with early stopping: max_depth=2, n_estimators=120, random_state=42; use staged_predict on the validation set to find the number of estimators with the lowest MSE.
+    solution: |-
+      ```python
+      from sklearn.ensemble import GradientBoostingRegressor
+      from sklearn.metrics import mean_squared_error
+
+      gbrt = GradientBoostingRegressor(max_depth=2, n_estimators=120, random_state=42)
+      gbrt.fit(X_train, y_train)
+
+      errors = [mean_squared_error(y_val, y_pred)
+                for y_pred in gbrt.staged_predict(X_val)]
+      bst_n_estimators = np.argmin(errors) + 1
+
+      gbrt_best = GradientBoostingRegressor(max_depth=2,
+                                            n_estimators=bst_n_estimators,
+                                            random_state=42)
+      gbrt_best.fit(X_train, y_train)
+      ```
+
+      +1 because errors[0] is the ensemble with ONE tree. The alternative implementation grows incrementally with warm_start=True and breaks after five consecutive increases in validation error.
+    source: |-
+      Labelled "Sample paper 2 · 2b" in the study kit. The wording is the kit's summary of a colleague's practice exam, not the original.
+
+  - id: s2-2c
+    title: 'Question 2 (c)'
+    topic: sequences
+    q: |-
+      Create a WaveNet-style architecture: an input layer, a loop of Conv1D layers with dilation_rate doubling 1,2,4,8, causal padding, relu activation, ending with Conv1D of 10 filters and kernel size 1.
+    solution: |-
+      ```python
+      model = keras.models.Sequential()
+      model.add(keras.layers.InputLayer(input_shape=[None, 1]))
+
+      for rate in (1, 2, 4, 8) * 2:
+          model.add(keras.layers.Conv1D(filters=20, kernel_size=2,
+                                        padding="causal", activation="relu",
+                                        dilation_rate=rate))
+
+      model.add(keras.layers.Conv1D(filters=10, kernel_size=1))
+      model.compile(loss="mse", optimizer="adam", metrics=[last_time_step_mse])
+      history = model.fit(X_train, Y_train, epochs=20,
+                          validation_data=(X_valid, Y_valid))
+      ```
+
+      causal padding = no peeking at future time steps. Doubling dilation grows the receptive field exponentially. The final kernel_size=1 convolution acts as a per-time-step Dense producing the 10 outputs.
+    source: |-
+      Labelled "Sample paper 2 · 2c" in the study kit. The wording is the kit's summary of a colleague's practice exam, not the original.

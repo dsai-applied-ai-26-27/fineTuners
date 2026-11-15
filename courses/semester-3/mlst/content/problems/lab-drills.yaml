@@ -1,0 +1,167 @@
+# Ids are permanent: people's progress is keyed by them.
+title: 'Lab drills'
+instructions: |-
+  Exam-shaped prompts taken from the labs, beside the ones on the past paper and the two sample papers. Read the prompt, write the code on paper, then open the solution.
+questions:
+  - id: drill-01
+    title: 'Stratified k-fold by hand'
+    topic: evaluation
+    q: |-
+      Write the k-fold evaluation by hand: StratifiedKFold with 3 shuffled folds, a fresh untrained model each fold, and the accuracy per fold.
+    solution: |-
+      ```python
+      from sklearn.model_selection import StratifiedKFold
+      from sklearn.base import clone
+
+      skfolds = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
+
+      for train_index, test_index in skfolds.split(X_train, y_train):
+          clone_clf = clone(sgd_clf)
+          clone_clf.fit(X_train[train_index], y_train[train_index])
+          y_pred = clone_clf.predict(X_train[test_index])
+          print(sum(y_pred == y_train[test_index]) / len(y_pred))
+      ```
+
+      clone gives an untrained copy with the same hyperparameters, so fold 2 has not already learned from fold 1. deepcopy would do the opposite — copy a trained model.
+    source: |-
+      Study kit drill, from lab 3 of the course.
+
+  - id: drill-02
+    title: 'Keep 95% of the variance, two ways'
+    topic: dimred
+    q: |-
+      Reduce dimensionality to preserve 95% of the variance, two ways.
+    solution: |-
+      ```python
+      from sklearn.decomposition import PCA
+
+      # explicit
+      pca = PCA()
+      pca.fit(X_train)
+      cumsum = np.cumsum(pca.explained_variance_ratio_)
+      d = np.argmax(cumsum >= 0.95) + 1
+      pca = PCA(n_components=d)
+      X_reduced = pca.fit_transform(X_train)
+
+      # equivalent one-liner
+      pca = PCA(n_components=0.95)
+      X_reduced = pca.fit_transform(X_train)
+      ```
+
+      n_components as a float below 1 means 'this share of variance'; as an int it means 'this many dimensions'.
+    source: |-
+      Study kit drill, from lab 8 of the course.
+
+  - id: drill-03
+    title: 'Bagging with out-of-bag evaluation'
+    topic: ensembles
+    q: |-
+      Bagging with out-of-bag evaluation: 500 decision trees, samples of 100, with replacement, and report the OOB score.
+    solution: |-
+      ```python
+      from sklearn.ensemble import BaggingClassifier
+      from sklearn.tree import DecisionTreeClassifier
+
+      bag_clf = BaggingClassifier(
+          DecisionTreeClassifier(), n_estimators=500,
+          max_samples=100, bootstrap=True, oob_score=True, random_state=42)
+      bag_clf.fit(X_train, y_train)
+
+      print(bag_clf.oob_score_)
+      y_pred = bag_clf.predict(X_test)
+      ```
+
+      bootstrap=True is bagging (with replacement); False is pasting. oob_score only works with bootstrap=True, because pasting leaves nothing out. About 63.2% of unique instances are drawn, so ~37% are out-of-bag.
+    source: |-
+      Study kit drill, from lab 7 of the course.
+
+  - id: drill-04
+    title: 'Batch gradient descent from scratch'
+    topic: linear
+    q: |-
+      Write a batch gradient descent loop for linear regression from scratch, with the bias column added by hand.
+    solution: |-
+      ```python
+      X_b = np.c_[np.ones((100, 1)), X]     # add x0 = 1
+
+      eta = 0.1
+      n_iterations = 1000
+      m = 100
+      theta = np.random.randn(2, 1)
+
+      for iteration in range(n_iterations):
+          gradients = 2/m * X_b.T.dot(X_b.dot(theta) - y)
+          theta = theta - eta * gradients
+
+      # closed-form check
+      theta_best = np.linalg.inv(X_b.T.dot(X_b)).dot(X_b.T).dot(y)
+      ```
+
+      2/m for batch, 2/minibatch_size for mini-batch, plain 2 for single-instance SGD. The divisor always matches how many instances the gradient averaged over.
+    source: |-
+      Study kit drill, from lab 4 of the course.
+
+  - id: drill-05
+    title: 'A threshold for 90% precision'
+    topic: evaluation
+    q: |-
+      Sweep the classification threshold to reach at least 90% precision, using out-of-fold scores.
+    solution: |-
+      ```python
+      y_scores = cross_val_predict(sgd_clf, X_train, y_train_5, cv=3,
+                                   method="decision_function")
+
+      precisions, recalls, thresholds = precision_recall_curve(y_train_5, y_scores)
+      threshold_90 = thresholds[np.argmax(precisions >= 0.90)]
+      y_train_pred_90 = (y_scores >= threshold_90)
+      ```
+
+      method="decision_function" returns scores instead of labels. np.argmax on a boolean array returns the index of the first True — the smallest threshold that reaches the target precision.
+    source: |-
+      Study kit drill, from lab 3 of the course.
+
+  - id: drill-06
+    title: 'A stateful character RNN'
+    topic: nlp
+    q: |-
+      Build a stateful char-RNN for text generation, with the callback that makes it work.
+    solution: |-
+      ```python
+      model = keras.models.Sequential([
+          keras.layers.GRU(128, return_sequences=True, stateful=True, dropout=0.2,
+                           batch_input_shape=[batch_size, None, max_id]),
+          keras.layers.GRU(128, return_sequences=True, stateful=True, dropout=0.2),
+          keras.layers.TimeDistributed(keras.layers.Dense(max_id, activation="softmax"))
+      ])
+
+      class ResetStatesCallback(keras.callbacks.Callback):
+          def on_epoch_begin(self, epoch, logs):
+              self.model.reset_states()
+
+      model.compile(loss="sparse_categorical_crossentropy", optimizer="adam")
+      history = model.fit(dataset, epochs=50, callbacks=[ResetStatesCallback()])
+      ```
+
+      Stateful needs batch_input_shape (fixed batch size) and non-shuffled sequential batches. Without the reset callback the state leaks across epochs.
+    source: |-
+      Study kit drill, from lab 10 of the course.
+
+  - id: drill-07
+    title: 'Non-linear SVM classification'
+    topic: svm
+    q: |-
+      Non-linear SVM classification on data that is not linearly separable — write both kernel options and say which parameter does what.
+    solution: |-
+      ```python
+      from sklearn.svm import SVC
+
+      poly_svc = SVC(kernel="poly", degree=3, coef0=1, C=5)
+      poly_svc.fit(X_train, y_train)
+
+      rbf_svc = SVC(kernel="rbf", gamma=5, C=0.001)
+      rbf_svc.fit(X_train, y_train)
+      ```
+
+      degree = polynomial order; coef0 = how much high-degree terms count; gamma = reach of each point's influence in the RBF kernel; C = inverse regularisation. gamma and C both raise complexity, so when overfitting, lower both.
+    source: |-
+      Study kit drill, from lab 5 of the course.

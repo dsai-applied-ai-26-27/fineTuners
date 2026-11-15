@@ -1,0 +1,71 @@
+sections:
+  - title: Representing patterns
+    topic: representation
+    rows:
+      - id: f-transform
+        name: Mean and covariance under a linear feature map
+        formula: |-
+          $$\mu_x = F^\top \mu_y, \qquad \Sigma_x = F^\top \Sigma_y F$$
+        note: |-
+          For $x = F^\top y$. With a single direction $f$: $\mu_x = f^\top \mu$ and
+          $\sigma_x^2 = f^\top \Sigma f$.
+      - id: f-contour
+        name: Unit standard-deviation contour of a class
+        formula: |-
+          $$(x - \mu)^\top \Sigma^{-1} (x - \mu) = 1$$
+        note: |-
+          An ellipse centred at $\mu$ with semi-axis $\sqrt{\lambda_j}$ along eigenvector
+          $v_j$ of $\Sigma$.
+      - id: f-eigen-shortcut
+        name: Eigenvalues of a symmetric matrix with equal diagonal
+        formula: |-
+          $$\begin{pmatrix} a & b \\ b & a \end{pmatrix}: \quad \lambda = a + b \ \text{along } (1, 1), \qquad \lambda = a - b \ \text{along } (1, -1)$$
+
+  - title: Feature extraction
+    topic: features
+    rows:
+      - id: f-fisher-criterion
+        name: Fisher's criterion
+        formula: |-
+          $$J(f) = \frac{f^\top \Sigma_T f}{f^\top \Sigma_W f}, \qquad \Sigma_W = \sum_{\kappa=1}^{K} \Sigma_\kappa$$
+        note: |-
+          Projected between-class spread over projected within-class spread.
+      - id: f-fisher-direction
+        name: Two-class Fisher direction
+        formula: |-
+          $$f \propto \Sigma_W^{-1}(\mu_1 - \mu_2), \qquad \Sigma_W = \Sigma_1 + \Sigma_2$$
+        note: |-
+          Direction only. For several features: $\Sigma_W^{-1} \Sigma_T F = F \Lambda$, at most
+          $K - 1$ of them.
+      - id: f-pca
+        name: PCA
+        formula: |-
+          $$\Sigma v_j = \lambda_j v_j, \qquad \lambda_1 \ge \dots \ge \lambda_m, \qquad F = [\,v_1 \;\dots\; v_n\,]$$
+      - id: f-cumulative
+        name: Variance kept by the first q components
+        formula: |-
+          $$v_q = \sum_{j=1}^{q} \lambda_j, \qquad v_m = \operatorname{tr}(\Sigma)$$
+
+  - title: Distance-based classification
+    topic: distance
+    rows:
+      - id: f-minkowski
+        name: Minkowski distance
+        formula: |-
+          $$d_\rho(x, z) = \Big( \sum_j |x_j - z_j|^\rho \Big)^{1/\rho}$$
+        note: |-
+          $\rho = 1$ Manhattan, $\rho = 2$ Euclidean, $\rho = \infty$ maximum coordinate.
+      - id: f-mahalanobis
+        name: Mahalanobis distance
+        formula: |-
+          $$d_M(x, \mu) = \sqrt{(x - \mu)^\top \Sigma^{-1} (x - \mu)}$$
+      - id: f-med
+        name: MED boundary between two class means
+        formula: |-
+          $$2x^\top(\mu_2 - \mu_1) = \lVert \mu_2 \rVert^2 - \lVert \mu_1 \rVert^2$$
+        note: |-
+          The perpendicular bisector of the segment joining the means.
+      - id: f-inverse
+        name: Inverse of a 2 by 2 matrix
+        formula: |-
+          $$\begin{pmatrix} a & b \\ c & d \end{pmatrix}^{-1} = \frac{1}{ad - bc} \begin{pmatrix} d & -b \\ -c & a \end{pmatrix}$$

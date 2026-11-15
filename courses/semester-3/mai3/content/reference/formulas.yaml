@@ -1,0 +1,235 @@
+sections:
+  - title: Sets and σ-algebras
+    topic: measure
+    rows:
+      - id: f-de-morgan
+        name: De Morgan's law for a countable union
+        formula: |-
+          $$X \setminus \bigcup_{k=1}^{\infty} E_k = \bigcap_{k=1}^{\infty} (X \setminus E_k)$$
+        note: |-
+          Turns closure under complements and countable unions into closure under countable
+          intersections. The same holds with union and intersection swapped.
+      - id: f-point-as-intersection
+        name: A single point as an intersection of open intervals
+        formula: |-
+          $$\{a\} = \bigcap_{n=1}^{\infty} \left( a - \tfrac1n,\ a + \tfrac1n \right)$$
+        note: |-
+          Shows that single points, and hence countable sets, are Borel.
+      - id: f-inverse-composition
+        name: Inverse image under a composition
+        formula: |-
+          $$(g \circ f)^{-1}(B) = f^{-1}\big( g^{-1}(B) \big)$$
+        note: |-
+          The one line behind "a Borel measurable function of a measurable function is
+          measurable".
+
+  - title: Measures
+    topic: measure
+    rows:
+      - id: f-countable-additivity
+        name: Countable additivity
+        formula: |-
+          $$\mu\Big( \bigcup_{k=1}^{\infty} E_k \Big) = \sum_{k=1}^{\infty} \mu(E_k)$$
+        note: |-
+          For every **disjoint** sequence $E_1, E_2, \dots$ in the σ-algebra. Together with
+          $\mu(\varnothing) = 0$ it defines a measure.
+      - id: f-subadditivity
+        name: Countable subadditivity
+        formula: |-
+          $$\mu\Big( \bigcup_{k=1}^{\infty} E_k \Big) \le \sum_{k=1}^{\infty} \mu(E_k)$$
+        note: |-
+          For any sequence of measurable sets, disjoint or not.
+      - id: f-measure-difference
+        name: Measure of a set difference
+        formula: |-
+          $$\mu(E \setminus D) = \mu(E) - \mu(D)$$
+        note: |-
+          Needs $D \subset E$ and $\mu(D) < \infty$.
+      - id: f-increasing-union
+        name: Measure of an increasing union
+        formula: |-
+          $$\mu\Big( \bigcup_{k=1}^{\infty} E_k \Big) = \lim_{k \to \infty} \mu(E_k)$$
+        note: |-
+          For $E_1 \subset E_2 \subset \cdots$. No finiteness needed.
+      - id: f-decreasing-intersection
+        name: Measure of a decreasing intersection
+        formula: |-
+          $$\mu\Big( \bigcap_{k=1}^{\infty} E_k \Big) = \lim_{k \to \infty} \mu(E_k)$$
+        note: |-
+          For $E_1 \supset E_2 \supset \cdots$ with $\mu(E_1) < \infty$. The finiteness
+          cannot be dropped.
+      - id: f-measure-union
+        name: Measure of a union of two sets
+        formula: |-
+          $$\mu(D \cup E) = \mu(D) + \mu(E) - \mu(D \cap E)$$
+        note: |-
+          Needs $\mu(D \cap E) < \infty$.
+
+  - title: Lebesgue measure and simple functions
+    topic: measure
+    rows:
+      - id: f-outer-measure
+        name: Outer measure of a subset of the real line
+        formula: |-
+          $$\lvert A \rvert = \inf \Big\{ \sum_{k=1}^{\infty} \ell(I_k) : I_1, I_2, \dots \text{ open intervals},\ A \subset \bigcup_{k=1}^{\infty} I_k \Big\}$$
+        note: |-
+          $\ell(I)$ is the length of the open interval $I$. Lebesgue measure is this
+          quantity restricted to Borel sets.
+      - id: f-countable-cover
+        name: Cover used to show a countable set has outer measure zero
+        formula: |-
+          $$I_k = \Big( a_k - \frac{\varepsilon}{2^k},\ a_k + \frac{\varepsilon}{2^k} \Big), \qquad \sum_{k=1}^{\infty} \ell(I_k) = 2\varepsilon$$
+        note: |-
+          $a_1, a_2, \dots$ lists the countable set; $\varepsilon > 0$ is arbitrary.
+      - id: f-simple-function
+        name: Standard form of a simple function
+        formula: |-
+          $$f = c_1 \chi_{E_1} + \dots + c_n \chi_{E_n}, \qquad E_k = f^{-1}(\{c_k\})$$
+        note: |-
+          $c_1, \dots, c_n$ are the distinct non-zero values of $f$ and $\chi_E$ is the
+          characteristic function of $E$. Measurable exactly when every $E_k$ is.
+      - id: f-dyadic-approximation
+        name: Simple functions increasing to a bounded function
+        formula: |-
+          $$f_k = \frac{\lfloor 2^k f \rfloor}{2^k}, \qquad 0 \le f - f_k < 2^{-k}$$
+        note: |-
+          For measurable $f \ge 0$: $f$ rounded down to the grid of step $2^{-k}$. The
+          bound gives uniform convergence when $f$ is bounded.
+
+  - title: The Lebesgue integral
+    topic: measure
+    rows:
+      - id: f-lower-lebesgue-sum
+        name: Lower Lebesgue sum and the integral
+        formula: |-
+          $$\mathcal{L}(f, P) = \sum_{j=1}^{m} \mu(A_j) \inf_{A_j} f, \qquad \int f \, d\mu = \sup_P \mathcal{L}(f, P)$$
+        note: |-
+          For measurable $f : X \to [0,\infty]$; the supremum runs over all finite
+          partitions $A_1, \dots, A_m$ of $X$ into disjoint sets of $\mathcal{S}$.
+      - id: f-integral-chi
+        name: Integral of a characteristic function
+        formula: |-
+          $$\int \chi_E \, d\mu = \mu(E)$$
+        note: |-
+          For $E \in \mathcal{S}$ (3.4). With $\lambda$: $\int \chi_{\mathbf{Q}} \, d\lambda = 0$.
+      - id: f-integral-simple
+        name: Integral of a non-negative simple function
+        formula: |-
+          $$\int \sum_{k=1}^{n} c_k \chi_{E_k} \, d\mu = \sum_{k=1}^{n} c_k \, \mu(E_k)$$
+        note: |-
+          For **disjoint** $E_k \in \mathcal{S}$ and $c_k \in [0,\infty]$ (3.7).
+      - id: f-positive-negative-parts
+        name: Positive and negative parts
+        formula: |-
+          $$f = f^+ - f^-, \qquad \lvert f \rvert = f^+ + f^-, \qquad f^{\pm} = \max(\pm f, 0)$$
+        note: |-
+          Both parts are non-negative (3.17).
+      - id: f-integral-real
+        name: Integral of a real-valued function
+        formula: |-
+          $$\int f \, d\mu = \int f^+ \, d\mu - \int f^- \, d\mu$$
+        note: |-
+          Defined when at least one of the two integrals on the right is finite (3.18).
+          Finite when $\int \lvert f \rvert \, d\mu < \infty$.
+      - id: f-integral-subset
+        name: Integral over a subset
+        formula: |-
+          $$\int_E f \, d\mu = \int \chi_E f \, d\mu, \qquad \Big\lvert \int_E f \, d\mu \Big\rvert \le \mu(E) \sup_E \lvert f \rvert$$
+        note: |-
+          3.24 and 3.25.
+      - id: f-absolute-value-integral
+        name: Absolute value of an integral
+        formula: |-
+          $$\Big\lvert \int f \, d\mu \Big\rvert \le \int \lvert f \rvert \, d\mu$$
+        note: |-
+          Whenever $\int f \, d\mu$ is defined (3.23).
+
+  - title: Convergence theorems
+    topic: measure
+    rows:
+      - id: f-mct
+        name: Monotone Convergence Theorem
+        formula: |-
+          $$0 \le f_1 \le f_2 \le \cdots,\ f_k \to f \implies \lim_{k\to\infty} \int f_k \, d\mu = \int f \, d\mu$$
+        note: |-
+          Measurable $f_k$; no bound needed, both sides may be $\infty$ (3.11).
+      - id: f-dct
+        name: Dominated Convergence Theorem
+        formula: |-
+          $$f_k \to f \text{ a.e.},\ \lvert f_k \rvert \le g,\ \int g \, d\mu < \infty \implies \lim_{k\to\infty} \int f_k \, d\mu = \int f \, d\mu$$
+        note: |-
+          One $g$ for every $k$ (3.31). Useful bounds: $\lvert \sin t \rvert \le \lvert t \rvert$,
+          $\lvert \sin t \rvert \le 1$, and a binomial term of $(1 + x/n)^n$.
+      - id: f-bct
+        name: Bounded Convergence Theorem
+        formula: |-
+          $$\mu(X) < \infty,\ \lvert f_k \rvert \le c,\ f_k \to f \implies \lim_{k\to\infty} \int f_k \, d\mu = \int f \, d\mu$$
+        note: |-
+          Dominated convergence with $g = c$ (3.26).
+      - id: f-riemann-lebesgue
+        name: Riemann and Lebesgue integrals agree
+        formula: |-
+          $$\int_a^b f(x) \, dx = \int_{[a,b]} f \, d\lambda$$
+        note: |-
+          For bounded $f$ on $[a,b]$ whose discontinuities form a set of measure $0$
+          (3.34). For unbounded $f$ or domains, cut off and use monotone convergence.
+      - id: f-exp-limit
+        name: The exponential limit
+        formula: |-
+          $$\Big(1 + \frac{x}{n}\Big)^n \to e^x, \qquad \Big(1 + \frac{x}{n}\Big)^n \ge \frac{n-1}{2n} x^2 \ \ (x \ge 0)$$
+        note: |-
+          The second is the $x^2$ term of the binomial expansion, the usual way to
+          dominate $(1 + x/n)^{-n}$.
+
+  - title: Lᵖ spaces
+    topic: measure
+    rows:
+      - id: f-p-norm
+        name: p-norm
+        formula: |-
+          $$\|f\|_p = \left(\int \lvert f \rvert^p \, d\mu\right)^{1/p}, \qquad L^p(\mu) = \{f : \|f\|_p < \infty\}$$
+        note: |-
+          A norm for $1 \le p < \infty$ once functions equal almost everywhere are identified.
+      - id: f-ess-sup
+        name: Essential supremum
+        formula: |-
+          $$\|f\|_\infty = \inf\{a \ge 0 : \mu(\{x : \lvert f(x) \rvert > a\}) = 0\}$$
+        note: |-
+          Attained, so $\lvert f \rvert \le \|f\|_\infty$ almost everywhere.
+      - id: f-conjugate
+        name: Conjugate exponents
+        formula: |-
+          $$\frac1p + \frac1q = 1, \qquad q = \frac{p}{p-1}$$
+        note: |-
+          2 and 2, 4 and $\frac43$, 1 and $\infty$.
+      - id: f-holder
+        name: Hölder's inequality
+        formula: |-
+          $$\|fg\|_1 \le \|f\|_p\,\|g\|_q$$
+        note: |-
+          Conjugate $p, q$, including $p = 1$, $q = \infty$. With $p = q = 2$ it is
+          Cauchy-Schwarz.
+      - id: f-minkowski
+        name: Minkowski's inequality
+        formula: |-
+          $$\|f + g\|_p \le \|f\|_p + \|g\|_p$$
+        note: |-
+          For $1 \le p \le \infty$; fails for $0 < p < 1$.
+      - id: f-lp-inclusion
+        name: Inclusion on a finite measure space
+        formula: |-
+          $$\|f\|_p \le \mu(X)^{(q-p)/(pq)}\,\|f\|_q, \qquad L^q(\mu) \subset L^p(\mu)$$
+        note: |-
+          For $\mu(X) < \infty$ and $p < q$ (7.10). On $[0,1]$: $\|f\|_p \le \|f\|_q$.
+      - id: f-power-membership
+        name: Which powers are in Lᵖ
+        formula: |-
+          $$x^{-a}\chi_{(0,1)} \in L^p \iff ap < 1, \qquad x^{-a}\chi_{(1,\infty)} \in L^p \iff ap > 1$$
+        note: |-
+          Lebesgue measure, $a > 0$. Neither $L^p \subset L^q$ nor $L^q \subset L^p$ in general.
+      - id: f-mse-l2
+        name: Mean squared error as an L² norm
+        formula: |-
+          $$\frac1N\sum_{i=1}^N \big(f_n(x_i) - f(x_i)\big)^2 = \|f_n - f\|_2^2$$
+        note: |-
+          For the measure giving each data point mass $1/N$.

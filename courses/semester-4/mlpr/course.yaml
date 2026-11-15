@@ -1,0 +1,34 @@
+# Showcase course, written from two sources:
+#   source/lectures/L1_intro_to_ML_PatternRecognition.pdf   (lecture 1 slides)
+#   source/misc/MLPR Exam Sprint.html                       (the exam kit used for the final)
+title: Machine Learning and Pattern Recognition
+code: MLPR
+year: "2025-26"
+semester: 4
+status: active
+hue: 265
+order: 1
+description: Representing patterns, extracting features, and classifying by distance and by statistics. Course of Aida Brankovic at ETF Sarajevo, following Fieguth's textbook.
+
+# The course outline from lecture 1, slides 4 to 6. Only some topics have content so far.
+topics:
+  - id: intro
+    title: Introduction to pattern recognition
+    short: Introduction
+  - id: learning
+    title: Learning
+  - id: representation
+    title: Representing patterns
+    short: Representation
+  - id: features
+    title: Feature extraction and selection
+    short: Features
+  - id: distance
+    title: Distance-based classification
+    short: Distance
+  - id: models
+    title: Inferring class models
+    short: Class models
+  - id: statistics
+    title: Statistics-based classification
+    short: Statistics

@@ -1,0 +1,85 @@
+# Ids are permanent: people's progress is keyed by them.
+hooks:
+  - id: 'h-1'
+    for: 'BFR summary — which one gets squared'
+    hook: |-
+      “N, then the sum, then the sum *squared* — and the variance subtracts the mean *squared*.”
+    explain: |-
+      The word **squared** appears in exactly two places and they line up: `SUMSQ` is the squared one on the way in, and `(SUM/N)²` is the squared one on the way out. So **variance = SUMSQ/N − (SUM/N)²** — the squared thing minus the square of the plain thing. If you ever write `(SUMSQ/N)² − SUM/N` you have the squares on the wrong side.
+
+  - id: 'h-2'
+    for: 'Precision vs recall — which denominator'
+    hook: |-
+      “**P**recision reads down the **P**redicted column. Recall reads across the **R**eal row.”
+    explain: |-
+      Both have TP on top; only the denominator differs. Precision = TP/(TP+**FP**) stays in the predicted-positive **column**. Recall = TP/(TP+**FN**) stays in the actual-positive **row**. The alliteration (P–P, R–R) survives exam panic better than the formulas do.
+
+  - id: 'h-3'
+    for: 'Mahalanobis — where σ goes'
+    hook: |-
+      “σ lives *downstairs*, one per dimension.”
+    explain: |-
+      (xᵢ − cᵢ)**/σᵢ** — the standard deviation is always in the **denominator**, and always inside the sum so each dimension gets its own. A wide dimension has a big σ, which *shrinks* that dimension's contribution — which is exactly the point: being 3 units out along a wide axis is not far.
+
+  - id: 'h-4'
+    for: 'DS / CS / RS — which set keeps its points'
+    hook: |-
+      “**D**iscard *discards* the points. **R**etained *retains* them.”
+    explain: |-
+      The names say what happens to the **points**, not to the cluster membership — which is why they feel backwards. Discard set = points thrown away (safely summarised, assigned to a cluster). Retained set = actual points still in memory (homeless). Compression set is in between: summarised, but **not** assigned to a cluster.
+
+  - id: 'h-5'
+    for: 'PCY — which bucket tells you something'
+    hook: |-
+      “A **quiet** bucket is proof. A **loud** bucket is gossip.”
+    explain: |-
+      A bucket below s (*quiet*) proves every pair inside it is infrequent — that is the elimination. A bucket at or above s (*loud*) proves nothing, because many infrequent pairs can add up. So PCY only ever uses buckets to **eliminate**, never to confirm — hence false positives, never false negatives.
+
+  - id: 'h-6'
+    for: 'Bagging vs boosting — which error term'
+    hook: |-
+      “**Ba**gging **ba**lances (variance). **Bo**osting **bo**lsters (bias).”
+    explain: |-
+      Averaging independent things **balances out** their scatter — that is variance. Boosting **bolsters** a weak model by making it progressively more expressive — that is bias. If you remember only one direction: bagging averages, and **averaging can never move a mean**, so bagging can never touch the bias.
+
+  - id: 'h-7'
+    for: 'Ensemble variance — where ρ sits'
+    hook: |-
+      “(1 − ρ) *over m*, plus ρ *on its own*. The lonely ρ is the floor.”
+    explain: |-
+      Var = **(1−ρ)σ²/m + ρσ²**. The term with m underneath shrinks away; the term *without* m is what's left at infinity, so **ρσ² is the floor**. That shape tells you immediately why more trees stop helping and why Random Forest attacks ρ instead.
+
+  - id: 'h-8'
+    for: 'Support / confidence — which is the fraction of what'
+    hook: |-
+      “Support counts **baskets**. Confidence divides the **bigger set by the smaller**.”
+    explain: |-
+      conf(I→j) = support(I ∪ \{j}) / support(I) — numerator is the **larger** itemset (it includes j), denominator the **smaller**. Since a larger set can only appear in fewer baskets, confidence is always ≤ 1, which is the check that tells you you've written it the right way up.
+
+  - id: 'h-9'
+    for: 'CURE — the number and the direction'
+    hook: |-
+      “**2 passes, 20% inward.**”
+    explain: |-
+      The two numbers most likely to be asked directly, and they rhyme in shape: **2** and **20**. Passes: one on a sample to build representatives, one over everything to assign. The shrink is **toward** the centroid — inward, never outward — because its job is to stop an outlier representative dragging the cluster.
+
+  - id: 'h-10'
+    for: 'χ² expected count'
+    hook: |-
+      “**Row times column over the total** — the margins, never the cells.”
+    explain: |-
+      Eᵢⱼ = rowᵢ × colⱼ / n. The observed count in that cell plays **no part** in its own expected value — that's the whole idea of 'expected under independence'. If you find yourself using Oᵢⱼ to compute Eᵢⱼ, stop.
+
+  - id: 'h-11'
+    for: 'Content-based vs CF — which cold start'
+    hook: |-
+      “Content knows the **item**. Collaborative knows the **crowd**.”
+    explain: |-
+      So content-based survives a **new item** (it can read the item's features without anyone rating it) but dies on a **new user** (no ratings, no profile). CF is the mirror image: it survives a new user with a few ratings but dies on a new item that nobody has rated. Each one's cold start is the other's strength — which is why the answer is always **hybrid**.
+
+  - id: 'h-12'
+    for: 'BFR suitability — the one question to ask'
+    hook: |-
+      “Can one **un-tilted oval** hold this cluster and nothing else?”
+    explain: |-
+      Not how many clusters, not how much data — only shape. Un-tilted because the σ-per-dimension summary cannot represent a rotation; oval because the model is a Gaussian. Crescents, rings, spirals: no. Diagonal cigars: also no, and that one is worth remembering because the cluster is *convex* yet still fails.

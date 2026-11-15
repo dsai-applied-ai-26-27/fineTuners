@@ -1,0 +1,111 @@
+terms:
+  - id: g-pattern
+    term: Pattern
+    topic: intro
+    definition: |-
+      An object, process or event that can be given a name. In practice, an abstraction
+      represented by a set of measurements describing a physical object.
+    see: [g-pattern-class]
+
+  - id: g-pattern-class
+    term: Pattern class
+    topic: intro
+    definition: |-
+      A set of patterns sharing common attributes and usually originating from the same
+      source. Also called a category.
+    see: [g-classifier]
+
+  - id: g-classifier
+    term: Classifier
+    topic: intro
+    definition: |-
+      A machine that performs classification: the assignment of an object or event to one of
+      several prespecified categories.
+    see: [g-decision-boundary]
+
+  - id: g-feature
+    term: Feature
+    topic: intro
+    definition: |-
+      A property of an object computed from the raw measurements, chosen so that objects of
+      different classes are easy to tell apart.
+    see: [g-feature-space]
+
+  - id: g-feature-space
+    term: Feature space
+    topic: intro
+    definition: |-
+      The $d$-dimensional space in which each object is one point, its feature vector
+      $x = (x_1, \dots, x_d)$.
+
+  - id: g-decision-boundary
+    term: Decision boundary
+    topic: intro
+    definition: |-
+      The surface that divides feature space into decision regions. Every point of a region
+      receives the same class label.
+
+  - id: g-supervised
+    term: Supervised learning
+    topic: intro
+    definition: |-
+      Learning from a training set in which every pattern comes with its category label.
+    see: [g-unsupervised]
+
+  - id: g-unsupervised
+    term: Unsupervised learning
+    topic: intro
+    definition: |-
+      Learning without labels: the system forms clusters, natural groupings of the patterns
+      according to a similarity criterion.
+
+  - id: g-overfitting
+    term: Overfitting
+    topic: intro
+    definition: |-
+      Fitting the particular training samples, noise included, so closely that the classifier
+      fails to generalise to new data.
+    see: [g-curse]
+
+  - id: g-curse
+    term: Curse of dimensionality
+    topic: intro
+    definition: |-
+      The growth in the amount of training data needed as features are added. The rule of
+      thumb from the lecture is $n \ge N(N-1)/2$ examples for $N$ features.
+
+  - id: g-extraction
+    term: Feature extraction
+    topic: features
+    definition: |-
+      Building new features as combinations of the measurements, $x = F^\top y$.
+    see: [g-selection]
+
+  - id: g-selection
+    term: Feature selection
+    topic: features
+    definition: |-
+      Keeping a subset of the original measurements. A discrete search over subsets, and
+      harder than extraction.
+
+  - id: g-manifold
+    term: Manifold
+    topic: features
+    definition: |-
+      A lower-dimensional structure embedded in a higher-dimensional space. When classes lie
+      on a curved manifold, no linear projection preserves their separation.
+
+  - id: g-prototype
+    term: Prototype
+    topic: distance
+    definition: |-
+      The point that stands for a class when the distance from a point to that class is
+      measured: its mean, its nearest member, its $k$ nearest members, or its furthest member.
+
+  - id: g-voronoi
+    term: Voronoi region
+    topic: distance
+    definition: |-
+      The set of points closer to one prototype than to any other. A minimum-distance
+      classifier with several prototypes partitions feature space into Voronoi regions.
+    see: [g-prototype]

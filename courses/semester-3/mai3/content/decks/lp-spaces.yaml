@@ -1,0 +1,177 @@
+title: Lᵖ spaces
+topic: measure
+lecture: 03-lp-spaces
+description: The p-norm and the essential supremum, Hölder and Minkowski, the a.e. identification, which functions are in which Lᵖ, and convergence in Lᵖ from lecture 3. The proofs are in their own deck.
+
+cards:
+  - id: lp-norm-def
+    hy: true
+    q: |-
+      Define $\|f\|_p$ and $L^p(\mu)$ for $0 < p < \infty$.
+    a: |-
+      $$\|f\|_p = \left(\int \lvert f \rvert^p \, d\mu\right)^{1/p}, \qquad L^p(\mu) = \{f \text{ measurable} : \|f\|_p < \infty\}.$$
+
+  - id: lp-why-power
+    q: |-
+      Why does the definition of $\|f\|_p$ take the power $1/p$?
+    a: |-
+      So that $\|\lambda f\|_p = \lvert \lambda \rvert\,\|f\|_p$ (homogeneity).
+
+  - id: lp-norm-axioms
+    q: |-
+      State the three axioms of a norm.
+    a: |-
+      Definiteness ($\|f\| = 0$ iff $f = 0$), homogeneity ($\|\lambda f\| = \lvert\lambda\rvert\|f\|$),
+      triangle inequality ($\|f + g\| \le \|f\| + \|g\|$).
+
+  - id: lp-seminorm
+    hy: true
+    q: |-
+      Which norm axiom fails for $\|\cdot\|_p$ on functions, and how is it repaired?
+    a: |-
+      Definiteness: $\|f\|_p = 0$ only gives $f = 0$ a.e. (e.g. $\chi_E$ with $\mu(E) = 0$).
+      Repair: regard functions equal almost everywhere as the same element of $L^p$.
+
+  - id: lp-ess-sup
+    q: |-
+      Define the essential supremum $\|f\|_\infty$.
+    a: |-
+      $\|f\|_\infty = \inf\{a \ge 0 : \mu(\{\lvert f \rvert > a\}) = 0\}$: the smallest bound on
+      $\lvert f \rvert$ outside a null set. The infimum is attained.
+
+  - id: lp-ess-sup-example
+    q: |-
+      $f(x) = x$ on $[0,1]$ except $f(\frac12) = 100$. $\sup\lvert f \rvert$ and $\|f\|_\infty$?
+    a: |-
+      $\sup = 100$, $\|f\|_\infty = 1$: one point has measure 0.
+
+  - id: lp-indicator-norms
+    q: |-
+      With Lebesgue measure, compute $\|\chi_{[0,2]}\|_p$ for $1 \le p < \infty$, and
+      $\|\chi_{[0,2]}\|_\infty$.
+    a: |-
+      $\|\chi_{[0,2]}\|_p = 2^{1/p}$ (so $2$, $\sqrt2$, $\sqrt[3]{2}$ for $p = 1, 2, 3$), and
+      $\|\chi_{[0,2]}\|_\infty = 1$.
+    note: |-
+      $\lvert \chi_E \rvert^p = \chi_E$, so $\|\chi_E\|_p = \lambda(E)^{1/p}$. As
+      $p \to \infty$, $2^{1/p} \to 1$, the essential supremum.
+
+  - id: lp-conjugate
+    cloze: |-
+      $p$ and $q$ are conjugate exponents when {{$\frac1p + \frac1q = 1$}}, i.e.
+      $q =$ {{$\frac{p}{p-1}$}}. 2 is conjugate to {{2}}, 4 to {{$\frac43$}}, and 1 to {{$\infty$}}.
+
+  - id: lp-holder
+    hy: true
+    q: |-
+      State Hölder's inequality.
+    a: |-
+      For conjugate $p, q$: $\|fg\|_1 \le \|f\|_p\|g\|_q$. So $f \in L^p$, $g \in L^q$ give
+      $fg \in L^1$. Also $\|fg\|_1 \le \|f\|_1\|g\|_\infty$.
+    hook: |-
+      Split the exponent fairly, and the product's mass is bounded.
+
+  - id: lp-holder-equality
+    q: |-
+      When does equality hold in Hölder's inequality $\|fg\|_1 \le \|f\|_p\|g\|_q$
+      ($1 < p < \infty$)? Check it on $f = 1$, $g(x) = x$ on $[0,1]$ with $p = q = 2$.
+    a: |-
+      Exactly when $\alpha\lvert f \rvert^p = \beta\lvert g \rvert^q$ a.e. for constants
+      $\alpha, \beta$ with $\alpha\beta \ne 0$. Here $1$ and $x^2$ are not proportional, so
+      it is strict: $\frac12 < \frac{1}{\sqrt3}$.
+    note: |-
+      $\|fg\|_1 = \int_0^1 x \, dx = \frac12$, $\|f\|_2 = 1$,
+      $\|g\|_2 = \big( \int_0^1 x^2 dx \big)^{1/2} = \frac{1}{\sqrt3} \approx 0.577$.
+
+  - id: lp-cauchy-schwarz
+    q: |-
+      What is Hölder with $p = q = 2$?
+    a: |-
+      The Cauchy-Schwarz inequality $\int \lvert fg \rvert \le \|f\|_2\|g\|_2$.
+
+  - id: lp-minkowski
+    hy: true
+    q: |-
+      State Minkowski's inequality and its role.
+    a: |-
+      For $1 \le p < \infty$: $\|f + g\|_p \le \|f\|_p + \|g\|_p$. It is the triangle inequality
+      of the $p$-norm.
+
+  - id: lp-small-p
+    q: |-
+      Why does the course restrict to $p \ge 1$?
+    a: |-
+      For $0 < p < 1$ the triangle inequality fails. Example: $\|\chi_{[0,1]} + \chi_{[1,2]}\|_{1/2} = 4 > 1 + 1$.
+
+  - id: lp-power-rule
+    hy: true
+    q: |-
+      When is $x^{-a}$ in $L^p$ near 0, and near $\infty$?
+    a: |-
+      Near 0 iff $ap < 1$; near $\infty$ iff $ap > 1$. At $ap = 1$ neither, because
+      $\int dx/x$ diverges at both ends.
+    hook: |-
+      Big powers sharpen spikes and shrink tails.
+
+  - id: lp-membership-example
+    q: |-
+      Give a function in $L^1 \setminus L^3$ and one in $L^2 \setminus L^1$ on $(0,\infty)$.
+    a: |-
+      $x^{-1/3}\chi_{(0,1)}$ ($\|\cdot\|_1 = \frac32$, cube integrates to $\infty$) and
+      $x^{-1}\chi_{(1,\infty)}$ ($\|\cdot\|_2 = 1$, $\int = \infty$).
+
+  - id: lp-inclusion
+    hy: true
+    q: |-
+      State 7.10: the inclusion on a finite measure space.
+    a: |-
+      If $\mu(X) < \infty$ and $p < q$: $\|f\|_p \le \mu(X)^{(q-p)/(pq)}\|f\|_q$, so
+      $L^q \subset L^p$. On $[0,1]$: $\|f\|_p \le \|f\|_q$.
+
+  - id: lp-inclusion-needs-finite
+    q: |-
+      Show by an example that 7.10 ($L^q \subset L^p$ for $p < q$) needs $\mu(X) < \infty$.
+    a: |-
+      On $(0, \infty)$ with Lebesgue measure, $g(x) = x^{-1}\chi_{(1,\infty)}$ has
+      $\|g\|_2 = 1$ but $\|g\|_1 = \infty$: $g \in L^2 \setminus L^1$.
+    note: |-
+      The tail is the problem. On a set of finite measure there is no tail, and Hölder
+      against the constant $1$ gives the inclusion.
+
+  - id: lp-convergence
+    cloze: |-
+      $f_n \to f$ in $L^p$ means {{$\|f_n - f\|_p \to 0$}}. For $p = 2$ it is called
+      convergence in {{mean square}}.
+
+  - id: lp-mse
+    q: |-
+      Why is "MSE tends to 0" the same as convergence in $L^2$?
+    a: |-
+      With $\mu$ giving each of $N$ data points mass $1/N$,
+      $\mathrm{MSE}_n = \int\lvert f_n - f\rvert^2 d\mu = \|f_n - f\|_2^2$. For continuous inputs on
+      $[a,b]$ the same integral uses Lebesgue measure normalised by $b - a$.
+
+  - id: lp-l1-not-l2
+    q: |-
+      A sequence converging to 0 in $L^1$ but not in $L^2$?
+    a: |-
+      $\sqrt n\,\chi_{(0,1/n)}$: $\|\cdot\|_1 = 1/\sqrt n \to 0$, $\|\cdot\|_2 = 1$.
+
+  - id: lp-l2-not-linf
+    q: |-
+      On $[0,1]$, does $x^n \to 0$ in $L^2$? In $L^\infty$?
+    a: |-
+      $\|x^n\|_2 = \frac{1}{\sqrt{2n+1}} \to 0$: yes in $L^2$. $\|x^n\|_\infty = 1$ for every
+      $n$: not in $L^\infty$.
+    note: |-
+      For $t < 1$ the set $\{x^n > t\} = (t^{1/n}, 1]$ has positive measure, so no bound
+      below $1$ holds almost everywhere.
+
+  - id: lp-ahead
+    q: |-
+      What do $L^p$ and $L^2$ become in functional analysis, and what does 7.10 say in
+      probability?
+    a: |-
+      $L^p$ is complete, a Banach space; $L^2$ with $\langle f, g \rangle = \int f\bar g\,d\mu$ is a
+      Hilbert space. With $\mu(X) = 1$, $L^2 \subset L^1$: a finite second moment implies a
+      finite first absolute moment.

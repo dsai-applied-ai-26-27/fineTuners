@@ -1,0 +1,37 @@
+# One file per course. Field reference: docs/content-types/course.md
+title: "Mathematics for AI III"
+code: "MAI3"
+year: "2026-27"
+semester: 3
+status: active          # active | archived
+has_educator: true      # someone writes it: its page does not ask for an educator
+hue: 245                # course colour, 0-359 on the hue wheel
+order: 4
+description: Measure and integration, advanced probability and functional analysis up to reproducing kernel Hilbert spaces, then computation with large matrices, low-rank methods, optimization and multiple integrals.
+
+# The thematic units of the course overview (slides 5 and 6), in the order they are listed
+# there. Only the first has content so far. Ids are permanent.
+topics:
+  - id: measure
+    title: Measure and integration theory
+    short: Measure
+  - id: probability
+    title: Advanced probability
+    short: Probability
+  - id: functional
+    title: Functional analysis
+    short: Functional analysis
+  - id: rkhs
+    title: Reproducing kernel Hilbert spaces
+    short: RKHS
+  - id: matrices
+    title: Computation with large matrices
+    short: Large matrices
+  - id: lowrank
+    title: Low-rank methods and compressed sensing
+    short: Low rank
+  - id: optimization
+    title: Optimization
+  - id: integrals
+    title: Double and triple integrals
+    short: Multiple integrals

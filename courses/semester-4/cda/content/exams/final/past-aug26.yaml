@@ -1,0 +1,225 @@
+# Ids are permanent: people's progress is keyed by them.
+title: 'Past final: 26 August paper'
+kind: 'past'
+instructions: |-
+  Reconstructed from a student's transcript of the paper, so some wording is approximate. Question 3 C) is blank in the transcript — see the note there. The code snippets of Question 8 are not preserved; its solution works from the same student's answer notes.
+questions:
+  - id: 'aug26-q1'
+    title: 'Question 1: ML tasks'
+    q: |-
+      ML tasks
+    solution: |-
+      See the May/Aug paper's Q1 — the six tasks, their discriminators, and the matching exercise. Both papers open with this, and both have it negatively marked on at least one sitting.
+    source: |-
+      The transcript records only the heading 'ML tasks' with no sub-parts, so the format is unknown. Same coverage as the other paper's Q1.
+
+  - id: 'aug26-q2'
+    title: 'Question 2: Data types and the right correlation'
+    q: |-
+      Data types and the right correlation
+    solution: |-
+      **The datasets A and B are not in the transcript**, so the specific answers can't be reconstructed. But the transcript's own parentheses tell you the shape of the expected answers: part B's answer is **Pearson**, and part A's is a different correlation.
+
+      **The rule to apply**, which is what is actually being examined:
+
+      **Both variables continuous numeric, relationship roughly linear** → **Pearson**. Justify: it measures the strength and direction of a *linear* relationship between two numeric variables, is standardised so it lies in \[−1,1], and is scale-independent.
+
+      **At least ordinal, or monotone-but-not-linear, or outlier-heavy** → **Spearman**. Justify: it is Pearson computed on the **ranks**, so it captures monotone rather than linear association and is robust to outliers.
+
+      **Both categorical/nominal** → **χ²**. Justify: non-parametric, works on counts in a contingency table, assumes nothing about distribution.
+
+      Since part D's answer is Pearson, dataset B is numeric and roughly linear; dataset A is therefore most likely **ordinal** (→ Spearman) or **nominal** (→ χ²). **Answer the data type explicitly first** — parts A and C award marks for the type itself, before the method.
+
+      **Data types:** nominal (categories, no order) · ordinal (ordered, gaps not meaningful) · interval (numeric, no true zero) · ratio (numeric, true zero).
+    source: |-
+      A) What is the data type in A? B) Which method is suitable for determining the relationship in A (correlation) — explain why it is suitable. C) What is the data type in B? D) Which relationship is suitable for determining the relationship in B (Pearson) — explain why.
+
+  - id: 'aug26-q3'
+    title: 'Question 3: Data cleaning'
+    q: |-
+      Data cleaning
+    solution: |-
+      :::warning
+      Part C is **blank in the transcript** — the letter was written but the question wasn't, and it is not invented here. Given the heading is "data cleaning" and A and B cover covariance and correlation, the most likely continuations are: the difference between them, how to detect redundant attributes, or handling of missing values / outliers. All three are covered in the Cleaning topic and deck.
+      :::
+
+      **A) Covariance** measures the **direction** of a linear relationship between two numeric variables, and is **scale-dependent** — so its magnitude alone means nothing.
+
+      Cov(A,B) = E\[(A − Ā)(B − B̄)] = E\[A·B] − Ā·B̄
+
+      Cov > 0: A and B tend to be larger than their expected values together. Cov \< 0: when A is above its expected value, B tends to be below. **Cov = 0 does not imply independence** — only under extra assumptions such as multivariate normality.
+
+      **B) Correlation** measures the **linear relationship** between variables. It is **standardised covariance**, capturing both **strength and direction**, always in **\[−1, 1]**, and **scale-independent**.
+
+      r\_(A,B) = Cov(A,B) / (σ\_Aσ\_B) = Σ(aᵢ−Ā)(bᵢ−B̄) / \[(n−1)σ\_Aσ\_B]
+
+      r > 0 positively correlated · r = 0 no linear relationship · r \< 0 negatively correlated. Equivalently: standardise both variables and take the dot product.
+
+      **If C asks for the difference** — the one-liner: **covariance gives direction only and depends on the units; correlation is the standardised version, giving strength as well as direction on a fixed \[−1,1] scale.**
+    source: |-
+      A) What is covariance? B) What is correlation? C) — the transcript shows 'C)' with nothing after it.
+
+  - id: 'aug26-q4'
+    title: 'Question 4: Clustering — CURE'
+    q: |-
+      Clustering — CURE
+    solution: |-
+      **A) CURE (Clustering Using REpresentatives)** — an extension of k-means to clusters of **arbitrary shape**. It assumes a Euclidean distance, allows clusters to take any shape, and represents a cluster by a **collection of representative points** rather than one centroid. **It takes 2 passes.**
+
+      **Pass 1** — on a sample:
+
+      **0.** Pick a random sample of points that fits in main memory.\
+      **1.** Cluster these points **hierarchically** — group nearest points/clusters.\
+      **2.** For each cluster, pick a sample of points **as dispersed as possible**; from that sample, pick representatives by **moving them 20% toward the centroid** of the cluster.
+
+      **Pass 2** — rescan the whole dataset; for each point p, find the **closest representative** and assign p to that representative's cluster.
+
+      *Why the 20% shrink:* far enough out to trace the cluster's shape, pulled in enough that a stray outlier chosen as a representative cannot drag the cluster after it.
+
+      **B) The main difference:**
+
+      **k-means** — a cluster is **one centroid**; assignment by Euclidean distance; data must fit in memory; iterates to convergence. Only convex blobs.
+
+      **BFR** — extends k-means to **data too large for memory**: one memory-load at a time, each cluster summarised as (N, SUM, SUMSQ), assignment by **Mahalanobis** distance. Still assumes clusters are **normally distributed and axis-aligned**.
+
+      **CURE** — extends k-means to **clusters of arbitrary shape**: a cluster is a set of representative points. 2 passes.
+
+      **In one line: BFR fixes the size problem; CURE fixes the shape problem.**
+
+      **C) No — BFR is not appropriate for two crescent-shaped clusters.**
+
+      BFR's assumption is that clusters are normally distributed around a centroid with axes aligned to the coordinate axes, i.e. **axis-aligned ellipses**. A crescent is **non-convex**: its centroid, computed as SUM/N, falls in the **hollow of the crescent where there are no points**, and the 2σ acceptance ellipse spreads over regions belonging to the other crescent. There is no axis-aligned ellipse containing one crescent and excluding the other, so the clusters BFR recovers cut *across* both crescents instead of separating them.
+
+      **What to use instead:** CURE — which is presumably why this question follows part A — since its dispersed representatives describe a curved cluster faithfully, and pass 2 assigns each point to the cluster of its **nearest representative**, so a point at the tip of a crescent joins the right cluster even though it is far from that cluster's centroid. DBSCAN is the other correct answer.
+    source: |-
+      A) What is the CURE algorithm, explain all its steps, how many passes does it take? B) What is the main difference between CURE, k-means and BFR? C) Is BFR appropriate for the provided data (2 crescent shaped clusters)?
+
+  - id: 'aug26-q5'
+    title: 'Question 5: Recommender systems — collaborative filtering'
+    q: |-
+      Recommender systems — collaborative filtering
+    solution: |-
+      **A)** Consider user x. **Find the set N of other users whose ratings are similar to x's ratings**, then **estimate x's ratings based on the ratings of the users in N**. It uses only the user–item rating matrix — no item features — which is why it works for any kind of item.
+
+      **B)** Work a small example end to end. **Item-item** is the cleaner one to present:
+
+      **1. Centre each row** on its own mean over rated cells only — so a missing rating becomes 0, meaning "average", rather than "hated it". **2. Compute cosine between centred rows** — which is Pearson correlation, since centred cosine *is* Pearson. **3. Select the neighbourhood N(i;x)**: the k most similar items *that user x has actually rated*. **4. Predict by weighted average:**
+
+      rₓᵢ = Σ\_(j∈N(i;x)) sᵢⱼ·rₓⱼ / Σ\_(j∈N(i;x)) sᵢⱼ
+
+      The lecture's worked instance: with |N| = 2, sim(1,3) = 0.41 and sim(1,6) = 0.59, and user 5 having rated those 2 and 3, the prediction is (0.41·2 + 0.59·3)/(0.41 + 0.59) = **2.6**.
+
+      Say why centring matters: plain cosine treats missing ratings as **negative** evidence, and Jaccard ignores the rating values altogether.
+
+      **C)** Note the transcript's own parenthesis — this part is **content filtering**, not CF, and saying so is part of the answer: **there is no information about any other user here**, only this customer's history and the items' features, so collaborative filtering cannot be applied and a content-based recommender is the right choice.
+
+      Item profiles are boolean vectors over actors. The user profile is the **mean of the watched item profiles**:
+
+      weight(A) = 3/6 = **0.5** · weight(B) = 2/6 = **0.333** · weight(C) = 1/6 = **0.167**
+
+      Then score every unseen movie i by **cos(x, i) = (x·i)/(‖x‖‖i‖)** and recommend the highest-scoring ones the customer hasn't seen.
+
+      *The detail that earns the extra mark:* the top candidate is usually **not** the pure actor-A movie. A movie featuring both A and B scores higher than one featuring A alone, because cosine rewards matching the profile's **direction** and the profile carries weight on B as well. This mirrors Lecture 7's Example 1 (5 movies, 2 with A and 3 with B ⇒ 0.4 and 0.6).
+
+      **D) Advantages:** **works for any kind of item** — no feature selection needed, which is content-based filtering's hardest problem.
+
+      **Limitations:** **cold start** — needs enough users in the system to find a match; **sparsity** — the user/ratings matrix is sparse, so it is hard to find users who rated the same items; **first rater** — cannot recommend an item that has not been rated, which blocks new and esoteric items; **popularity bias** — cannot serve someone with unique taste, and tends toward popular items.
+
+      **Fix:** hybrid methods — combine two or more recommenders, adding content-based item profiles for the new-item problem and demographics for the new-user problem.
+    source: |-
+      A) What is collaborative filtering? B) Explain the CF algorithm on an example of your choice. C) Scenario: customer X watched 6 movies — 3 with actor A, 2 with actor B, 1 with actor C. Recommend candidate movies. (Content filtering.) D) Main advantages and limitations of the CF algorithm.
+
+  - id: 'aug26-q6'
+    title: 'Question 6: Ensembles'
+    q: |-
+      Ensembles
+    solution: |-
+      **A)** **Error = bias² + variance + noise**, with bias² = Eₓ\[(h\*(x) − E\_D\[y(x;D)])²], variance = E\_(D,x)\[(y(x;D) − E\_D\[y(x;D)])²], noise = E\_(D,x,t)\[(t − h\*(x))²] — where t is the true target, D a randomly drawn training set, y(x;D) the model trained on D, and h\*(x) = E\[t|x] the Bayes-optimal predictor.
+
+      **B)** "A set of predictors whose individual decisions are combined in some way to classify new examples." Generate multiple classifiers; each votes on the test instance.
+
+      **C) Bagging** — **parallel**: every learner trained independently on its own **bootstrap sample** (sampling with replacement, same size as the original), combined by plain average or majority vote. **Boosting** — **sequential**: each learner trained on data reweighted toward the previous learners' mistakes, combined by a **weighted** vote where better learners get larger α.
+
+      That is the difference the question asks about: **parallel and independent vs sequential and error-driven**.
+
+      **D)** **Bagging reduces variance and leaves bias unchanged.** Averaging m predictors gives σ²/m if they are independent, or (1−ρ)σ²/m + ρσ² with correlation ρ — so with correlated learners the variance floors at ρσ² and more trees stop helping. The mean of the average is the average of the means, so the bias cannot move. Its stated limitations are exactly these: does not reduce bias, and correlation between classifiers remains.
+
+      **Boosting reduces bias** by making each classifier focus on the previous ones' mistakes, so the ensemble becomes progressively more expressive — **at the cost of increased variance** and a greater risk of overfitting. Noise is irreducible under both.
+
+      *Extra:* this is why Random Forest adds a random feature subset at each split — to reduce ρ so that bagging's (1−ρ)/m term actually bites. And why Random Forest is more robust to errors and outliers than AdaBoost, which up-weights misclassified points every round.
+
+      **E) Bagging:** **Random Forest**, **bagged decision trees**. **Boosting:** **AdaBoost**, **Gradient Boosting / XGBoost**.
+    source: |-
+      A) Write the error decomposition. B) What are ensembles? C) What are the main two approaches to ensembles and how do they differ in training? D) How do these methods affect bias and variance? E) Name 4 examples of boosting and bagging.
+
+  - id: 'aug26-q7'
+    title: 'Question 7: A-Priori'
+    q: |-
+      A-Priori
+    solution: |-
+      **A)** The key idea is **monotonicity**: if a set of items I appears at least s times, so does every subset J of I. Contrapositive for pairs: **if item i does not appear in s baskets, then no pair including i can appear in s baskets**.
+
+      **Pass 1:** read the baskets and count in main memory the occurrences of each **individual item** — requiring only memory proportional to the number of items. Items appearing ≥ s times are the **frequent items**.
+
+      **Pass 2:** read the baskets again and count in main memory **only those pairs where both elements are frequent** from pass 1 — requiring memory proportional to the square of the number of *frequent* items, plus a list of the frequent items so you know what to count.
+
+      **So: 2 passes to find frequent pairs**, and in general **one pass for each itemset size k**.
+
+      **Draw the memory picture** (the question asks for visuals): a box for main memory in each pass. Pass 1: a small strip of **item counts**, the rest **idle**. Pass 2: a small strip of **frequent items**, the rest filled with **counts of candidate pairs**. That contrast is what motivates PCY in part C.
+
+      Implementation detail worth a line: you can use the **triangular matrix** method with n = the number of frequent items, renumbering them 1, 2, … and keeping a table relating new numbers to original item numbers — which may save space against storing triples.
+
+      **B) For k = 3**, the general C/L cycle:
+
+      **Cₖ** = candidate k-tuples, those that might be frequent based on the pass for k−1. **Lₖ** = the truly frequent k-tuples.
+
+      **1.** From **L₂**, construct **C₃**. Careful generation: a triple is a candidate only if **all three of its pairs are in L₂** — the lecture's own note is that in C₃ we know \{b,m,j} cannot be frequent since \{m,j} is not frequent.\
+      **2.** Make **pass 3** over the data, counting the support of each itemset in C₃.\
+      **3.** Prune the non-frequent ones: **L₃** = those with support ≥ s.
+
+      The lecture's hypothetical run: C₁ = \{b}\{c}\{j}\{m}\{n}\{p} → L₁ = \{b,c,j,m} → C₂ = the 6 pairs → L₂ = \{b,m}\{b,c}\{c,m}\{c,j} → C₃ = \{b,c,m}\{b,c,j}\{b,m,j}\{c,m,j} → count → **L₃ = \{b,c,m}**.
+
+      Note that **k = 2 requires the most memory** for typical market-basket data at a reasonable support threshold — frequent pairs are common, frequent triples are rare.
+
+      **C) The main limitation is main memory in pass 2** — it must hold a counter for every candidate pair, and that count is roughly quadratic in the number of frequent items. Meanwhile pass 1 leaves most of memory idle. (The arithmetic: 10⁵ items gives 5×10⁹ pairs, which at 4 bytes each is **20 GB**.)
+
+      **The algorithm that addresses it: PCY (Park–Chen–Yu).**
+
+      **How:** in pass 1, as well as counting items, **hash every pair of items in every basket to a bucket and count the buckets** — keeping only the counts, not the pairs. Between passes, replace each bucket count with a single **bit**: 1 if the count ≥ s, else 0. In pass 2, count the pair \{i,j} only if **(1) both i and j are frequent items and (2) \{i,j} hashes to a bucket whose bit is 1**.
+
+      **Why it is valid:** a bucket with total count below s cannot contain any frequent pair, so all its pairs can be eliminated even if both their items are frequent. The reverse doesn't hold — a bucket can be frequent without containing a frequent pair — so PCY yields **false positives but never false negatives**.
+
+      *Caveat:* pass 2 must now use a table of (item, item, count) triples rather than a triangular matrix, so the hash table has to eliminate about **2/3** of candidate pairs for PCY to beat A-Priori. *Refinements:* **Multistage** (3 passes, a second independent hash on the survivors, check both bitmaps) and **Multihash** (2 passes, several hash tables in pass 1).
+    source: |-
+      A) How does Apriori find candidate pairs — write the whole process with visuals, how many passes does it require? B) Write the process for finding frequent k=3 itemsets. C) What is the main limitation of Apriori and what algorithm addresses it and how?
+
+  - id: 'aug26-q8'
+    title: 'Question 8: Code — two snippets'
+    q: |-
+      Code — two snippets
+    solution: |-
+      **The snippets are not in the transcript**, so this checks and expands the student's answer notes.
+
+      **Snippet 1 — four claims, all sound:**
+
+      **1. Wrong join / wrong join key.** Verify by checking the **row count before and after** the merge: growth means a non-unique key duplicated rows; shrinkage means an inner join silently dropped records. Also check key **data types** match and there is no stray whitespace or case difference.
+
+      **2. Dropping the whole `urgent` feature for missingness.** Correct, and the reasoning is the good part: the missingness *is* the signal, because the feature marks a **rare but meaningful event**. Fix: treat missing as its own category, or add an explicit indicator column, rather than deleting.
+
+      **3. Random split must be group-based.** Assert it.
+
+      **4. Accuracy is inappropriate under imbalance.** The framing in the notes is exactly right and worth reproducing: **recall** if false negatives are expensive — which for cancer detection they are — **F1** otherwise, and **deciding which requires domain knowledge**. That last clause shows you understand the choice is about error costs, not a default.
+
+      **Snippet 2 — four claims, all sound:**
+
+      **1. Global forward fill.** A frame-wide `ffill()` carries one sensor's last reading into another sensor's opening rows. Fix: sort by (sensor, time), then `groupby(sensor_id).ffill()`.
+
+      **2. Feature selection before the split** — the selector has seen the test labels; fit on train only, ideally inside a `Pipeline`.
+
+      **3. SMOTE before the split** — synthetic minority points are interpolated between existing ones, so points derived from test examples leak into training and near-duplicates of training points appear in test. Resample the **training set only**, after the split. Never resample the test set at all: it must keep the real class distribution.
+
+      **4. Temporal split required.** Sensor data is a time series, so a random split lets the model train on the future and predict the past — impossible in deployment. Note the distinction from snippet 1: **grouped data needs a group split; temporal data needs a temporal split.** Naming the wrong one loses the mark.
+
+      **Marking note:** four errors per snippet is more than the "one, two or three intended issues" the exam-prep document describes. All eight here are defensible, but if you are unsure on the day, lead with the two you are surest of per snippet and phrase the rest conditionally.
+    source: |-
+      The student's answer notes (translated): First — wrong join or wrong variable joined on; the whole 'urgent' feature deleted for missingness, which is wrong because it represents a rare but meaningful event; cannot use a random split, must be group-based; accuracy is not appropriate because the dataset is imbalanced, so recall is better if false negatives are expensive (which they should be, as it is cancer detection) — but determining that requires domain knowledge, and if false negatives are not expensive then F1 is the better choice. Second — global forward fill was done, which is not allowed because one sensor can be imputed from another; must be group-based ffill; feature selection before the train/test split, which must be on the train set only; SMOTE before the train/test split, which must also be train-only; wrong split — must be a temporal split.

@@ -1,0 +1,237 @@
+title: Lab 1 Preparation practice
+topic: simulink
+instructions: |-
+  Quiz-style questions on what Lab 1 (Introduction to Simulink) assumes you know: the
+  blocks, transfer functions from differential equations, first-order responses, initial
+  conditions and the step size. The real Lab Preparation is not available; these questions
+  are written here from the lab sheet.
+
+  In the session the preparation is individual, timed, and without AI tools. Practise it
+  the same way: about 10 minutes, no notes.
+
+questions:
+  - id: l1prep-q1
+    type: mcq
+    title: Transfer function
+    points: 1
+    q: |-
+      What is the transfer function $X(s)/U(s)$ of $4\dot x(t) + x(t) = u(t)$, $x(0) = 0$?
+    choices:
+      - text: $\dfrac{1}{4s+1}$
+        correct: true
+      - text: $\dfrac{4}{s+1}$
+        why: That would be the equation $\dot x + x = 4u$.
+      - text: $\dfrac{4s+1}{1}$
+        why: Upside down. This is $U/X$.
+      - text: $\dfrac{1}{s+4}$
+        why: That is $\dot x + 4x = u$.
+
+  - id: l1prep-q2
+    type: mcq
+    title: Entering a denominator
+    points: 1
+    q: |-
+      Which denominator do you type into a Transfer Fcn block for
+      $G(s) = \dfrac{1}{s^2 + 2s + 5}$?
+    choices:
+      - text: '`[5 2 1]`'
+        why: Coefficients go in descending powers of $s$, so $s^2$ first.
+      - text: '`[1 2 5]`'
+        correct: true
+      - text: '`[2 5]`'
+        why: The $s^2$ coefficient 1 is missing.
+      - text: '`1 + 2s + 5s^2`'
+        why: The block takes a vector of coefficients, not an expression.
+
+  - id: l1prep-q3
+    type: tf
+    title: Initial conditions in a Transfer Fcn
+    points: 1
+    q: |-
+      A Transfer Fcn block can be given a nonzero initial condition $x(0) = 1$.
+    correct: false
+    solution: |-
+      False. A Transfer Fcn block always assumes zero initial conditions. For $x(0) = 1$,
+      build the equation with Integrator blocks, each holding its own initial condition.
+
+  - id: l1prep-q4
+    type: mcq
+    title: Time constant
+    points: 1
+    q: |-
+      $2\dot x + x = u$, $x(0)=0$, and $u$ is a unit step at $t = 0$. What is $x(2)$?
+    choices:
+      - text: About 0.5
+        why: Half the final value is reached at $t = \tau \ln 2 \approx 1.39$ s.
+      - text: About 0.63
+        correct: true
+        why: $\tau = 2$ s, and at $t = \tau$ the response is $1 - e^{-1} \approx 0.632$.
+      - text: About 0.86
+        why: That is $x(4)$, at $2\tau$.
+      - text: '1'
+        why: 1 is the final value, approached but not reached.
+
+  - id: l1prep-q5
+    type: tf
+    title: A larger coefficient
+    points: 1
+    q: |-
+      Changing $2\dot x + x = u$ to $5\dot x + x = u$ makes the step response reach its
+      final value faster.
+    correct: false
+    solution: |-
+      False. The coefficient of $\dot x$ is the time constant. 5 s is larger than 2 s, so
+      the response is slower. The final value stays 1.
+
+  - id: l1prep-q6
+    type: mcq
+    title: Isolating the highest derivative
+    points: 1
+    q: |-
+      To build $\ddot x + 2\dot x + 5x = u$ with integrators, the Sum block computes which
+      signal?
+    choices:
+      - text: $u + 2\dot x + 5x$
+        why: The feedback terms are subtracted.
+      - text: $u - 2\dot x - 5x$
+        correct: true
+        why: That is $\ddot x$, the input of the first Integrator.
+      - text: $u - 2x - 5\dot x$
+        why: The gains are swapped. $\dot x$ goes with 2 and $x$ with 5.
+      - text: $\dot x - u$
+        why: This is not the equation.
+
+  - id: l1prep-q7
+    type: mcq
+    title: Which integrator holds what
+    points: 1
+    q: |-
+      In a chain of two Integrators modelling a second-order equation, where do you set
+      $x(0)$?
+    choices:
+      - text: In the first Integrator, whose input is $\ddot x$
+        why: Its output is $\dot x$, so it holds $\dot x(0)$.
+      - text: In the second Integrator, whose output is $x$
+        correct: true
+      - text: In the Sum block
+        why: A Sum has no state and no initial condition.
+      - text: In the Scope
+        why: The Scope only displays signals.
+
+  - id: l1prep-q8
+    type: mcq
+    title: Final value
+    points: 1
+    q: |-
+      $\ddot x + 2\dot x + 5x = u$ with $u$ a unit step. Which value does $x(t)$ approach?
+    choices:
+      - text: '1'
+        why: Only true when the coefficient of $x$ is 1.
+      - text: '0.2'
+        correct: true
+        why: Settled, $\dot x = \ddot x = 0$, so $5x = 1$.
+      - text: '5'
+        why: Upside down.
+      - text: It depends on the initial conditions
+        why: The system is stable, so the initial conditions only change the transient.
+
+  - id: l1prep-q9
+    type: mcq
+    title: The right block
+    points: 1
+    q: |-
+      You want a simulated signal saved as a MATLAB variable for analysis after the run.
+      Which block?
+    choices:
+      - text: Scope
+        why: It displays signals; it does not create a workspace variable by default.
+      - text: To Workspace
+        correct: true
+      - text: Mux
+        why: It combines signals into a vector.
+      - text: Gain
+        why: It scales a signal.
+
+  - id: l1prep-q10
+    type: tf
+    title: Step block default
+    points: 1
+    q: |-
+      By default, the Step block switches from 0 to 1 at $t = 0$.
+    correct: false
+    solution: |-
+      False. The default step time is 1 s. Lab 1 sets it to 0 for the examples and Task 1.
+
+  - id: l1prep-q11
+    type: mcq
+    title: Several signals on one Scope
+    points: 1
+    q: |-
+      Which block lets one Scope show the input $u(t)$ and the output $x(t)$ together?
+    choices:
+      - text: Sum
+        why: That would add them into one signal.
+      - text: Mux
+        correct: true
+      - text: Integrator
+        why: That integrates a signal.
+      - text: Derivative
+        why: That differentiates a signal.
+
+  - id: l1prep-q12
+    type: mcq
+    title: A pulse from steps
+    points: 1
+    q: |-
+      Two Step blocks, both from 0 to 1, with step times 0 and 3 s, go into a Sum with signs
+      `+-`. What is the output?
+    choices:
+      - text: 1 for $0 \le t < 3$ s, then 0
+        correct: true
+      - text: 0 until 3 s, then 1
+        why: That is the second step alone.
+      - text: 2 after 3 s
+        why: That would be signs `++`.
+      - text: -1 for $0 \le t < 3$ s
+        why: The first step is added and the second subtracted.
+
+  - id: l1prep-q13
+    type: tf
+    title: Step size
+    points: 1
+    q: |-
+      With a fixed-step Euler solver (ode1), a larger step size always gives the same curve,
+      only with fewer points.
+    correct: false
+    solution: |-
+      False. A large step makes the result inaccurate, and for some systems unstable: in
+      Lab 1, Task 4, a step of 0.5 s makes the oscillation grow instead of decay. Smaller
+      steps are more accurate but take more computation.
+
+  - id: l1prep-q14
+    type: mcq
+    title: Simulation time
+    points: 1
+    q: |-
+      Where do you change the simulation stop time?
+    choices:
+      - text: In Configuration Parameters, or the time field in the model toolbar
+        correct: true
+      - text: In the Step block
+        why: The step time is when the input switches, not how long the run lasts.
+      - text: In the Scope's Configuration Properties
+        why: That changes the display, not the simulation.
+      - text: With the `simulink` command
+        why: That only opens Simulink.
+
+  - id: l1prep-q15
+    type: tf
+    title: Following the input
+    points: 1
+    q: |-
+      For $2\dot x + x = u$ driven by a sine of 1 rad/s, the output is a sine of the same
+      frequency with the same amplitude.
+    correct: false
+    solution: |-
+      False. Same frequency, but smaller and delayed: amplitude $1/\sqrt{1 + 2^2} \approx
+      0.447$ and a lag of $\arctan 2 \approx 63^\circ$.

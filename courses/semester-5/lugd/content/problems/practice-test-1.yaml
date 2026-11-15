@@ -1,0 +1,454 @@
+title: Practice Test 1
+topic: evaluation
+instructions: |-
+  The sample test the lecturer published on C3 before the first test (Friday 13 November,
+  30 minutes at the start of the lecture). Four questions, 15 points: true/false
+  (0.5 each), multiple choice (1 each), and two worked problems where every step counts.
+  The lecturer says the sample takes longer than the real test. Calculators are allowed,
+  notes are not.
+
+  The solutions are written here. What each question draws on:
+
+  - lecture 1, [](lecture:01-recommender-systems): biased ratings, the peak-end rule,
+    matrix factorization (1a, 1b, 1c);
+  - [](lecture:02-collaborative-filtering-i): the mean-centred prediction, Pearson and
+    cosine, MAE, RMSE, precision, recall, F1, NDCG (1d to 1g, 2a, 2d, 2e, 3);
+  - [](lecture:03-collaborative-filtering-ii): association rules, neighbour reliability,
+    the F1 ceilings of a top-N evaluation (1h, 2c, 3, 4);
+  - the Bayes classifier sheet, [](lecture:04-bayes-classifier) (2b).
+
+  Drill first with [](deck:test-1), the deck made for this test, then
+  [](deck:collaborative-filtering-i), [](deck:collaborative-filtering-ii) and
+  [](deck:bayes-classifier); every formula is on [the formula sheet](formulas).
+
+questions:
+  - id: pt1-1a-explicit-sample
+    type: tf
+    title: 1(a) Explicit ratings as a sample
+    topic: intro
+    points: 0.5
+    q: |-
+      The explicit ratings that users give in a recommender are a representative sample of
+      how they would rate all items in the catalogue.
+    correct: false
+    solution: |-
+      False. Users choose what to consume and what to rate, mostly items they expected to
+      like, so the observed ratings are missing not at random and skewed towards high
+      values. They are a biased sample of the whole catalogue.
+
+  - id: pt1-1b-peak-end
+    type: tf
+    title: 1(b) Peak-end rule
+    topic: decision
+    points: 0.5
+    q: |-
+      Two movies have the same best moment, but movie A ends better than movie B. According
+      to the peak-end rule, a viewer is likely to rate A higher, even if B was more enjoyable
+      on average.
+    correct: true
+    solution: |-
+      True. The remembered experience is set by its peak and its end, not by the average.
+      Same peak, better end: A is remembered, and rated, higher.
+
+  - id: pt1-1c-mf-size
+    type: tf
+    title: 1(c) Size of a matrix factorization
+    topic: cf
+    points: 0.5
+    q: |-
+      With $10^6$ users, $10^4$ items and 20 latent factors, matrix factorization stores
+      about $2 \times 10^7$ numbers instead of the $10^{10}$ cells of the full rating matrix.
+    correct: true
+    solution: |-
+      True. It stores $k$ numbers per user and $k$ per item:
+      $(10^6 + 10^4) \cdot 20 = 2.02 \times 10^7 \approx 2 \times 10^7$, against
+      $10^6 \cdot 10^4 = 10^{10}$ cells.
+
+  - id: pt1-1d-unrated-items
+    type: tf
+    title: 1(d) Test error and unrated items
+    topic: evaluation
+    points: 0.5
+    q: |-
+      If a recommender has a low error on a held-out test set of ratings, we also know how
+      accurate its predictions are for items that users have never rated.
+    correct: false
+    solution: |-
+      False. The test set is drawn from the observed ratings, which are not a random sample
+      of all items (see 1(a)). The error on items users never rated is not measured and can
+      be quite different.
+
+  - id: pt1-1e-mae-weight
+    type: tf
+    title: 1(e) MAE and heavy users
+    topic: evaluation
+    points: 0.5
+    q: |-
+      MAE computed over all test ratings gives more weight to users who have many ratings in
+      the test set.
+    correct: true
+    solution: |-
+      True. Every test rating counts once, so a user with 100 test ratings contributes 100
+      terms and a user with 2 only two. Averaging per user first and then over users would
+      weigh all users equally.
+
+  - id: pt1-1f-mae-rmse
+    type: tf
+    title: 1(f) MAE against RMSE
+    topic: evaluation
+    points: 0.5
+    q: |-
+      For the same set of predictions, MAE can be larger than RMSE.
+    correct: false
+    solution: |-
+      False. $\mathrm{RMSE} = \sqrt{\mathrm{mean}(e^2)} \geq \mathrm{mean}(|e|) = \mathrm{MAE}$,
+      because the mean of the squares is at least the square of the mean. They are equal
+      only when all absolute errors are the same.
+
+  - id: pt1-1g-pearson-cosine
+    type: tf
+    title: 1(g) Pearson against cosine
+    topic: cf
+    points: 0.5
+    q: |-
+      User $v$'s ratings are exactly user $u$'s ratings plus 1 on every co-rated item, and
+      $u$'s ratings are not all the same. Then the Pearson correlation of $u$ and $v$ is 1,
+      while their cosine similarity is strictly less than 1.
+    correct: true
+    solution: |-
+      True. Pearson subtracts each user's mean, and the means differ by exactly 1, so the
+      centred vectors are identical: correlation 1. Cosine uses the raw vectors $r_u$ and
+      $r_u + \mathbf{1}$; these point in the same direction only if $r_u$ is a multiple of
+      $\mathbf{1}$, that is if all of $u$'s ratings are equal, which is excluded. So the
+      cosine is below 1.
+
+  - id: pt1-1h-support-confidence
+    type: tf
+    title: 1(h) Support against confidence
+    topic: cf
+    points: 0.5
+    q: |-
+      For an association rule $X \to Y$, the support of the rule can be larger than its
+      confidence.
+    correct: false
+    solution: |-
+      False. $S(X \to Y) = \frac{n(X \cup Y)}{N}$ and
+      $C(X \to Y) = \frac{n(X \cup Y)}{n(X)}$. Since $n(X) \leq N$, the confidence is always at
+      least the support.
+
+  - id: pt1-2a-mean-centred
+    type: mcq
+    title: 2(a) Mean-centred user-based prediction
+    topic: cf
+    points: 1
+    q: |-
+      User $u$ has an average rating of $3.0$. We predict $u$'s rating for item $j$ from three
+      neighbours, using
+
+      $$r^*_{uj} = \bar r_u + K \sum_{v \in N_j(u)} w_{uv}\,(r_{vj} - \bar r_v), \qquad K = \frac{1}{\sum_{v \in N_j(u)} |w_{uv}|}$$
+
+      | Neighbour | Similarity $w_{uv}$ | Rating $r_{vj}$ | Average rating of $v$ |
+      |---|---|---|---|
+      | $v_1$ | 0.8 | 5 | 4.0 |
+      | $v_2$ | 0.4 | 2 | 3.0 |
+      | $v_3$ | -0.5 | 1 | 2.0 |
+
+      What is the predicted rating $r^*_{uj}$?
+    choices:
+      - text: '2.53'
+        why: |-
+          That is the weighted average of the raw ratings,
+          $(0.8 \cdot 5 + 0.4 \cdot 2 - 0.5 \cdot 1)/1.7$: the formula uses deviations from
+          each neighbour's mean, added to $u$'s mean.
+      - text: '3.33'
+        why: |-
+          That drops the negative neighbour: $3 + (0.8 - 0.4)/1.2$. $v_3$ counts too, and its
+          term is positive.
+      - text: '3.53'
+        correct: true
+        why: |-
+          $0.8(5-4) + 0.4(2-3) + (-0.5)(1-2) = 0.8 - 0.4 + 0.5 = 0.9$, and
+          $K = 1/(0.8 + 0.4 + 0.5) = 1/1.7$. So $r^* = 3.0 + 0.9/1.7 = 3.0 + 0.53 = 3.53$.
+      - text: '4.29'
+        why: |-
+          That normalises without absolute values, $K = 1/(0.8 + 0.4 - 0.5) = 1/0.7$, so
+          $3 + 0.9/0.7 = 4.29$. $K$ sums $|w_{uv}|$.
+    solution: |-
+      Work with deviations from each neighbour's own mean:
+
+      - $v_1$: $0.8 \cdot (5 - 4) = 0.8$
+      - $v_2$: $0.4 \cdot (2 - 3) = -0.4$
+      - $v_3$: $-0.5 \cdot (1 - 2) = +0.5$ (a dissimilar user who rated below their mean
+        pushes the prediction up)
+
+      Sum $0.9$; normaliser $K = 1/(|0.8| + |0.4| + |{-0.5}|) = 1/1.7$. Then
+      $r^*_{uj} = 3.0 + 0.9/1.7 = 3.53$: answer C. The same computation as the lecture's
+      worked example in [](lecture:02-collaborative-filtering-i).
+
+  - id: pt1-2b-bayes-1nn
+    type: mcq
+    title: 2(b) Bayes and 1-NN error at a point
+    topic: classification
+    points: 1
+    q: |-
+      In a two-class problem, at a point $x_0$ the true probability of class 1 is
+      $\Pr(Y = 1 \mid X = x_0) = 0.65$. With an unlimited amount of training data, what are
+      the error rates at $x_0$ of the Bayes classifier and of the 1-nearest-neighbour
+      classifier?
+    choices:
+      - text: Bayes 0.35, 1-NN 0.35
+        why: |-
+          1-NN does not pick the most probable class; it copies a random neighbour's label.
+      - text: Bayes 0.35, 1-NN 0.455
+        correct: true
+        why: |-
+          Bayes predicts class 1 and is wrong with probability $0.35$. The nearest
+          neighbour's label is a random draw with the true probabilities, so 1-NN is wrong
+          with probability $0.65 \cdot 0.35 + 0.35 \cdot 0.65 = 2 \cdot 0.65 \cdot 0.35 = 0.455$.
+      - text: Bayes 0.35, 1-NN 0.70
+        why: |-
+          $0.70$ is twice the Bayes error, the upper bound for 1-NN, not its value here.
+      - text: Bayes 0.65, 1-NN 0.455
+        why: |-
+          The Bayes classifier picks class 1, so its error is the probability of class 2,
+          $0.35$.
+    solution: |-
+      Bayes error at a point: $\min(p, 1-p) = 0.35$. 1-NN with unlimited data:
+      $2p(1-p) = 0.455$. Answer B. See [](lecture:04-bayes-classifier).
+
+  - id: pt1-2c-association
+    type: mcq
+    title: 2(c) Support and confidence
+    topic: cf
+    points: 1
+    q: |-
+      In 10 shopping transactions, product set $X$ appears in 5, product set $Y$ appears in
+      6, and $X$ and $Y$ appear together in 4. Which statement is correct?
+    choices:
+      - text: $S(X \to Y) = 0.4$ and $C(X \to Y) = 0.8$
+        correct: true
+        why: |-
+          $S = 4/10 = 0.4$ and $C(X \to Y) = 4/5 = 0.8$.
+      - text: $C(Y \to X) = 0.8$
+        why: |-
+          $C(Y \to X) = 4/6 = 0.67$: the denominator is the count of $Y$.
+      - text: $S(X \to Y) = 0.5$
+        why: |-
+          $0.5$ is the support of $X$ alone; the rule's support counts $X$ and $Y$ together.
+      - text: $C(X \to Y) = C(Y \to X)$
+        why: |-
+          Equal only when $X$ and $Y$ occur equally often; here $0.8 \neq 0.67$.
+    solution: |-
+      Support is the share of all transactions containing both: $4/10 = 0.4$. Confidence of
+      $X \to Y$ is the share of transactions with $X$ that also contain $Y$: $4/5 = 0.8$.
+      Answer A. Definitions in [](lecture:03-collaborative-filtering-ii).
+
+  - id: pt1-2d-ndcg
+    type: mcq
+    title: 2(d) NDCG@3
+    topic: evaluation
+    points: 1
+    q: |-
+      A user has exactly 2 relevant items in the test set. A recommender returns a top-3 list
+      in which the relevant items are at positions 2 and 3. Relevance is binary
+      (1 = relevant, 0 = not), and
+
+      $$\mathrm{NDCG}@k = Z_k \sum_{m=1}^{k} \frac{2^{R(m)} - 1}{\log_2(1 + m)}$$
+
+      where $Z_k$ makes a perfect ranking score 1. What is NDCG@3 for this list?
+    choices:
+      - text: '0.50'
+        why: |-
+          That is only the gain at position 3.
+      - text: '0.69'
+        correct: true
+        why: |-
+          DCG $= \frac{1}{\log_2 3} + \frac{1}{\log_2 4} = 0.631 + 0.5 = 1.131$. Ideal DCG
+          (relevant at 1 and 2) $= 1 + 0.631 = 1.631$. NDCG $= 1.131/1.631 = 0.69$.
+      - text: '0.81'
+        why: |-
+          Check the ideal ranking: both relevant items at positions 1 and 2.
+      - text: '0.92'
+        why: |-
+          Too high for a list whose first item is irrelevant.
+    solution: |-
+      With binary relevance the gain $2^R - 1$ is 1 for a relevant item, 0 otherwise.
+
+      - This list: $\frac{1}{\log_2 3} + \frac{1}{\log_2 4} = 0.631 + 0.500 = 1.131$.
+      - Perfect list (relevant at 1 and 2): $\frac{1}{\log_2 2} + \frac{1}{\log_2 3} = 1 + 0.631 = 1.631$.
+
+      $\mathrm{NDCG}@3 = 1.131 / 1.631 = 0.69$: answer B.
+
+  - id: pt1-2e-baseline
+    type: mcq
+    title: 2(e) A baseline that always predicts 4
+    topic: evaluation
+    points: 1
+    q: |-
+      A baseline recommender ignores the user and always predicts a rating of 4. In the test
+      set, the true ratings are distributed as follows:
+
+      | True rating | 5 | 4 | 3 | 2 | 1 |
+      |---|---|---|---|---|---|
+      | Share of test ratings | 35% | 35% | 15% | 10% | 5% |
+
+      Which statement is correct?
+    choices:
+      - text: MAE = 0.85, so a personalized recommender with MAE = 0.80 is clearly a strong model.
+        why: |-
+          $0.80$ barely beats a rule that ignores the user; that is weak, not strong.
+      - text: MAE = 0.85; such a low error from a rule that ignores the user shows that observed ratings are skewed towards high values, so a recommender's MAE must be compared with this kind of baseline.
+        correct: true
+        why: |-
+          The arithmetic is right, and so is the lesson: a low MAE means little until it is
+          compared with a trivial baseline.
+      - text: MAE = 1.25; the baseline is useless because it gives everyone the same prediction.
+        why: |-
+          The MAE is $0.85$, not $1.25$.
+      - text: MAE = 0.85; this proves that most items in the catalogue would be rated 4 or 5.
+        why: |-
+          The test set holds observed ratings only, which are biased towards liked items
+          (1(a)); it says nothing certain about the whole catalogue.
+    solution: |-
+      $\mathrm{MAE} = 0.35 \cdot 1 + 0.35 \cdot 0 + 0.15 \cdot 1 + 0.10 \cdot 2 + 0.05 \cdot 3
+      = 0.35 + 0.15 + 0.20 + 0.15 = 0.85$. Answer B.
+
+  - id: pt1-3-ceilings
+    title: 3. How good can precision, recall and F1 be?
+    topic: evaluation
+    points: 3
+    q: |-
+      Two recommenders are evaluated in the same way. Each user's ratings are split 75%
+      training / 25% test, every rated test item counts as relevant, and each user gets a
+      top-5 list. The table gives the averages per user.
+
+      | Dataset | Catalogue size | Ratings per user | Measured F1 |
+      |---|---|---|---|
+      | Books | 5,000 items | 40 | 0.20 |
+      | Groceries | 500 items | 8 | 0.20 |
+    parts:
+      - label: (a)
+        points: 1
+        q: |-
+          For each dataset, compute the highest precision and the highest recall that a
+          perfect recommender could reach for an average user.
+        solution: |-
+          Relevant test items per user: 25% of the ratings. Books $0.25 \cdot 40 = 10$,
+          groceries $0.25 \cdot 8 = 2$. A perfect recommender fills the top-5 with relevant
+          items as far as there are any.
+
+          - **Books:** all 5 slots can be relevant, so precision $\leq 5/5 = 1$; it finds at
+            most 5 of the 10 relevant items, so recall $\leq 5/10 = 0.5$.
+          - **Groceries:** only 2 relevant items exist, so precision $\leq 2/5 = 0.4$; both
+            fit in the list, so recall $\leq 2/2 = 1$.
+      - label: (b)
+        points: 0.5
+        q: |-
+          Compute the highest possible $F_1$ for each dataset, using
+          $F_1 = \frac{2PR}{P + R}$.
+        solution: |-
+          - Books: $\frac{2 \cdot 1 \cdot 0.5}{1 + 0.5} = \frac{1}{1.5} = 0.667$.
+          - Groceries: $\frac{2 \cdot 0.4 \cdot 1}{0.4 + 1} = \frac{0.8}{1.4} = 0.571$.
+
+          The ceilings are reached together, by the same perfect list, so these are the
+          highest $F_1$ values.
+      - label: (c)
+        points: 1
+        q: |-
+          Both recommenders measure $F_1 = 0.20$. Which one performs better relative to what
+          is achievable? Justify with numbers.
+        solution: |-
+          Divide by the ceiling: books $0.20 / 0.667 = 0.30$ (30% of the achievable $F_1$),
+          groceries $0.20 / 0.571 = 0.35$ (35%). The grocery recommender is closer to its
+          ceiling, so it performs better relative to what is achievable, although the
+          measured values are equal.
+      - label: (d)
+        points: 0.5
+        q: |-
+          The grocery team wants a higher precision ceiling without changing the data or the
+          algorithm. What single change to the evaluation set-up would achieve this, and what
+          would the new precision ceiling be?
+        solution: |-
+          Shorten the recommendation list to the number of relevant items: a top-2 list. Then
+          a perfect recommender can fill both slots with relevant items, so the precision
+          ceiling becomes $2/2 = 1$ (and the recall ceiling stays $2/2 = 1$).
+    solution: |-
+      The lesson: precision@k and recall@k have ceilings set by the evaluation, here by the
+      number of relevant test items against the list length. Compare a measured value with its
+      ceiling before comparing systems. It is the lecture's question "Why is F1 so small?" in
+      [](lecture:03-collaborative-filtering-ii).
+    answer: |-
+      (a) Books $P \leq 1$, $R \leq 0.5$; groceries $P \leq 0.4$, $R \leq 1$.
+      (b) $0.667$ and $0.571$. (c) Groceries, $35\%$ against $30\%$ of the ceiling.
+      (d) A top-2 list: precision ceiling $1$.
+
+  - id: pt1-4-neighbour-trust
+    title: 4. Which neighbour do we trust?
+    topic: cf
+    points: 3
+    q: |-
+      For a target user $u$, three candidate neighbours have the following Pearson
+      correlations $w_{uv}$ and numbers of co-rated items $|I_{uv}|$:
+
+      | Neighbour | Pearson $w_{uv}$ | Co-rated items $\lvert I_{uv} \rvert$ |
+      |---|---|---|
+      | $v_1$ | 0.95 | 4 |
+      | $v_2$ | 0.70 | 40 |
+      | $v_3$ | 0.80 | 20 |
+
+      The two adjustments from the lecture are
+
+      $$\text{Significance weighting: } w'_{uv} = \frac{\min\{|I_{uv}|, \gamma\}}{\gamma} \cdot w_{uv} \qquad \text{Shrinkage: } w'_{uv} = \frac{|I_{uv}|}{|I_{uv}| + \beta} \cdot w_{uv}$$
+    parts:
+      - label: (a)
+        points: 1
+        q: |-
+          Compute $w'_{uv}$ for all three neighbours with significance weighting and
+          $\gamma = 25$, and rank the neighbours. Compare with the ranking by raw Pearson.
+        solution: |-
+          - $v_1$: $\frac{\min(4, 25)}{25} \cdot 0.95 = 0.16 \cdot 0.95 = 0.152$
+          - $v_2$: $\frac{\min(40, 25)}{25} \cdot 0.70 = 1 \cdot 0.70 = 0.700$
+          - $v_3$: $\frac{\min(20, 25)}{25} \cdot 0.80 = 0.8 \cdot 0.80 = 0.640$
+
+          Ranking: $v_2 > v_3 > v_1$. By raw Pearson it was $v_1 > v_3 > v_2$: the order is
+          reversed, because $v_1$'s high correlation rests on only 4 co-rated items.
+      - label: (b)
+        points: 1
+        q: |-
+          Compute $w'_{uv}$ for all three neighbours with shrinkage and $\beta = 10$, and
+          rank the neighbours.
+        solution: |-
+          - $v_1$: $\frac{4}{14} \cdot 0.95 = 0.286 \cdot 0.95 = 0.271$
+          - $v_2$: $\frac{40}{50} \cdot 0.70 = 0.8 \cdot 0.70 = 0.560$
+          - $v_3$: $\frac{20}{30} \cdot 0.80 = 0.667 \cdot 0.80 = 0.533$
+
+          Ranking: $v_2 > v_3 > v_1$, the same as with significance weighting.
+      - label: (c)
+        points: 0.5
+        q: |-
+          With $\beta = 10$, for how many co-rated items does shrinkage keep exactly half of
+          the original similarity? With $\gamma = 25$, what is the smallest number of
+          co-rated items for which significance weighting keeps the whole similarity?
+        solution: |-
+          Shrinkage: $\frac{|I|}{|I| + 10} = \frac12$ gives $|I| = 10$; in general half is
+          kept when $|I| = \beta$. Significance weighting keeps all of it once
+          $\min\{|I|, 25\} = 25$, that is from $|I| = 25$ co-rated items.
+      - label: (d)
+        points: 0.5
+        q: |-
+          Without any adjustment, $v_3$ ranks above $v_2$. For which values of $\beta$ does
+          $v_3$ still rank above $v_2$ under shrinkage?
+        solution: |-
+          Require $\frac{20}{20 + \beta} \cdot 0.8 > \frac{40}{40 + \beta} \cdot 0.7$, that is
+          $16(40 + \beta) > 28(20 + \beta)$, so $640 + 16\beta > 560 + 28\beta$, so
+          $80 > 12\beta$: $\beta < 20/3 \approx 6.67$. For $0 \leq \beta < 6.67$, $v_3$ stays
+          above $v_2$; at larger $\beta$ the neighbour with more co-rated items wins.
+    solution: |-
+      Both adjustments discount similarities computed on few co-rated items. Significance
+      weighting cuts linearly up to $\gamma$ and then leaves the value alone; shrinkage
+      discounts smoothly and never quite keeps the full value. Both are in
+      [](lecture:03-collaborative-filtering-ii).
+    answer: |-
+      (a) $0.152, 0.700, 0.640$: $v_2 > v_3 > v_1$ (raw: $v_1 > v_3 > v_2$).
+      (b) $0.271, 0.560, 0.533$: $v_2 > v_3 > v_1$. (c) $10$ items; $25$ items.
+      (d) $\beta < 20/3 \approx 6.67$.

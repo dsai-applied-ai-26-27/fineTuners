@@ -1,0 +1,23 @@
+# One file per course. Field reference: docs/content-types/course.md
+title: "Dynamic Modeling and Simulation"
+code: "DMS"
+year: "2026-27"
+semester: 5
+status: active          # active | archived
+has_educator: true      # someone writes it: its page does not ask for an educator
+hue: 200                # course colour, 0-359 on the hue wheel
+order: 2
+description: Modelling and simulating dynamic systems, with ten laboratory exercises in MATLAB and Simulink. So far this page holds lecture 1 on dynamic systems, how the labs run and are graded, a MATLAB introduction, and labs 1 to 3.
+
+# Only lab material has arrived so far, so the topics follow the labs. Add the lecture
+# units here when the lectures come. Ids are permanent.
+topics:
+  - id: matlab
+    title: MATLAB and Simulink basics
+    short: MATLAB
+  - id: simulink
+    title: Modelling in Simulink
+    short: Simulink
+  - id: dynamic-systems
+    title: What a dynamic system is
+    short: Dynamic systems

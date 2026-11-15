@@ -1,0 +1,174 @@
+title: Simulink basics
+topic: simulink
+description: The blocks, the two ways of modelling an equation, first-order step responses and the step size. What Lab 1 assumes you know.
+
+cards:
+  - id: sim-what
+    q: |-
+      What is Simulink, and how does it differ from solving an equation in plain MATLAB?
+    a: |-
+      MATLAB's graphical block-diagram environment for modelling and simulating dynamic
+      systems. Instead of writing the differential equations as code, you connect blocks
+      with wires that carry signals.
+
+  - id: sim-open
+    q: |-
+      Two ways to open Simulink, and what to choose next?
+    a: |-
+      Type `simulink` in the Command Window, or click the Simulink icon on the Home tab.
+      On the Start Page choose Blank Model.
+
+  - id: sim-config
+    q: |-
+      What do you set in Configuration Parameters, and where is it?
+    a: |-
+      The gear icon next to the Library Browser button. It holds the simulation start and
+      stop time and the solver selection.
+
+  - id: sim-four-categories
+    cloze: |-
+      Lab 1 uses four Library Browser categories: {{Continuous}}, {{Math Operations}},
+      {{Sinks}} and {{Sources}}.
+
+  - id: sim-integrator
+    hy: true
+    q: |-
+      What does the Integrator block output, and what can be set in it?
+    a: |-
+      The integral of its input. Its initial condition, the starting value of the
+      integral.
+
+  - id: sim-derivative
+    q: |-
+      The Derivative block behaves like which transfer function?
+    a: |-
+      $$G(s) = \frac{s}{cs+1}$$
+      a real differentiator, approaching the ideal $s$ as $c \to 0$. It differentiates
+      numerically.
+
+  - id: sim-transfer-fcn
+    hy: true
+    q: |-
+      How are the numerator and denominator entered in a Transfer Fcn block? Give them for
+      $\dfrac{1}{5s+1}$.
+    a: |-
+      As coefficient vectors in descending powers of $s$: numerator `[1]`, denominator
+      `[5 1]`.
+
+  - id: sim-tf-zero-ic
+    hy: true
+    q: |-
+      What does a Transfer Fcn block assume about initial conditions?
+    a: |-
+      That they are all zero: the system starts at rest. With nonzero initial conditions,
+      model the equation with Integrator blocks instead.
+
+  - id: sim-sum
+    q: |-
+      What does the Sum block do, and how do you subtract an input?
+    a: |-
+      It outputs the algebraic sum of its inputs. Each input is configured as `+` or `-`
+      in its list of signs, for example `+-`.
+
+  - id: sim-gain
+    q: |-
+      What does the Gain block do?
+    a: |-
+      Multiplies its input by a constant set in the block.
+
+  - id: sim-scope-workspace
+    q: |-
+      Scope against To Workspace?
+    a: |-
+      The Scope shows signals as a plot, during or after the run, several on one graph if
+      needed. To Workspace saves a signal to a MATLAB variable for later analysis.
+
+  - id: sim-mux
+    q: |-
+      What is the Mux block for in this lab?
+    a: |-
+      It combines several signals into one vector signal, so that one Scope can show, for
+      example, the input and the output together.
+
+  - id: sim-step-default
+    hy: true
+    q: |-
+      What is the Step block's default step time, and what does Lab 1 change it to?
+    a: |-
+      1 s. The examples and Task 1 set it to 0, so the input switches on at the start.
+    note: |-
+      Forgetting this shifts every curve by one second.
+
+  - id: sim-sources
+    q: |-
+      Which parameters define the Ramp, Sine Wave and Pulse Generator blocks?
+    a: |-
+      - Ramp: slope, start time, initial output.
+      - Sine Wave: amplitude, frequency, phase, bias.
+      - Pulse Generator: amplitude, period, phase delay, pulse width.
+
+  - id: sim-pulse-from-steps
+    q: |-
+      How do you build a single pulse that is 1 for $0 \le t < 3$ s and 0 otherwise?
+    a: |-
+      Two Step blocks, step times 0 and 3, both from 0 to 1, into a Sum with signs `+-`.
+
+  - id: sim-ode-to-tf
+    hy: true
+    q: |-
+      Transfer function of $2\dot x + x = u$ with $x(0)=0$?
+    a: |-
+      Laplace with zero initial conditions: $2sX + X = U$, so
+      $$\frac{X(s)}{U(s)} = \frac{1}{2s+1}.$$
+
+  - id: sim-time-constant
+    hy: true
+    q: |-
+      For $\tau \dot x + x = u$ and a unit step, what is $x(t)$, and what happens at
+      $t = \tau$?
+    a: |-
+      $x(t) = 1 - e^{-t/\tau}$. At $t = \tau$ it reaches 63% of its final value 1; about 95%
+      at $3\tau$.
+
+  - id: sim-larger-tau
+    q: |-
+      In $\tau\dot x + x = u$, $\tau$ goes from 2 to 5. Faster or slower response?
+    a: |-
+      Slower: the time constant is the time scale of the response.
+
+  - id: sim-integrator-chain
+    hy: true
+    q: |-
+      How do you model $\ddot x + 3\dot x + 2x = u$ with integrators?
+    a: |-
+      Isolate $\ddot x = u - 3\dot x - 2x$. A Sum computes it and feeds Integrator 1
+      (output $\dot x$), which feeds Integrator 2 (output $x$). $\dot x$ and $x$ go back
+      through Gains 3 and 2 into the Sum with minus signs.
+
+  - id: sim-which-ic
+    q: |-
+      In the two-integrator chain, which Integrator holds $x(0)$ and which $\dot x(0)$?
+    a: |-
+      The first, whose output is $\dot x$, holds $\dot x(0)$. The second, whose output is
+      $x$, holds $x(0)$.
+
+  - id: sim-final-value
+    hy: true
+    q: |-
+      What value does $x$ approach in $\ddot x + 2\dot x + 5x = u$ with a unit step, and
+      why?
+    a: |-
+      0.2. Once settled, $\dot x = \ddot x = 0$, so $5x = 1$.
+
+  - id: sim-step-size
+    cloze: |-
+      Simulink computes the solution at a sequence of instants; the distance between two
+      of them is the {{step size}}. Too large a fixed step makes the result
+      {{inaccurate, or even unstable}}; a smaller one costs {{more computation}}.
+
+  - id: sim-euler
+    q: |-
+      What does the solver ode1 do?
+    a: |-
+      Euler's method: $x_{k+1} = x_k + h\,f(x_k)$, one derivative evaluation per step of
+      fixed size $h$.

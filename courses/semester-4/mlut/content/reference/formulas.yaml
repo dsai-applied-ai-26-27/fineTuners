@@ -1,0 +1,178 @@
+sections:
+  - title: Probability and independence
+    topic: lecture-1
+    rows:
+      - id: f-joint-probability
+        name: Joint probability
+        formula: |-
+          $$p(A,B)=p(A\cap B)$$
+        note: |-
+          $p(A,B)$ is the probability that $A$ and $B$ occur together.
+      - id: f-marginal-continuous
+        name: Continuous marginal probability
+        formula: |-
+          $$p(A)=\int p(A,B)\,dB$$
+        note: |-
+          Integrate the joint density over all values of the variable being removed.
+      - id: f-conditional-probability
+        name: Conditional probability
+        formula: |-
+          $$p(A\mid B)=\frac{p(A,B)}{p(B)}$$
+        note: |-
+          This requires $p(B)>0$.
+      - id: f-bayes-theorem
+        name: Bayes' theorem
+        formula: |-
+          $$p(z\mid x)=\frac{p(x\mid z)p(z)}{p(x)}$$
+        note: |-
+          Posterior equals likelihood times prior divided by evidence.
+      - id: f-product-rule
+        name: Product rule
+        formula: |-
+          $$p(A,B)=p(A\mid B)p(B)=p(B\mid A)p(A)$$
+      - id: f-complement
+        name: Complement probability
+        formula: |-
+          $$p(A^c)=1-p(A)$$
+      - id: f-event-independence
+        name: Event independence
+        formula: |-
+          $$p(A\cap B)=p(A)p(B)$$
+        note: |-
+          Equivalently, if $p(B)>0$, $p(A\mid B)=p(A)$.
+      - id: f-independent-density
+        name: Independent continuous variables
+        formula: |-
+          $$p(x,y)=p(x)p(y)$$
+        note: |-
+          This factorisation holds for all $x,y$ when the continuous random variables are independent.
+
+  - title: Descriptive statistics
+    topic: lecture-1
+    rows:
+      - id: f-mean
+        name: Sample mean
+        formula: |-
+          $$\mu=\frac{1}{N}\sum_{i=1}^{N}x_i$$
+        note: |-
+          $N$ is the number of observations.
+      - id: f-variance
+        name: Population variance
+        formula: |-
+          $$\sigma^2=\frac{1}{N}\sum_{i=1}^{N}(x_i-\mu)^2$$
+      - id: f-standard-deviation
+        name: Standard deviation
+        formula: |-
+          $$\sigma=\sqrt{\sigma^2}$$
+      - id: f-covariance
+        name: Covariance
+        formula: |-
+          $$\operatorname{Cov}(X,Y)=\frac{1}{N}\sum_{i=1}^{N}(x_i-\mu_x)(y_i-\mu_y)$$
+      - id: f-covariance-matrix
+        name: Three-variable covariance matrix
+        formula: |-
+          $$\Sigma=\begin{bmatrix}
+          \operatorname{Var}(x)&\operatorname{Cov}(x,y)&\operatorname{Cov}(x,z)\\
+          \operatorname{Cov}(y,x)&\operatorname{Var}(y)&\operatorname{Cov}(y,z)\\
+          \operatorname{Cov}(z,x)&\operatorname{Cov}(z,y)&\operatorname{Var}(z)
+          \end{bmatrix}$$
+      - id: f-linear-covariance
+        name: Covariance of a linear combination
+        formula: |-
+          $$\operatorname{Cov}(x+y-z,x)=\operatorname{Var}(x)+\operatorname{Cov}(y,x)-\operatorname{Cov}(z,x)$$
+      - id: f-independent-expectation-product
+        name: Expectation of a product under independence
+        formula: |-
+          $$E[XY]=E[X]E[Y]$$
+        note: |-
+          This follows when $X$ and $Y$ are independent.
+
+  - title: Gaussian distributions
+    topic: lecture-1
+    rows:
+      - id: f-univariate-gaussian
+        name: Univariate Gaussian density
+        formula: |-
+          $$p(x;\mu,\sigma^2)=\frac{1}{\sqrt{2\pi\sigma^2}}\exp\left(-\frac{(x-\mu)^2}{2\sigma^2}\right)$$
+      - id: f-central-limit-theorem
+        name: Central Limit Theorem approximation
+        formula: |-
+          $$\bar X_n\approx\mathcal{N}\left(\mu,\frac{\sigma^2}{n}\right)$$
+        note: |-
+          For independent identically distributed variables with finite mean and variance, this holds approximately for large $n$.
+      - id: f-multivariate-normal
+        name: Multivariate normal density
+        formula: |-
+          $$p(\mathbf{x})=\frac{1}{(2\pi)^{D/2}|\Sigma|^{1/2}}\exp\left(-\frac{1}{2}(\mathbf{x}-\boldsymbol{\mu})^T\Sigma^{-1}(\mathbf{x}-\boldsymbol{\mu})\right)$$
+        note: |-
+          $D$ is the dimension, $\boldsymbol{\mu}$ the mean vector, and $\Sigma$ the covariance matrix.
+      - id: f-spherical-covariance
+        name: Spherical covariance
+        formula: |-
+          $$\Sigma=\sigma^2I$$
+        note: |-
+          The contours are circles.
+      - id: f-diagonal-covariance
+        name: Diagonal covariance
+        formula: |-
+          $$\Sigma=\operatorname{diag}(\sigma_1^2,\sigma_2^2)$$
+        note: |-
+          The contours are axis-aligned ellipses.
+      - id: f-full-bivariate-covariance
+        name: Full bivariate covariance
+        formula: |-
+          $$\Sigma=\begin{bmatrix}\sigma_1^2&\rho\sigma_1\sigma_2\\\rho\sigma_1\sigma_2&\sigma_2^2\end{bmatrix}$$
+        note: |-
+          $\rho$ is the correlation; off-diagonal terms rotate the contours.
+      - id: f-bivariate-marginals
+        name: Bivariate Gaussian marginals
+        formula: |-
+          $$p(x)=\mathcal{N}(\mu_x,\sigma_x^2),\qquad p(y)=\mathcal{N}(\mu_y,\sigma_y^2)$$
+      - id: f-conditional-x-given-y
+        name: Conditional Gaussian $p(x\mid y)$
+        formula: |-
+          $$p(x\mid y)=\mathcal{N}\left(\mu_x+\frac{\operatorname{Cov}(x,y)}{\sigma_y^2}(y-\mu_y),\;\sigma_x^2-\frac{\operatorname{Cov}(x,y)^2}{\sigma_y^2}\right)$$
+      - id: f-conditional-y-given-x
+        name: Conditional Gaussian $p(y\mid x)$
+        formula: |-
+          $$p(y\mid x)=\mathcal{N}\left(\mu_y+\frac{\operatorname{Cov}(x,y)}{\sigma_x^2}(x-\mu_x),\;\sigma_y^2-\frac{\operatorname{Cov}(x,y)^2}{\sigma_x^2}\right)$$
+      - id: f-gaussian-mixture
+        name: Mixture of Gaussians
+        formula: |-
+          $$p(x)=\sum_{k=1}^{K}\pi_k\mathcal{N}(x\mid\mu_k,\sigma_k^2)$$
+      - id: f-mixture-weights
+        name: Mixture weight constraints
+        formula: |-
+          $$\sum_{k=1}^{K}\pi_k=1,\qquad \pi_k\geq0$$
+
+  - title: Error models
+    topic: lecture-1
+    rows:
+      - id: f-additive-noise
+        name: Additive Gaussian noise
+        formula: |-
+          $$y=x+\varepsilon,\qquad \varepsilon\sim\mathcal{N}(0,\sigma^2)$$
+      - id: f-multiplicative-noise
+        name: Multiplicative Gaussian noise
+        formula: |-
+          $$y=x\eta,\qquad \eta\sim\mathcal{N}(1,\sigma_\eta^2)$$
+      - id: f-conditional-additive-density
+        name: Conditional density for additive noise
+        formula: |-
+          $$p(x\mid z)=\mathcal{N}(x\mid z,\sigma^2)$$
+        note: |-
+          This follows from $x=z+\varepsilon$ with Gaussian error.
+      - id: f-log-transform
+        name: Log transform of multiplicative noise
+        formula: |-
+          $$\log(y)=\log(x)+\log(\eta)$$
+        note: |-
+          On the log scale, a multiplicative model becomes additive.
+      - id: f-additive-signal-noise
+        name: Additive signal-to-noise ratio
+        formula: |-
+          $$\operatorname{SNR}_{\mathrm{additive}}=\frac{x}{\sigma}$$
+      - id: f-multiplicative-signal-noise
+        name: Multiplicative signal-to-noise ratio
+        formula: |-
+          $$\operatorname{SNR}_{\mathrm{multiplicative}}=\frac{1}{\sigma_\eta}$$

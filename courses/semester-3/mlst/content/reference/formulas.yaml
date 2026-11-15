@@ -1,0 +1,168 @@
+# Ids are permanent: people's progress is keyed by them.
+# The exam kit gives most of these in words or in code; the notes say where the written
+# form is the standard one and not the kit's.
+sections:
+  - title: Loss and empirical risk
+    topic: framing
+    rows:
+      - id: f-l1-loss
+        name: L1 (absolute) loss
+        formula: |-
+          $$L(y, f(x)) = \lvert y - f(x) \rvert$$
+        note: |-
+          Robust to outliers, but not differentiable at zero, so it needs numerical
+          optimisation.
+      - id: f-l2-loss
+        name: L2 (squared) loss
+        formula: |-
+          $$L(y, f(x)) = (y - f(x))^2$$
+        note: |-
+          Convex and differentiable, gives the closed-form OLS estimator. One outlier
+          carries enormous weight.
+      - id: f-empirical-risk
+        name: Empirical risk
+        formula: |-
+          $$\mathcal{R}_{\text{emp}}(\theta) = \frac{1}{m} \sum_{i=1}^{m} L\big(y_i, f(x_i; \theta)\big)$$
+        note: |-
+          The average loss over the $m$ training instances, minimised in place of the
+          unknowable theoretical risk. The kit states it in words; this is the standard
+          written form.
+
+  - title: Linear regression and gradient descent
+    topic: linear
+    rows:
+      - id: f-normal-equation
+        name: Normal equation
+        formula: |-
+          $$\theta = (X^\top X)^{-1} X^\top y$$
+        note: |-
+          The closed-form minimiser for L2 loss. $X$ is the design matrix with a column of
+          ones. Needs $X^\top X$ invertible.
+      - id: f-gd-update
+        name: Gradient descent update
+        formula: |-
+          $$\theta \leftarrow \theta - \alpha\, \nabla_\theta \mathcal{R}_{\text{emp}}(\theta)$$
+        note: |-
+          $\alpha$ is the learning rate (`eta` in the code). Too high diverges, too low
+          crawls.
+      - id: f-batch-gradient
+        name: Gradient of the MSE over the whole training set
+        formula: |-
+          $$\nabla_\theta \text{MSE} = \frac{2}{m}\, X^\top (X\theta - y)$$
+        note: |-
+          The divisor matches how many instances were averaged: $2/m$ for batch, $2$ for
+          one instance, $2/\text{minibatch size}$ for a mini-batch.
+      - id: f-learning-schedule
+        name: Learning schedule of the manual SGD loop
+        formula: |-
+          $$\eta(t) = \frac{t_0}{t + t_1}$$
+        note: |-
+          $t$ is the global step count. Large steps first, tiny steps at the end so the
+          parameters settle. The lab uses $t_0 = 5$, $t_1 = 50$.
+
+  - title: Regularization
+    topic: regularization
+    rows:
+      - id: f-ridge-penalty
+        name: Ridge (L2) penalty
+        formula: |-
+          $$\alpha \sum_j \theta_j^2$$
+        note: |-
+          Added to the loss. Shrinks every coefficient towards zero, never exactly to zero.
+      - id: f-lasso-penalty
+        name: Lasso (L1) penalty
+        formula: |-
+          $$\alpha \sum_j \lvert \theta_j \rvert$$
+        note: |-
+          Drives some coefficients exactly to zero: automatic feature selection.
+
+  - title: Evaluation
+    topic: evaluation
+    rows:
+      - id: f-precision
+        name: Precision
+        formula: |-
+          $$\text{precision} = \frac{TP}{TP + FP}$$
+        note: |-
+          How trustworthy a positive prediction is.
+      - id: f-recall
+        name: Recall (sensitivity, true-positive rate)
+        formula: |-
+          $$\text{recall} = \frac{TP}{TP + FN}$$
+        note: |-
+          How much of the actual positives is caught.
+      - id: f-f1
+        name: F1 score
+        formula: |-
+          $$F_1 = \frac{2 \cdot \text{precision} \cdot \text{recall}}{\text{precision} + \text{recall}}$$
+        note: |-
+          The harmonic mean of precision and recall, which punishes imbalance between them.
+          The kit names it; this is the standard written form.
+      - id: f-threshold
+        name: Label from a score by thresholding
+        formula: |-
+          $$\hat y = \mathbb{I}\big(f(x) > c\big)$$
+        note: |-
+          $c = 0$ for scores, $0.5$ for probabilities. $\mathbb{I}$ is the indicator
+          function.
+      - id: f-bootstrap-share
+        name: Share of distinct instances in a bootstrap sample
+        formula: |-
+          $$1 - \frac{1}{e} \approx 63.2\%$$
+        note: |-
+          The rest, about 37%, is out-of-bag. The kit gives the number; the expression
+          behind it is the standard one.
+
+  - title: Distance
+    topic: classifiers
+    rows:
+      - id: f-gower-numeric
+        name: Gower dissimilarity of one numerical feature
+        formula: |-
+          $$\frac{\lvert x_i - x_j \rvert}{\text{range of the feature}}$$
+        note: |-
+          Categorical features score 0 for a match and 1 otherwise. The Gower distance is
+          the (weighted) average over all features, in $[0, 1]$.
+
+  - title: Support vector machines
+    topic: svm
+    rows:
+      - id: f-svm-primal
+        name: Hard-margin SVM, primal problem
+        formula: |-
+          $$\min_{w,\, b}\ \tfrac12 \lVert w \rVert^2 \quad \text{subject to} \quad y_i (w^\top x_i + b) \ge 1 \ \text{ for all } i$$
+        note: |-
+          A convex quadratic program with linear constraints.
+      - id: f-svm-margin
+        name: Margin width
+        formula: |-
+          $$\frac{2}{\lVert w \rVert}$$
+        note: |-
+          Shrinking $\lVert w \rVert$ widens the margin.
+      - id: f-svm-lagrangian
+        name: Lagrangian of the hard-margin SVM
+        formula: |-
+          $$L(w, b, \alpha) = \tfrac12 \lVert w \rVert^2 - \sum_i \alpha_i \big[ y_i (w^\top x_i + b) - 1 \big]$$
+        note: |-
+          One multiplier $\alpha_i \ge 0$ per constraint.
+      - id: f-svm-stationarity
+        name: Stationarity conditions of the SVM Lagrangian
+        formula: |-
+          $$w = \sum_i \alpha_i y_i x_i, \qquad \sum_i \alpha_i y_i = 0$$
+        note: |-
+          From setting the partial derivatives with respect to $w$ and $b$ to zero.
+      - id: f-svm-dual
+        name: Hard-margin SVM, dual problem
+        formula: |-
+          $$\max_{\alpha}\ \sum_i \alpha_i - \tfrac12 \sum_i \sum_j \alpha_i \alpha_j\, y_i y_j\, x_i^\top x_j \quad \text{subject to} \quad \alpha_i \ge 0,\ \sum_i \alpha_i y_i = 0$$
+        note: |-
+          The data appears only through inner products $x_i^\top x_j$, which a kernel
+          $K(x_i, x_j)$ can replace.
+      - id: f-hinge
+        name: Hinge loss
+        formula: |-
+          $$\max\big(0,\ 1 - y\, f(x)\big)$$
+        note: |-
+          Zero for points on the correct side and outside the margin, growing linearly
+          otherwise. The kit describes it in words; this is the standard written form, with
+          $y \in \{-1, +1\}$.

@@ -1,0 +1,175 @@
+# Ids are permanent: people's progress is keyed by them.
+title: 'Sample paper 1 (a colleague''s practice exam, reworded)'
+kind: mock
+instructions: |-
+  Code tasks in the shape of Section B, rebuilt from colleagues' practice exams and the lab notebooks. The original wording could not be recovered: these are the task types, worded by the study kit, under the numbering the kit kept. No point values or time limit are known.
+
+  Read the prompt, write the code on paper, then open the solution.
+questions:
+  - id: s1-1a
+    title: 'Question 1 (a)'
+    topic: framing
+    q: |-
+      Explain the purpose of StratifiedShuffleSplit compared to a standard train_test_split, and how the loop guarantees a representative test set.
+
+      ```python
+      split = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
+      for train_index, test_index in split.split(X, y):
+          X_train = X.iloc[train_index]
+          X_test  = X.iloc[test_index]
+      ```
+    solution: |-
+      train_test_split draws the 20% purely at random, so it only preserves category proportions on average — with a rare category or a small test set, one unlucky draw skews the test set and the estimate of generalisation error is biased. StratifiedShuffleSplit takes y (or a stratification column), counts each category, and samples 20% within each stratum, so every category appears in the test set in the same proportion as in the full dataset. n_splits=1 means the loop body executes once; split.split() yields arrays of positional indices, which is why the rows are selected with .iloc[].
+    source: |-
+      Labelled "Sample paper 1 · 1a" in the study kit. The wording is the kit's summary of a colleague's practice exam, not the original.
+
+  - id: s1-1b
+    title: 'Question 1 (b)'
+    topic: preprocessing
+    q: |-
+      Build a preprocessing pipeline with ColumnTransformer: numerical columns imputed with the median then scaled, categorical columns one-hot encoded. Store the result in X_prepared.
+    solution: |-
+      ```python
+      from sklearn.pipeline import Pipeline
+      from sklearn.compose import ColumnTransformer
+      from sklearn.impute import SimpleImputer
+      from sklearn.preprocessing import StandardScaler, OneHotEncoder
+
+      num_pipeline = Pipeline([
+          ("imputer", SimpleImputer(strategy="median")),
+          ("std_scaler", StandardScaler()),
+      ])
+
+      full_pipeline = ColumnTransformer([
+          ("num", num_pipeline, num_attribs),
+          ("cat", OneHotEncoder(), cat_attribs),
+      ])
+
+      X_prepared = full_pipeline.fit_transform(X)
+      ```
+
+      Pipeline steps are 2-tuples, ColumnTransformer entries are 3-tuples. Order inside the numeric pipeline matters — impute before scaling, since the scaler cannot compute statistics over NaNs.
+    source: |-
+      Labelled "Sample paper 1 · 1b" in the study kit. The wording is the kit's summary of a colleague's practice exam, not the original.
+
+  - id: s1-1c
+    title: 'Question 1 (c)'
+    topic: regularization
+    q: |-
+      Explain the algorithm below and the logic of the loop: SGDRegressor with max_iter=1, tol=-np.infty, warm_start=True, learning_rate="constant", eta0=0.0005, and a deepcopy inside an if.
+
+      ```python
+      sgd_reg = SGDRegressor(max_iter=1, tol=-np.infty, warm_start=True,
+                             penalty=None, learning_rate="constant", eta0=0.0005)
+
+      minimum_val_error = float("inf")
+      best_epoch = None
+      best_model = None
+      for epoch in range(1000):
+          sgd_reg.fit(X_train_poly_scaled, y_train)
+          y_val_predict = sgd_reg.predict(X_val_poly_scaled)
+          val_error = mean_squared_error(y_val, y_val_predict)
+          if val_error < minimum_val_error:
+              minimum_val_error = val_error
+              best_epoch = epoch
+              best_model = deepcopy(sgd_reg)
+      ```
+    solution: |-
+      This is EARLY STOPPING as regularisation. max_iter=1 makes each .fit() run exactly one epoch, so the Python loop counts epochs. warm_start=True means the next fit resumes from the current θ instead of reinitialising. tol=-np.infty disables sklearn's own convergence stop so the loop stays in control. penalty=None because early stopping is the regulariser here. Each epoch it predicts on the validation set, and whenever the validation error hits a new minimum it records the epoch and takes a deepcopy — a full snapshot, because a plain reference would keep training with the object. The validation curve falls while the model is still learning signal and rises once it starts fitting noise; the snapshot at the turning point is the returned model.
+    source: |-
+      Labelled "Sample paper 1 · 1c" in the study kit. The wording is the kit's summary of a colleague's practice exam, not the original.
+
+  - id: s1-2a
+    title: 'Question 2 (a)'
+    topic: ensembles
+    q: |-
+      Train a soft VotingClassifier combining LogisticRegression(solver="lbfgs"), RandomForestClassifier with 100 estimators, and an SVC.
+    solution: |-
+      ```python
+      from sklearn.ensemble import VotingClassifier, RandomForestClassifier
+      from sklearn.linear_model import LogisticRegression
+      from sklearn.svm import SVC
+
+      log_clf = LogisticRegression(solver="lbfgs", random_state=42)
+      rnd_clf = RandomForestClassifier(n_estimators=100, random_state=42)
+      svm_clf = SVC(probability=True, random_state=42)
+
+      voting_clf = VotingClassifier(
+          estimators=[("lr", log_clf), ("rf", rnd_clf), ("svc", svm_clf)],
+          voting="soft")
+      voting_clf.fit(X_train, y_train)
+      ```
+
+      probability=True on the SVC is the mark that gets dropped. Soft voting averages predict_proba, and SVC has none unless you ask for it.
+    source: |-
+      Labelled "Sample paper 1 · 2a" in the study kit. The wording is the kit's summary of a colleague's practice exam, not the original.
+
+  - id: s1-2b
+    title: 'Question 2 (b)'
+    topic: linear
+    q: |-
+      Implement polynomial regression with a Pipeline: PolynomialFeatures(degree=2, include_bias=False), then StandardScaler, then LinearRegression. Fit it.
+    solution: |-
+      ```python
+      from sklearn.pipeline import Pipeline
+      from sklearn.preprocessing import PolynomialFeatures, StandardScaler
+      from sklearn.linear_model import LinearRegression
+
+      poly_pipeline = Pipeline([
+          ("poly_features", PolynomialFeatures(degree=2, include_bias=False)),
+          ("std_scaler", StandardScaler()),
+          ("lin_reg", LinearRegression()),
+      ])
+      poly_pipeline.fit(X_train, y_train)
+      ```
+
+      include_bias=False because LinearRegression adds its own intercept, and a constant column would have zero variance for the scaler to divide by.
+    source: |-
+      Labelled "Sample paper 1 · 2b" in the study kit. The wording is the kit's summary of a colleague's practice exam, not the original.
+
+  - id: s1-2c
+    title: 'Question 2 (c)'
+    topic: preprocessing
+    q: |-
+      Tune a DecisionTreeClassifier with GridSearchCV over max_leaf_nodes 2–100 and min_samples_split in {2,3,4}, cv=3, and print the best parameters.
+    solution: |-
+      ```python
+      from sklearn.model_selection import GridSearchCV
+      from sklearn.tree import DecisionTreeClassifier
+
+      param_grid = {"max_leaf_nodes": list(range(2, 100)),
+                    "min_samples_split": [2, 3, 4]}
+
+      grid_search = GridSearchCV(DecisionTreeClassifier(random_state=42),
+                                 param_grid, cv=3)
+      grid_search.fit(X_train, y_train)
+      print(grid_search.best_params_)
+      ```
+
+      grid_search.best_estimator_ is already refitted on the whole training set, so no second fit is needed.
+    source: |-
+      Labelled "Sample paper 1 · 2c" in the study kit. The wording is the kit's summary of a colleague's practice exam, not the original.
+
+  - id: s1-2d
+    title: 'Question 2 (d)'
+    topic: sequences
+    q: |-
+      Build a hybrid Conv1D + GRU sequence model: Conv1D with 20 filters, kernel size 4, valid padding, stride 2; two GRU layers of 20 units returning sequences; TimeDistributed Dense(10) output; MSE loss with Adam.
+    solution: |-
+      ```python
+      model = keras.models.Sequential([
+          keras.layers.Conv1D(filters=20, kernel_size=4, strides=2, padding="valid",
+                              input_shape=[None, 1]),
+          keras.layers.GRU(20, return_sequences=True),
+          keras.layers.GRU(20, return_sequences=True),
+          keras.layers.TimeDistributed(keras.layers.Dense(10))
+      ])
+
+      model.compile(loss="mse", optimizer="adam", metrics=[last_time_step_mse])
+      history = model.fit(X_train, Y_train[:, 3::2], epochs=20,
+                          validation_data=(X_valid, Y_valid[:, 3::2]))
+      ```
+
+      Stride 2 halves the output length, so the targets are sliced Y_train[:, 3::2] — start at index 3 (steps lost to valid padding), take every 2nd (the stride).
+    source: |-
+      Labelled "Sample paper 1 · 2d" in the study kit. The wording is the kit's summary of a colleague's practice exam, not the original.

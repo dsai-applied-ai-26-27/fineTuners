@@ -1,0 +1,406 @@
+# Ids are permanent: people's progress is keyed by them.
+title: 'Look-alikes'
+topic: sequences
+description: 'Models and arguments that look alike in code and differ in one line. The note is the tell: what in the question decides which one to write.'
+
+cards:
+  - id: pair-01
+    topic: preprocessing
+    q: |-
+      **fit_transform vs transform.** Which one goes on the training set and which on the test set?
+    a: |-
+      **fit_transform(X_train)**
+
+      ```python
+      scaler.fit_transform(X_train)
+      poly.fit_transform(X_train)
+      pca.fit_transform(X_train)
+      ```
+
+      Learns the parameters (mean, std, categories, components) AND applies them. Training data only.
+
+      **transform(X_test)**
+
+      ```python
+      scaler.transform(X_test)
+      poly.transform(X_test)
+      pca.transform(X_test)
+      ```
+
+      Applies the already-learned parameters. Never re-learns.
+    note: |-
+      **The tell.** If you call fit on the test set you have leaked information and the estimate is optimistic. Transformers = fit/transform. Models = fit/predict.
+
+  - id: pair-02
+    topic: evaluation
+    q: |-
+      **cross_val_score vs cross_val_predict.** You need a confusion matrix from cross-validation. Which one?
+    a: |-
+      **cross_val_score → numbers**
+
+      ```python
+      scores = cross_val_score(
+          sgd_clf, X_train, y_train,
+          cv=3, scoring="accuracy")
+      # array([0.95, 0.96, 0.96])
+      ```
+
+      One score per fold. Use it to compare models.
+
+      **cross_val_predict → predictions**
+
+      ```python
+      y_pred = cross_val_predict(
+          sgd_clf, X_train, y_train, cv=3)
+      confusion_matrix(y_train, y_pred)
+      ```
+
+      One clean out-of-fold prediction per instance. Use it to build a confusion matrix or sweep a threshold.
+    note: |-
+      **The tell.** 'Calculate and print the confusion matrix / precision / recall' ⇒ cross_val_predict. 'Compare model performance' ⇒ cross_val_score. Add method="decision_function" when you need scores rather than labels.
+
+  - id: pair-03
+    topic: regularization
+    q: |-
+      **LinearRegression vs SGDRegressor vs Ridge / Lasso / ElasticNet.** All four fit a straight line. What actually differs?
+    a: |-
+      **Closed form**
+
+      ```python
+      LinearRegression()
+      Ridge(alpha=1, solver="cholesky")
+      ```
+
+      Solves the normal equation exactly. Fast on small data, impractical on huge data.
+
+      **Iterative**
+
+      ```python
+      SGDRegressor(max_iter=1000, tol=1e-3,
+                   penalty=None, eta0=0.1)
+      SGDRegressor(penalty="l2")   # = Ridge
+      SGDRegressor(penalty="l1")   # = Lasso
+      ```
+
+      Gradient descent. Scales to huge data and is the only option when no closed form exists.
+    note: |-
+      **The tell.** Regularisation is a penalty argument, not a different algorithm: Ridge = L2 (shrinks, keeps all), Lasso = L1 (zeroes some out), ElasticNet = both with l1_ratio setting the mix. alpha = strength; l1_ratio = mix.
+
+  - id: pair-04
+    topic: svm
+    q: |-
+      **SVC vs LinearSVC vs SVR vs LinearSVR.** Four classes with almost the same name.
+    a: |-
+      **Classification**
+
+      ```python
+      SVC(kernel="rbf", gamma=5, C=0.001)
+      SVC(kernel="poly", degree=3, coef0=1, C=5)
+      LinearSVC(C=1, loss="hinge")
+      ```
+
+      SVC supports kernels (poly, rbf, sigmoid). LinearSVC is linear-only, faster, and needs loss="hinge" to be a true SVM.
+
+      **Regression**
+
+      ```python
+      SVR(kernel="poly", degree=2, C=100,
+          epsilon=0.1, gamma="scale")
+      LinearSVR(epsilon=1.5)
+      ```
+
+      epsilon appears ONLY in regression: the width of the tube inside which errors cost nothing.
+    note: |-
+      **The tell.** epsilon in the question ⇒ regression. gamma or coef0 ⇒ a kernel is involved ⇒ SVC/SVR, not the `Linear*` versions. probability=True only exists on SVC and is needed for soft voting.
+
+  - id: pair-05
+    topic: ensembles
+    q: |-
+      **Bagging vs Random Forest vs AdaBoost vs Gradient Boosting.** Four ensembles. Parallel or sequential, and what is resampled?
+    a: |-
+      **Parallel (variance ↓)**
+
+      ```python
+      BaggingClassifier(DecisionTreeClassifier(),
+          n_estimators=500, max_samples=100,
+          bootstrap=True, oob_score=True)
+
+      RandomForestClassifier(n_estimators=500,
+          max_leaf_nodes=16)
+      ```
+
+      Independent trees on resampled data, then vote/average. bootstrap=True is bagging, False is pasting. Random Forest additionally samples FEATURES at each split.
+
+      **Sequential (bias ↓)**
+
+      ```python
+      AdaBoostClassifier(
+          DecisionTreeClassifier(max_depth=1),
+          n_estimators=200, learning_rate=0.5)
+
+      GradientBoostingRegressor(max_depth=2,
+          n_estimators=120, learning_rate=0.1)
+      ```
+
+      Each predictor fixes the previous one. AdaBoost reweights the misclassified INSTANCES; Gradient Boosting fits the RESIDUALS.
+    note: |-
+      **The tell.** More trees never hurts a forest, but does overfit a boosted model — which is why only boosting needs early stopping (staged_predict or warm_start).
+
+  - id: pair-06
+    topic: ensembles
+    q: |-
+      **voting="hard" vs voting="soft".** One word changes the whole ensemble.
+    a: |-
+      **hard**
+
+      ```python
+      VotingClassifier(
+        estimators=[("lr", log_clf), ("rf", rnd_clf),
+                    ("svc", svm_clf)],
+        voting="hard")
+      ```
+
+      Majority vote over predicted labels. Works with any classifier.
+
+      **soft**
+
+      ```python
+      svm_clf = SVC(probability=True)
+      VotingClassifier(
+        estimators=[...], voting="soft")
+      ```
+
+      Averages predict_proba. Usually better because confident votes weigh more — but EVERY member must expose predict_proba.
+    note: |-
+      **The tell.** If the question says soft voting and one of the models is SVC, you must write probability=True or the code fails.
+
+  - id: pair-07
+    q: |-
+      **SimpleRNN vs LSTM vs GRU.** Three interchangeable layer names. What does the question have to say for each?
+    a: |-
+      **SimpleRNN**
+
+      ```python
+      keras.layers.SimpleRNN(20,
+          return_sequences=True,
+          input_shape=[None, 1])
+      ```
+
+      One state, no gates. Forgets over long sequences.
+
+      **LSTM / GRU**
+
+      ```python
+      keras.layers.LSTM(20, return_sequences=True)
+      keras.layers.GRU(20, return_sequences=True)
+      ```
+
+      LSTM: 3 gates, 2 states (h and c). GRU: 2 gates, 1 state, simplified and lighter. Same constructor arguments.
+    note: |-
+      **The tell.** They occupy the identical slot in a Sequential list — swapping the class name is the entire change. Only LSTM returns THREE values under return_state=True.
+
+  - id: pair-08
+    q: |-
+      **return_sequences vs return_state.** Both start with `return_`. They do unrelated things.
+    a: |-
+      **return_sequences=True**
+
+      ```python
+      GRU(20, return_sequences=True)
+      # output shape [batch, time_steps, units]
+      ```
+
+      Emit an output at EVERY time step. Needed on any recurrent layer feeding another recurrent layer, and on the last one for seq-to-seq output.
+
+      **return_state=True**
+
+      ```python
+      encoder_outputs, state_h, state_c = \
+          LSTM(128, return_state=True)(inputs)
+      ```
+
+      Also return the final internal state(s), so another layer can be initialised with them. This is what builds an encoder–decoder.
+    note: |-
+      **The tell.** 'Returns sequences' ⇒ shape of the output. 'Returns the state' ⇒ encoder handoff via initial_state=. An LSTM gives you 3 values, a GRU 2.
+
+  - id: pair-09
+    q: |-
+      **padding="valid" vs "same" vs "causal".** Conv1D padding, and why WaveNet insists on one of them.
+    a: |-
+      **valid / same**
+
+      ```python
+      Conv1D(20, kernel_size=4, strides=2,
+             padding="valid")
+      ```
+
+      valid: no padding, output is shorter. same: pad both sides to keep the length — but that means padding on the RIGHT, i.e. using future values.
+
+      **causal**
+
+      ```python
+      Conv1D(20, kernel_size=2, padding="causal",
+             dilation_rate=rate, activation="relu")
+      ```
+
+      Pads only on the left. Output at time t uses only inputs up to t. Mandatory for forecasting and generation.
+    note: |-
+      **The tell.** Forecasting or WaveNet in the question ⇒ causal. And any stride > 1 shortens the sequence, so the targets must be sliced to match (Y_train[:, 3::2] for strides=2).
+
+  - id: pair-10
+    q: |-
+      **Dense(10) vs TimeDistributed(Dense(10)).** Where does the output layer go in a sequence model?
+    a: |-
+      **Dense(10)**
+
+      ```python
+      GRU(20)            # no return_sequences
+      Dense(10)
+      ```
+
+      The recurrent layer collapsed the sequence into one vector, so one Dense produces one output for the whole sequence. Sentiment, single-value forecast.
+
+      **TimeDistributed(Dense(10))**
+
+      ```python
+      GRU(20, return_sequences=True)
+      TimeDistributed(Dense(10))
+      ```
+
+      The same Dense is applied independently at every time step, producing an output sequence.
+    note: |-
+      **The tell.** TimeDistributed only makes sense when the layer beneath it has return_sequences=True. The two always travel together.
+
+  - id: pair-11
+    topic: dimred
+    q: |-
+      **n_components as int vs float.** Same argument, two completely different meanings.
+    a: |-
+      **int**
+
+      ```python
+      PCA(n_components=154)
+      KernelPCA(n_components=2)
+      ```
+
+      Give me exactly this many dimensions.
+
+      **float < 1**
+
+      ```python
+      PCA(n_components=0.95)
+      ```
+
+      Give me however many dimensions are needed to preserve 95% of the variance — PCA works out the count itself.
+    note: |-
+      **The tell.** The manual equivalent: `cumsum = np.cumsum(pca.explained_variance_ratio_)`, then `d = np.argmax(cumsum >= 0.95) + 1`.
+
+  - id: pair-12
+    topic: evaluation
+    q: |-
+      **predict vs predict_proba vs decision_function.** Three ways to ask a classifier for an answer.
+    a: |-
+      **Hard labels**
+
+      ```python
+      y_pred = clf.predict(X)
+      ```
+
+      The final class, after the threshold has been applied.
+
+      **Scores / probabilities**
+
+      ```python
+      y_proba  = clf.predict_proba(X)[:, 1]
+      y_scores = sgd_clf.decision_function(X)
+      ```
+
+      Continuous output, needed for ROC/PR curves, threshold tuning and soft voting. Threshold is 0.5 for probabilities, 0 for scores.
+    note: |-
+      **The tell.** SGDClassifier and SVC give decision_function; RandomForest and Naive Bayes give predict_proba. To sweep a threshold under CV: cross_val_predict(..., method="decision_function").
+
+  - id: pair-13
+    topic: preprocessing
+    q: |-
+      **Pipeline vs ColumnTransformer.** Both take a list of tuples. Which list, and how long are the tuples?
+    a: |-
+      **Pipeline — vertical**
+
+      ```python
+      Pipeline([
+        ("imputer", SimpleImputer(strategy="median")),
+        ("std_scaler", StandardScaler()),
+      ])
+      ```
+
+      2-tuples. Steps run one after another on the SAME columns; every step but the last must be a transformer.
+
+      **ColumnTransformer — horizontal**
+
+      ```python
+      ColumnTransformer([
+        ("num", num_pipeline, num_attribs),
+        ("cat", OneHotEncoder(), cat_attribs),
+      ])
+      ```
+
+      3-tuples: name, transformer, columns. Different treatment for different column groups, results concatenated.
+    note: |-
+      **The tell.** Count the tuple length. Two items = Pipeline, three = ColumnTransformer. Nesting a Pipeline inside a ColumnTransformer is the standard preprocessing pattern.
+
+  - id: pair-14
+    q: |-
+      **Which Keras loss?** The loss follows mechanically from the task and the target format.
+    a: |-
+      **Regression / forecasting**
+
+      ```python
+      model.compile(loss="mse", optimizer="adam",
+                    metrics=[last_time_step_mse])
+      ```
+
+      Continuous target. Output layer: Dense(n) with no activation.
+
+      **Classification**
+
+      ```python
+      # binary
+      loss="binary_crossentropy"      # Dense(1, "sigmoid")
+      # multi-class, integer labels
+      loss="sparse_categorical_crossentropy"
+      # multi-class, one-hot labels
+      loss="categorical_crossentropy"  # Dense(n, "softmax")
+      ```
+
+      Binary ⇒ 1 unit + sigmoid. Multi-class ⇒ n units + softmax; 'sparse' iff the labels are integer IDs rather than one-hot.
+    note: |-
+      **The tell.** Output units, output activation and loss are one decision, not three. Fix the task and all three follow.
+
+  - id: pair-15
+    topic: evaluation
+    q: |-
+      **StratifiedShuffleSplit vs StratifiedKFold vs GridSearchCV.** All from model_selection, all stratified-ish, all different jobs.
+    a: |-
+      **Splitting once**
+
+      ```python
+      split = StratifiedShuffleSplit(
+          n_splits=1, test_size=0.2, random_state=42)
+      for train_index, test_index in split.split(X, y):
+          ...
+      ```
+
+      Make ONE representative train/test split. n_splits=1.
+
+      **Evaluating / tuning**
+
+      ```python
+      skf = StratifiedKFold(n_splits=3, shuffle=True,
+                            random_state=42)
+
+      GridSearchCV(clf, param_grid, cv=3)
+      ```
+
+      StratifiedKFold rotates k folds for evaluation. GridSearchCV wraps that around a parameter grid to pick hyperparameters.
+    note: |-
+      **The tell.** 'Make the test set representative' ⇒ StratifiedShuffleSplit. 'Evaluate with k folds' ⇒ cross_val_score / StratifiedKFold. 'Find the best parameters' ⇒ GridSearchCV.

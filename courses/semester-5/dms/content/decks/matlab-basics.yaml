@@ -1,0 +1,208 @@
+title: MATLAB basics
+topic: matlab
+description: The fundamentals from the MATLAB introduction slides. The kind of thing a Lab Preparation quiz can ask before any exercise.
+
+cards:
+  - id: matlab-name
+    q: |-
+      What does the name MATLAB stand for, and what is the program for?
+    a: |-
+      MATrix LABoratory. A software package, and a programming language, for analysis and
+      for solving mathematical and engineering problems, with strong graphics and
+      domain-specific toolboxes.
+
+  - id: matlab-simulink
+    hy: true
+    q: |-
+      What is Simulink used for?
+    a: |-
+      To model, analyse and simulate dynamic systems using block diagrams. It is fully
+      integrated with MATLAB, has a block library for linear, non-linear and discrete
+      systems, and can generate C code from a model.
+
+  - id: matlab-everything-matrix
+    cloze: |-
+      MATLAB treats all variables as {{matrices}}. A vector is a matrix with only one row
+      {{or}} one column; a scalar is a matrix with only one row {{and}} one column.
+
+  - id: matlab-naming
+    hy: true
+    q: |-
+      State the rules for MATLAB variable names.
+    a: |-
+      - No declaration is needed before use.
+      - Up to 63 characters.
+      - Case sensitive: `A` and `a` are different variables.
+      - Must start with a letter; may contain letters, digits and underscores, but no
+        spaces.
+
+  - id: matlab-valid-names
+    q: |-
+      Which of these are valid variable names? `rate2`, `2rate`, `flow_rate`, `flow rate`,
+      `flow-rate`
+    a: |-
+      `rate2` and `flow_rate`.
+    note: |-
+      `2rate` starts with a digit, `flow rate` contains a space, and `flow-rate` is read as
+      a subtraction.
+
+  - id: matlab-dot-operators
+    hy: true
+    q: |-
+      What is the difference between `*` and `.*`, and between `^` and `.^`?
+    a: |-
+      `*` and `^` are matrix operations (matrix product, matrix power). `.*` and `.^` work
+      element by element. `./` is the element-wise division.
+    note: |-
+      For scalars they agree. `[1 2 3].^2` gives `[1 4 9]`; `[1 2 3]^2` is an error.
+
+  - id: matlab-dot-compute
+    q: |-
+      With `a = [1 2 3]` and `b = [4 5 6]`, what do `a.*b` and `a*b` give?
+    a: |-
+      `a.*b` is `[4 10 18]`. `a*b` is an error: two $1 \times 3$ matrices cannot be
+      multiplied as matrices.
+    note: |-
+      `a*b'` works: the apostrophe transposes `b`, and a row times a column is the scalar
+      $4 + 10 + 18 = 32$.
+
+  - id: matlab-ans
+    q: |-
+      You type `3/4`, then `ans*2`, then `ans^3`. What is displayed each time, and what is
+      `ans`?
+    a: |-
+      `0.75`, `1.5`, `3.3750`. `ans` is the variable that holds the last result that was
+      not assigned to a name.
+
+  - id: matlab-semicolon
+    hy: true
+    q: |-
+      Give the two uses of the semicolon.
+    a: |-
+      At the end of an expression it suppresses the display of the result. Inside
+      brackets it ends a row: `m = [1 2 3; 4 5 6]` is a $2 \times 3$ matrix.
+
+  - id: matlab-colon
+    q: |-
+      Give the two uses of the colon.
+    a: |-
+      It builds a vector, `x = a:b:c` (from `a` to `c` in steps of `b`), and it selects
+      everything along a dimension: `z(:,k)` is all rows of column `k`, `z(k,:)` all
+      columns of row `k`.
+
+  - id: matlab-apostrophe
+    q: |-
+      Give the two uses of the apostrophe.
+    a: |-
+      It delimits a string, `'text'`, and it transposes a vector or matrix (taking the
+      complex conjugate as well if the entries are complex).
+
+  - id: matlab-comments
+    cloze: |-
+      A comment starts with {{`%`}}. A block of comment lines is enclosed in {{`%{`}} and
+      {{`%}`}}, and {{`...`}} continues an expression on the next line.
+
+  - id: matlab-log
+    hy: true
+    q: |-
+      What do `log(x)`, `log10(x)` and `exp(x)` compute? What is `exp(log(10))`?
+    a: |-
+      `log` is the natural logarithm, `log10` the base-10 logarithm, `exp` is $e^x$.
+      `exp(log(10))` is `10`.
+    note: |-
+      A common slip is to use `log` for the base-10 logarithm.
+
+  - id: matlab-degrees
+    hy: true
+    q: |-
+      Give three correct ways to compute $\sin 30^\circ$ in MATLAB, and one wrong way.
+    a: |-
+      Correct: `sind(30)`, `sin(30*pi/180)`, `sin(pi/6)`. Wrong: `sin(30)`, which takes 30
+      as radians.
+
+  - id: matlab-atan2
+    q: |-
+      When must `atan2(y, x)` be used instead of `atan`?
+    a: |-
+      When the signs of $y$ and $x$ can each be positive or negative. `atan2` is the
+      four-quadrant version and returns the angle in the correct quadrant.
+
+  - id: matlab-constants
+    q: |-
+      What are `pi`, `i` and `j`, `eps`, `inf` and `NaN`?
+    a: |-
+      - `pi`: $\pi$.
+      - `i`, `j`: $\sqrt{-1}$.
+      - `eps`: the distance from 1.0 to the next larger floating-point number, about
+        $2.22 \times 10^{-16}$.
+      - `inf`: infinity.
+      - `NaN`: not a number, the result of an undefined operation.
+
+  - id: matlab-infinity
+    q: |-
+      What do `1/0`, `1/Inf`, `Inf*2` and `Inf/Inf` return?
+    a: |-
+      `Inf`, `0`, `Inf`, `NaN`.
+
+  - id: matlab-relational
+    hy: true
+    q: |-
+      Write the MATLAB operators for "equal" and "not equal". What does `5 == 4` return?
+    a: |-
+      `==` and `~=`. `5 == 4` returns `0`, logical false; a true comparison returns `1`.
+    note: |-
+      A single `=` is assignment, not comparison.
+
+  - id: matlab-rounding
+    hy: true
+    q: |-
+      Evaluate `fix(-1.9)`, `round(-1.9)`, `ceil(-1.9)` and `floor(-1.9)`.
+    a: |-
+      `-1`, `-2`, `-1`, `-2`.
+    note: |-
+      `fix` rounds toward zero, `round` to the nearest integer, `ceil` toward $+\infty$,
+      `floor` toward $-\infty$. For 2.7 they give 2, 3, 3, 2.
+    hook: |-
+      `fix` fixes its eyes on zero; `floor` and `ceil` are the room below and above.
+
+  - id: matlab-complex
+    q: |-
+      For `z = 3 + 4j`, give `abs(z)`, `conj(z)`, `real(z)`, `imag(z)`, and say what
+      `angle(z)` returns.
+    a: |-
+      `5`, `3 - 4j`, `3`, `4`. `angle(z)` is the phase angle `atan2(4, 3)` in radians,
+      between $-\pi$ and $\pi$.
+
+  - id: matlab-scientific
+    q: |-
+      What numbers are `1e6` and `1e-3`?
+    a: |-
+      $10^6 = 1000000$ and $10^{-3} = 0.001$.
+
+  - id: matlab-symbolic
+    hy: true
+    q: |-
+      Name the symbolic toolbox commands for: declaring symbols, differentiating,
+      integrating, taking a limit, substituting, and a Taylor expansion.
+    a: |-
+      `syms`, `diff(f, x, n)`, `int(f, x, c, d)`, `limit(f, x, z)`, `subs(f, a, b)`,
+      `taylor(f, x, a, 'Order', n)`.
+    note: |-
+      `vpa(f, n)` evaluates to `n` significant digits.
+
+  - id: matlab-symbolic-compute
+    q: |-
+      After `syms b t`, what do `diff(b*cos(b*t), t)` and
+      `limit((2*a + b)/(3*a - 4), a, inf)` (with `a` symbolic) return?
+    a: |-
+      `-b^2*sin(b*t)` and `2/3`.
+
+  - id: matlab-radians-trap
+    q: |-
+      A formula contains both $\sin\theta$ and the bare term $\theta - 0.5\sin(2\theta)$,
+      with $\theta = 60^\circ$. Why is `theta = 60` with `sind` not enough?
+    a: |-
+      The bare $\theta$ must be a number in radians. Convert once,
+      `theta = 60*pi/180`, and use `sin` and `cos` throughout.
+    note: |-
+      The flow-rate problem of the introduction slides.

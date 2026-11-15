@@ -1,0 +1,97 @@
+# Ids are permanent: people's progress is keyed by them.
+title: 'Data streams'
+topic: 'streams'
+cards:
+  - id: 'sr01'
+    hy: false
+    q: |-
+      What makes stream mining different, and what is the core constraint?
+    a: |-
+      Data arrives **one element at a time, at a rapid rate**. **If it is not processed immediately it is lost forever**, and it is not feasible to store it all. The stream is effectively infinite and **non-stationary** — its distribution changes over time.\
+      \
+      The core question: how do you make critical calculations about the stream with a **limited amount of memory**?
+    note: |-
+      Examples where the input rate is externally controlled: Google queries, Twitter/Facebook updates, e-commerce purchases, credit-card transactions.
+
+  - id: 'sr02'
+    hy: false
+    q: |-
+      How do you take a fixed-proportion sample of a stream, and what's the naïve mistake?
+    a: |-
+      **Naïve mistake:** generate a random integer 0–9 for each *query* and keep it if the integer is 0. This gives a 10% sample of queries but **distorts statistics about users** — it underestimates, for example, the fraction of queries a user repeats.\
+      \
+      **Correct:** **don't sample queries, sample users.** Hash each tuple's **key** (the user id) uniformly into b buckets and pick the tuple if its hash value is at most a — giving an a/b fraction. For 30%: hash into b = 10 buckets and take the tuple if it lands in the first 3.
+
+  - id: 'sr03'
+    hy: false
+    q: |-
+      Give the reservoir sampling algorithm and state the property it maintains.
+    steps:
+      - do: |-
+          **Store the first s elements** of the stream in the sample S.
+        why: |-
+          Base case: after exactly n = s elements, each is in S with probability s/s = 1, which satisfies the property trivially.
+
+      - do: |-
+          **When the n-th element arrives (n > s), keep it with probability s/n**; otherwise discard it.
+        why: |-
+          This is the probability the property demands for the newest element, so it is imposed directly.
+
+      - do: |-
+          **If kept, it replaces one of the s elements in S, chosen uniformly at random.**
+        why: |-
+          S has a fixed size, so admitting one means evicting one — and uniform choice is what keeps the older elements symmetric with each other.
+
+      - do: |-
+          **The property:** after n elements, the sample contains each element seen so far with probability **s/n**.
+        why: |-
+          This is what 'a random sample of fixed size' has to mean when you don't know the stream's length in advance.
+
+      - do: |-
+          **Why the old elements stay correct:** an element already in S survives with probability (1 − s/(n+1)) + (s/(n+1))·((s−1)/s) = **n/(n+1)**.
+        why: |-
+          Two disjoint ways to survive: the new element is discarded, or it is kept but evicts one of the *other* s−1 members. Adding them gives n/(n+1).
+
+      - do: |-
+          **Close the induction:** P(in S at time n+1) = (s/n)·(n/(n+1)) = **s/(n+1)**. ∎
+        why: |-
+          It was in S with probability s/n by the inductive hypothesis, and survives with probability n/(n+1) — the n cancels, which is what makes the invariant hold at every step.
+
+  - id: 'sr04'
+    hy: false
+    q: |-
+      What is a Bloom filter, and what is its guarantee?
+    a: |-
+      A bit array B of n bits with k independent hash functions. **Initialise** B to all 0s and, for each key s in S, set B\[hᵢ(s)] = 1 for every i. **At run time**, for stream element x: if B\[hᵢ(x)] = 1 for **all** i, declare x may be in S; otherwise discard it.\
+      \
+      **The guarantee: false positives yes, false negatives never.** An item hashing to a 0 bucket is **surely not** in S; an item hashing to all 1s may or may not be.
+    note: |-
+      Used for spam filtering against a list of trusted addresses, and for making sure a user doesn't see the same ad twice.
+
+  - id: 'sr05'
+    hy: false
+    q: |-
+      Write the Bloom filter false-positive rate and the optimal number of hash functions.
+    a: |-
+      **False positive probability = (1 − e^(−km/n))ᵏ**\
+      \
+      **m** = number of keys in S · **n** = number of bits in B · **k** = number of hash functions.\
+      \
+      **Optimal k = (n/m)·ln 2.**\
+      \
+      Lecture's case, m = 10⁹ and n = 8×10⁹: k = 1 gives 0.1175, k = 2 gives 0.0489, optimal k = 8·ln2 ≈ 5.54 ≈ **6**, giving 0.0216.
+    note: |-
+      The derivation is the darts-and-targets argument: throwing m darts at n targets, the probability a given target is hit at least once is 1 − (1 − 1/n)^m ≈ **1 − e^(−m/n)**, which is the fraction of 1s in the array.
+
+  - id: 'sr06'
+    hy: false
+    q: |-
+      Give the Flajolet-Martin algorithm and its estimate.
+    a: |-
+      Pick a hash function h mapping each of the N elements to at least log₂N bits. For each stream element a, let **r(a) = the number of trailing 0s** in h(a) — the position of the first 1 counting from the right. Record **R = max r(a)** over all items seen.\
+      \
+      **Estimated number of distinct elements = 2^R.**\
+      \
+      Example: h(a) = 12 = 1100 in binary, so r(a) = 2.
+    note: |-
+      The intuition: about 50% of values end in 0, 25% in 00, and so on — so a tail of r zeros appears roughly once per 2^r distinct items. Formally, the probability of not seeing a tail of length r among m elements is (1 − 2^(−r))^m ≈ e^(−m·2^−r), which tends to 1 if m ≪ 2^r and 0 if m ≫ 2^r.

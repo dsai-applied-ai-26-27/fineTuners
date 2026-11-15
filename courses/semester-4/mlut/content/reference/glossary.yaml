@@ -1,0 +1,150 @@
+terms:
+  - id: g-unsupervised-learning
+    term: Unsupervised learning
+    topic: lecture-1
+    definition: |-
+      Learning from observations without target labels in order to discover hidden structure, patterns, groups, or lower-dimensional representations.
+    see: [g-latent-variable]
+  - id: g-supervised-learning
+    term: Supervised learning
+    topic: lecture-1
+    definition: |-
+      Learning from input-output pairs $(x,y)$ to predict a specified target, such as a class or a numerical quantity.
+  - id: g-dataset
+    term: Dataset
+    topic: lecture-1
+    definition: |-
+      The collection of observations used for learning.
+  - id: g-sample
+    term: Sample
+    topic: lecture-1
+    definition: |-
+      One individual observation or instance in a dataset.
+  - id: g-feature
+    term: Feature
+    topic: lecture-1
+    definition: |-
+      A measurable property or characteristic of a sample that is supplied to a model.
+  - id: g-latent-variable
+    term: Latent variable
+    topic: lecture-1
+    definition: |-
+      A variable that is not observed directly but is inferred from observed variables and represents hidden structure in the data.
+    see: [g-observed-data]
+  - id: g-observed-data
+    term: Observed data
+    topic: lecture-1
+    definition: |-
+      The measurements available to the learner, denoted by $x$ in the lecture's latent-variable model.
+  - id: g-joint-probability
+    term: Joint probability
+    topic: lecture-1
+    definition: |-
+      The probability that two events or variables occur together, written $p(A,B)$ or $p(A\cap B)$.
+  - id: g-marginal-probability
+    term: Marginal probability
+    topic: lecture-1
+    definition: |-
+      The probability of one event or variable without conditioning on another; it is obtained by summing or integrating the joint probability over the other variable.
+  - id: g-conditional-probability
+    term: Conditional probability
+    topic: lecture-1
+    definition: |-
+      The probability of an event or variable given that another event or variable is known, defined by $p(A\mid B)=p(A,B)/p(B)$ when $p(B)>0$.
+  - id: g-bayes-theorem
+    term: Bayes' theorem
+    topic: lecture-1
+    definition: |-
+      The identity that obtains a posterior from a likelihood and prior: $p(z\mid x)=p(x\mid z)p(z)/p(x)$.
+    see: [g-posterior, g-likelihood, g-prior, g-evidence]
+  - id: g-posterior
+    term: Posterior
+    topic: lecture-1
+    definition: |-
+      The probability distribution of a latent variable or hypothesis after the observed data has been taken into account, written $p(z\mid x)$.
+  - id: g-likelihood
+    term: Likelihood
+    topic: lecture-1
+    definition: |-
+      The probability of the observed data under a proposed latent state or hypothesis, written $p(x\mid z)$.
+  - id: g-prior
+    term: Prior
+    topic: lecture-1
+    definition: |-
+      The probability assigned to a latent state or hypothesis before the current observed data is considered, written $p(z)$.
+  - id: g-evidence
+    term: Evidence
+    topic: lecture-1
+    definition: |-
+      The marginal probability of the observed data, $p(x)$, which normalises the posterior in Bayes' theorem.
+  - id: g-mean
+    term: Mean
+    topic: lecture-1
+    definition: |-
+      The average of $N$ observations, $\mu=N^{-1}\sum_{i=1}^{N}x_i$.
+  - id: g-variance
+    term: Variance
+    topic: lecture-1
+    definition: |-
+      The average squared deviation from the mean, measuring the spread of observations; for the population, $\sigma^2=N^{-1}\sum_{i=1}^{N}(x_i-\mu)^2$.
+  - id: g-standard-deviation
+    term: Standard deviation
+    topic: lecture-1
+    definition: |-
+      The positive square root of variance, $\sigma=\sqrt{\sigma^2}$, expressed in the same units as the variable.
+  - id: g-covariance
+    term: Covariance
+    topic: lecture-1
+    definition: |-
+      A measure of linear co-movement between two variables, with positive values indicating movement in the same direction and negative values indicating movement in opposite directions.
+  - id: g-covariance-matrix
+    term: Covariance matrix
+    topic: lecture-1
+    definition: |-
+      A matrix whose diagonal entries are variances and whose off-diagonal entries are pairwise covariances.
+    see: [g-covariance, g-multivariate-normal]
+  - id: g-independence
+    term: Independence
+    topic: lecture-1
+    definition: |-
+      A relationship in which knowing one event or variable gives no information about the other; for events, $p(A\cap B)=p(A)p(B)$, and for continuous variables, $p(x,y)=p(x)p(y)$.
+  - id: g-gaussian-distribution
+    term: Gaussian distribution
+    topic: lecture-1
+    definition: |-
+      A probability distribution specified by a mean and variance, with a bell-shaped density whose mass is concentrated around the mean.
+  - id: g-central-limit-theorem
+    term: Central Limit Theorem
+    topic: lecture-1
+    definition: |-
+      The result that the standardised mean of many independent, identically distributed variables with finite mean and variance approaches a standard normal distribution as the number of variables grows.
+  - id: g-multivariate-normal
+    term: Multivariate normal distribution
+    topic: lecture-1
+    definition: |-
+      The multidimensional Gaussian distribution parameterised by a mean vector $\boldsymbol{\mu}$ and covariance matrix $\Sigma$.
+  - id: g-gaussian-mixture
+    term: Mixture of Gaussians
+    topic: lecture-1
+    definition: |-
+      A density formed as a weighted sum of Gaussian component densities, where each component has its own mean and variance and the non-negative weights sum to one.
+  - id: g-error-model
+    term: Error model
+    topic: lecture-1
+    definition: |-
+      A mathematical description of how an observed measurement deviates from an underlying true signal.
+  - id: g-additive-noise
+    term: Additive noise
+    topic: lecture-1
+    definition: |-
+      Noise added to a signal as $y=x+\varepsilon$, usually with a magnitude that is approximately independent of the signal.
+  - id: g-multiplicative-noise
+    term: Multiplicative noise
+    topic: lecture-1
+    definition: |-
+      Noise that scales a signal as $y=x\eta$, so its magnitude grows with the signal; the multiplier has mean one when the signal should remain unchanged on average.
+  - id: g-conditional-density
+    term: Conditional density
+    topic: lecture-1
+    definition: |-
+      The density of an observed measurement after fixing a value of another variable; under $x=z+\varepsilon$ with Gaussian noise it is a Gaussian centred at $z$.

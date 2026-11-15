@@ -1,0 +1,35 @@
+# One file per course. Field reference: docs/content-types/course.md
+# Written from reference/CDA_Exam_Kit.html.
+title: 'Computational Data Analytics'
+code: 'CDA'
+year: "2025-26"
+semester: 4
+status: active
+hue: 15
+order: 2
+description: Clustering, recommender systems, ensembles and association mining on data too big for memory, with the statistics and evaluation around them.
+
+# Ids are permanent.
+topics:
+  - id: tasks
+    title: 'ML task types'
+  - id: stats
+    title: 'Correlation & χ²'
+  - id: clean
+    title: 'Cleaning & redundancy'
+  - id: lsh
+    title: 'Similarity & LSH'
+  - id: clustering
+    title: 'Clustering'
+  - id: rec
+    title: 'Recommenders'
+  - id: ens
+    title: 'Ensembles'
+  - id: assoc
+    title: 'Association mining'
+  - id: streams
+    title: 'Data streams'
+  - id: eval
+    title: 'Evaluation metrics'
+  - id: debug
+    title: 'Code debugging'

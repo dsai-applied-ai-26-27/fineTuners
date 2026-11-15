@@ -1,0 +1,175 @@
+title: The Bayes classifier and its error
+topic: classification
+lecture: 04-bayes-classifier
+description: The Bayes classifier sheet. The cards marked key are the ones the practice test leans on.
+
+cards:
+  - id: bayes-mse-split
+    hy: true
+    q: |-
+      Into which three parts does the expected test MSE at $x_0$ split?
+    a: |-
+      $$E\big(y_0 - \hat f(x_0)\big)^2 = \mathrm{Var}\big(\hat f(x_0)\big) + \big[\mathrm{Bias}\big(\hat f(x_0)\big)\big]^2 + \mathrm{Var}(\varepsilon)$$
+
+      Variance, squared bias, and the irreducible error.
+    note: |-
+      All three are non-negative, so the test MSE can never go below
+      $\mathrm{Var}(\varepsilon)$.
+
+  - id: bayes-variance-bias
+    q: |-
+      What do variance and bias of a method mean, and how do they move with flexibility?
+    a: |-
+      - **Variance:** how much the estimate changes when trained on a different training
+        set. Rises with flexibility.
+      - **Bias:** the error from approximating a complicated reality with a simpler model.
+        Falls with flexibility.
+
+  - id: bayes-irreducible
+    q: |-
+      What is the irreducible error, and why can no method remove it?
+    a: |-
+      $\mathrm{Var}(\varepsilon)$: noise in $y$ that is not a function of $x$. No estimate of
+      $f$ can predict it, so even the true $f$ has test MSE $\mathrm{Var}(\varepsilon)$.
+
+  - id: bayes-error-rate-def
+    q: |-
+      How are the training and test error rates of a classifier defined?
+    a: |-
+      The training error rate is $\frac{1}{n}\sum_{i=1}^{n} I(y_i \neq \hat y_i)$, the share
+      of training observations classified wrongly. The test error rate is the same average
+      over test observations not used in training, $\mathrm{Ave}\big(I(y_0 \neq \hat y_0)\big)$.
+
+  - id: bayes-rule
+    hy: true
+    q: |-
+      What does the Bayes classifier predict at $x_0$?
+    a: |-
+      The most probable class given the predictors:
+      $$\hat y_0 = \arg\max_j \Pr(Y = j \mid X = x_0).$$
+      With two classes: class 1 if $\Pr(Y = 1 \mid X = x_0) > 0.5$, class 2 otherwise.
+
+  - id: bayes-boundary
+    cloze: |-
+      The Bayes decision boundary is the set of points where $\Pr(Y = 1 \mid X = x)$ is exactly {{0.5}}.
+
+  - id: bayes-why-best
+    hy: true
+    q: |-
+      Why does no classifier have a lower test error rate than the Bayes classifier?
+    a: |-
+      At every point it picks the most probable class. Any other rule sometimes picks a less
+      probable class at some $x_0$, which can only add mistakes. It uses the true
+      probabilities, so it has no bias and no variance: only the irreducible error is left.
+
+  - id: bayes-why-quotes
+    hy: true
+    q: |-
+      The Bayes classifier is called "perfect" in quotes. Give the two reasons for the quotes.
+    a: |-
+      1. It is not error-free: where the classes overlap, the most probable class is still
+         wrong some of the time.
+      2. It cannot be built for real data: we never know $\Pr(Y = j \mid X)$. It is an
+         unattainable gold standard to compare other methods against.
+
+  - id: bayes-population-sample
+    q: |-
+      Where do the Bayes classifier and a real classifier live: population or sample?
+    a: |-
+      The Bayes classifier and the Bayes error rate are defined on the **population**, with
+      the true probabilities. Every classifier we can build (KNN, logistic regression, Naive
+      Bayes) works from a **sample** and only estimates them, with bias and variance.
+
+  - id: bayes-not-naive
+    hy: true
+    q: |-
+      Is the Bayes classifier the same as Naive Bayes?
+    a: |-
+      No. Naive Bayes is a sample-based method: it estimates the probabilities from training
+      data and assumes the features are independent. When that assumption is wrong it can be
+      far from the Bayes classifier.
+
+  - id: bayes-error-formula
+    hy: true
+    q: |-
+      What is the Bayes error rate, at one point and overall?
+    a: |-
+      At $x_0$: $1 - \max_j \Pr(Y = j \mid X = x_0)$; with two classes and
+      $p = \Pr(Y = 1 \mid X = x_0)$ that is $\min(p, 1-p)$. Overall:
+      $$1 - E\Big[\max_j \Pr(Y = j \mid X)\Big].$$
+
+  - id: bayes-error-zero
+    q: |-
+      When is the Bayes error rate exactly zero?
+    a: |-
+      Only when the classes never overlap: at every $x$ one class has probability 1.
+
+  - id: bayes-worked-example
+    q: |-
+      100 identical-looking observations at $x_0$, with $p = 0.7$ (70 of class 1, 30 of
+      class 2). How many mistakes do "always class 1", "always class 2" and "class 1 at
+      random with probability 0.7" make?
+    a: |-
+      30, 70 and 42. The random rule: $70 \cdot 0.3 + 30 \cdot 0.7 = 42$. The Bayes rule
+      (always class 1) is best, and its 30 mistakes cannot be removed.
+
+  - id: bayes-floor-analogy
+    q: |-
+      What plays the role of $\mathrm{Var}(\varepsilon)$ in classification?
+    a: |-
+      The Bayes error rate. It comes from the overlap of the classes at the same $X$, as the
+      irreducible error comes from noise in $Y$ that $X$ does not explain.
+
+  - id: bayes-knn-estimate
+    q: |-
+      How does KNN estimate $\Pr(Y = j \mid X = x_0)$?
+    a: |-
+      As the share of class $j$ among the $K$ training points nearest to $x_0$:
+      $$\widehat{\Pr}(Y = j \mid X = x_0) = \frac{1}{K}\sum_{i \in N_0} I(y_i = j),$$
+      then it picks the class with the highest estimate.
+
+  - id: bayes-knn-k
+    hy: true
+    q: |-
+      What happens to KNN with $K = 1$ and with a very large $K$?
+    a: |-
+      $K = 1$ is very flexible: training error 0, a wiggly boundary that follows the noise,
+      high test error (overfitting). A very large $K$ (100 in the sheet) is rigid: a nearly
+      straight boundary, high bias, high test error (underfitting). A moderate $K$ (30)
+      comes within $0.018$ of the Bayes error.
+
+  - id: bayes-u-shape
+    q: |-
+      How do KNN's training and test error behave as $1/K$ grows?
+    a: |-
+      The test error is U-shaped and never drops below the Bayes error. The training error
+      keeps falling, to 0 at $K = 1$, and can go below the Bayes error.
+
+  - id: bayes-train-below
+    hy: true
+    q: |-
+      A classifier's training error is $0.05$ on data whose Bayes error is $0.13$. What does
+      it tell you?
+    a: |-
+      It is overfitting. No classifier can have a test error below $0.13$, so it has learned
+      noise; its test error will be at least $0.13$.
+
+  - id: bayes-1nn-limit
+    hy: true
+    q: |-
+      With unlimited training data, what is the error of 1-NN at a point where
+      $\Pr(Y = 1 \mid X = x_0) = p$ (two classes)?
+    a: |-
+      $2p(1-p)$, against the Bayes error $\min(p, 1-p)$. For $p = 0.65$: 1-NN $0.455$,
+      Bayes $0.35$.
+    note: |-
+      The nearest neighbour is effectively at $x_0$, so its label is a random draw with the
+      true probabilities, independent of the label being predicted. The classic result:
+      1-NN's asymptotic error is at most twice the Bayes error.
+
+  - id: bayes-more-data
+    q: |-
+      Which part of the test error can more training data reduce, and which can it not?
+    a: |-
+      More data reduces the estimation error (mainly variance). It cannot reduce the Bayes
+      error, which comes from the overlap of the classes in the population.

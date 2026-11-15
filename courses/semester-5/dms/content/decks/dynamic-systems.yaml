@@ -1,0 +1,231 @@
+title: Dynamic systems
+topic: dynamic-systems
+lecture: 01-introduction-to-dynamic-systems
+description: The vocabulary of lecture 1. What makes a system dynamic, the roles of the variables, classification, and the three ways to write a model.
+cards:
+  - id: dyn-what-dynamic
+    hy: true
+    q: |-
+      When is a system dynamic?
+    a: |-
+      When its current behaviour depends on how it has evolved over time, not only on the
+      current input.
+    hook: |-
+      Dynamic means it remembers.
+
+  - id: dyn-key-characteristic
+    hy: true
+    q: |-
+      Name the key characteristics of a dynamic system.
+    a: |-
+      - Internal storage of energy, mass, information or another quantity.
+      - Dependence on initial conditions.
+      - Transient behaviour before a steady condition.
+      - Memory of previous inputs or states.
+      - Evolution described by differential or difference equations.
+    note: |-
+      The key one is internal storage: storage gives memory.
+
+  - id: dyn-storage
+    hy: true
+    q: |-
+      What does each store: a capacitor, a rotating mass, a water tank, a thermal body, a
+      bank account?
+    a: |-
+      Electrical energy; kinetic energy; mass; thermal energy; accumulated balance.
+
+  - id: dyn-static-dynamic
+    q: |-
+      Contrast $y = Ku$ with $\tau\dot y + y = Ku$.
+    a: |-
+      The first is static: the output is fixed by the current input, no state, no memory.
+      The second is dynamic: the output evolves over time, needs an initial condition and
+      has a time scale $\tau$.
+
+  - id: dyn-system
+    q: |-
+      Define a system and its boundary.
+    a: |-
+      A collection of interacting components that transforms inputs and internal
+      conditions into observable outputs. The boundary, chosen by the modeller for the
+      question asked, separates what the model includes from its environment; what crosses
+      it becomes an input, output or disturbance.
+
+  - id: dyn-state
+    hy: true
+    q: |-
+      What is the state of a dynamic system?
+    a: |-
+      The minimum internal information needed to predict future behaviour once the future
+      inputs are known. It summarises the relevant past.
+
+  - id: dyn-state-output
+    hy: true
+    q: |-
+      Are the state and the output the same thing?
+    a: |-
+      No. The state is internal and not necessarily measured; the output is what the model
+      exposes, $y = h(x, u)$. A system may have several states and one measured output.
+
+  - id: dyn-variables
+    hy: true
+    q: |-
+      In the room temperature model, which variable is the input, the state, the output, the
+      parameters and the disturbance?
+    a: |-
+      Input: heater power. State: room (and wall) temperature. Output: measured air
+      temperature. Parameters: thermal resistance and capacitance. Disturbance: outdoor
+      temperature, an opened window.
+
+  - id: dyn-disturbance
+    q: |-
+      Disturbance against control input against parameter?
+    a: |-
+      A control input is deliberately manipulated. A disturbance is an external influence
+      not under our control. A parameter is a quantity assumed constant (or slowly varying)
+      during one simulation.
+
+  - id: dyn-initial-conditions
+    q: |-
+      $\dot x = -ax$, $a > 0$. What is $x(t)$, and what does the example show?
+    a: |-
+      $x(t) = x(0)e^{-at}$. The same equation gives different trajectories for different
+      $x(0)$: initial conditions summarise the effect of the past at $t = 0$.
+
+  - id: dyn-equilibrium
+    hy: true
+    cloze: |-
+      An equilibrium $(x_e, u_e)$ of $\dot x = f(x, u)$ satisfies {{$f(x_e, u_e) = 0$}}.
+      A tank level stays constant when {{inflow equals outflow}}.
+
+  - id: dyn-feedback
+    q: |-
+      Negative against positive feedback?
+    a: |-
+      Negative feedback counteracts deviations and promotes regulation. Positive feedback
+      reinforces change and can cause growth or instability.
+
+  - id: dyn-deterministic
+    hy: true
+    q: |-
+      Deterministic against stochastic model?
+    a: |-
+      Deterministic: a unique trajectory for given inputs, parameters and initial
+      conditions. Stochastic: random variables or processes are included explicitly, e.g.
+      $\dot x = f(x, u) + w(t)$.
+
+  - id: dyn-causal-memoryless
+    hy: true
+    q: |-
+      Causal against memoryless?
+    a: |-
+      Causal: the output depends only on present and past information, never the future.
+      Memoryless: the output uses only the current input, e.g. $y(t) = u^2(t)$.
+    hook: |-
+      Causal may look back; memoryless only looks now.
+
+  - id: dyn-linear
+    q: |-
+      What makes a system linear, and give a nonlinear example from the lecture.
+    a: |-
+      Superposition: $u_1 \to y_1$, $u_2 \to y_2$ imply $au_1 + bu_2 \to ay_1 + by_2$. The
+      pendulum $\dot\omega = -\frac{g}{\ell}\sin\theta + u$ is nonlinear.
+
+  - id: dyn-time-invariant
+    q: |-
+      Time-invariant against time-varying?
+    a: |-
+      Time-invariant: the rules do not change with time ($A$, $B$ constant), so a shifted
+      input gives a shifted response. Time-varying: $A(t)$, $B(t)$, and the response
+      depends on when the input is applied.
+
+  - id: dyn-continuous-discrete
+    q: |-
+      Write the general continuous-time and discrete-time models.
+    a: |-
+      $\dot x(t) = f(x(t), u(t), t)$ and $x[k+1] = F(x[k], u[k], k)$.
+
+  - id: dyn-siso-autonomous
+    q: |-
+      SISO, MIMO, autonomous, forced?
+    a: |-
+      SISO: one input, one output. MIMO: several inputs and/or outputs. Autonomous: no
+      external input, $\dot x = f(x)$. Forced: an input drives the trajectory.
+
+  - id: dyn-lumped
+    q: |-
+      Lumped against distributed-parameter model?
+    a: |-
+      Lumped: finitely many time-dependent variables, ODEs (RLC circuit, rigid body).
+      Distributed: depends on time and position, PDEs such as
+      $\partial T/\partial t = \alpha\,\partial^2 T/\partial x^2$ (heat conduction, beams).
+
+  - id: dyn-msd-ode
+    hy: true
+    q: |-
+      Write the mass-spring-damper equation and say what each element does with energy.
+    a: |-
+      $m\ddot x + c\dot x + kx = F(t)$. The mass stores kinetic energy, the spring
+      potential energy, the damper dissipates energy.
+
+  - id: dyn-msd-state-space
+    hy: true
+    q: |-
+      Write the mass-spring-damper in state space with $x_1 = x$, $x_2 = \dot x$.
+    a: |-
+      $$\dot x_1 = x_2, \qquad \dot x_2 = -\frac{k}{m} x_1 - \frac{c}{m} x_2 + \frac{1}{m} F .$$
+
+  - id: dyn-msd-tf
+    hy: true
+    q: |-
+      Transfer function of the mass-spring-damper, and what it hides?
+    a: |-
+      $G(s) = \dfrac{X(s)}{F(s)} = \dfrac{1}{ms^2 + cs + k}$, with zero initial conditions.
+      The internal state is not explicit.
+
+  - id: dyn-three-forms
+    q: |-
+      When is each representation most useful: differential equation, state space,
+      transfer function?
+    a: |-
+      Differential equation: deriving models from first principles. State space: MIMO and
+      nonlinear systems. Transfer function: LTI input-output, frequency analysis and
+      control.
+
+  - id: dyn-transient
+    cloze: |-
+      A response splits as $y(t) = y_{tr}(t) + y_{ss}(t)$: the {{transient}} part, from the
+      initial condition, and the {{steady-state}} part, the long-term behaviour under the
+      input.
+
+  - id: dyn-domains
+    q: |-
+      What question does each viewpoint answer: time domain, frequency domain?
+    a: |-
+      Time domain: how does the system evolve as time passes (transient, overshoot,
+      steady state)? Frequency domain: how does it respond to sinusoids of different
+      frequencies (gain, phase, bandwidth, resonance)?
+
+  - id: dyn-time-step
+    q: |-
+      What does the fastest dynamics in a model mean for its simulation?
+    a: |-
+      The numerical time step must be small enough to resolve the fastest dynamics that
+      matter; widely separated time scales make simulation hard.
+
+  - id: dyn-room
+    q: |-
+      Write the room temperature model and its time constant.
+    a: |-
+      $C\,\dot T = P_h - \dfrac{T - T_o}{R}$, i.e. $RC\,\dot T + T = T_o + RP_h$, so
+      $\tau = RC$.
+
+  - id: dyn-verification
+    hy: true
+    q: |-
+      Verification against validation?
+    a: |-
+      Verification: were the equations and code implemented correctly? Validation: is the
+      model adequate for its intended real-world purpose?
+    hook: |-
+      Verify the code, validate the model.

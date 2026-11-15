@@ -1,0 +1,327 @@
+title: 'Recommender systems: the overview'
+topic: intro
+lecture: 01-recommender-systems
+description: Lecture 1. The ten cards marked key are the ten questions on its last slide, which is what the written exam is said to resemble.
+
+cards:
+  - id: intro-overload
+    hy: true
+    q: |-
+      What is information overload?
+    a: |-
+      The state of having too much information to make a decision or to remain informed
+      about a topic.
+    note: |-
+      Question 1 of the lecture's closing list. Search engines help to look things up, but
+      deciding needs an exploratory search, where the user does not know the range of
+      options, may not know what to search for, and may be unable to choose among results.
+
+  - id: intro-overload-tamed
+    hy: true
+    q: |-
+      How may information overload be tamed?
+    a: |-
+      By a recommender system: a tool that suggests the items likely to be good for this
+      user (relevant, timely), which reduces the search cost and supports the choice when
+      the user lacks knowledge or faces an overabundance of options.
+    note: |-
+      Question 2. The slides' vision is that queries disappear: the system uses multiple
+      signals instead of waiting to be asked.
+
+  - id: intro-more-choice
+    hy: true
+    q: |-
+      Is having more choices always good?
+    a: |-
+      No. More options bring more freedom and autonomy, and in theory can only help, but
+      assessments of well-being show increased affluence accompanied by decreased
+      well-being: the paradox of choice (Schwartz, 2004).
+    note: |-
+      Question 3. The mechanism the lecture gives: deciding has a cost. Decision overload
+      leads to unproductivity and loss of drive, and processing information is tiring.
+
+  - id: intro-rs-definition
+    hy: true
+    q: |-
+      How would you define a recommender system?
+    a: |-
+      A software tool that supports users in finding and selecting products, services or
+      information, by recommending items that are good for them: relevant, timely,
+      improving well-being, supporting rational choices and reducing search cost.
+    note: |-
+      Question 4. The handbook's wording: software tools and techniques that provide
+      suggestions for items that are most likely of interest to a particular user.
+
+  - id: intro-three-steps
+    q: |-
+      Name the three steps of a recommender system.
+    a: |-
+      1. Preference and behaviour elicitation.
+      2. Preference or behaviour prediction.
+      3. Selecting and presenting the recommendations.
+
+  - id: intro-preference-models
+    hy: true
+    q: |-
+      How are user preferences typically modelled?
+    a: |-
+      From explicit signals, such as ratings, likes and reactions, and pairwise
+      preferences ("A is preferred to B"), possibly conditional as in CP-networks, and
+      from implicit signals, namely the user's choices and actions. Stacked over all users
+      and items, ratings form a users-by-items matrix.
+    note: |-
+      Question 5. Systems also use user characteristics such as age and personality.
+
+  - id: intro-implicit
+    hy: true
+    q: |-
+      What are "implicit" preferences?
+    a: |-
+      Preferences the system infers by interpreting the user's actions, such as a click or
+      a visited link, instead of asking for an evaluation.
+    note: |-
+      Question 6. They are plentiful but ambiguous: goals are hard to read from actions,
+      which the slides illustrate with the duck-rabbit drawing.
+
+  - id: intro-explicit-reliability
+    q: |-
+      Give four reasons why explicit preferences are not fully reliable.
+    a: |-
+      - They cover a very small part of the catalogue.
+      - They depend on a context the system does not know.
+      - They are biased towards good choices: we do not experience, and so do not rate,
+        what we expect to dislike.
+      - They are biased by imprecise memory.
+
+  - id: intro-peak-end
+    cloze: |-
+      By Kahneman's peak-end rule, what we remember about an experience is determined by
+      how it felt at its {{peak}} (best or worst) and how it felt when it {{ended}}.
+
+  - id: intro-pairwise
+    q: |-
+      What did the cited studies find about pairwise preferences?
+    a: |-
+      Systems that elicit pairwise preferences make users more aware of their choice
+      options, and a pairwise-based system outperformed a rating-based one in
+      recommendation accuracy.
+
+  - id: intro-cp-network
+    q: |-
+      What kind of preference does a CP-network express? Give the slide's example.
+    a: |-
+      A conditional preference: one that holds only when other attributes take certain
+      values. "A red shirt is preferred to a white shirt if jacket and pants are black."
+
+  - id: intro-amazon-boxes
+    q: |-
+      Amazon lets you mark a purchase "This was a gift" or "Don't use for
+      recommendations". Why would a recommender ask for that?
+    a: |-
+      A purchase is ambiguous evidence of taste. A gift says little about what the buyer
+      likes, so using it would distort the preference model.
+    note: |-
+      The slide only poses the question; this is the answer the rest of the lecture
+      supports (actions are hard to interpret).
+
+  - id: intro-train-test
+    q: |-
+      In the hotel example, what distinguishes training data from test data?
+    a: |-
+      Both are rows of user, hotel and context. Training rows carry the rating; test rows
+      have the rating withheld, and the model's prediction for them is compared with the
+      true value.
+
+  - id: intro-matrix-size
+    q: |-
+      Netflix has about $10^8$ users and $10^5$ items. How many entries does the rating
+      matrix have, and how many numbers does a 10-factor matrix factorization store
+      instead?
+    a: |-
+      $10^8 \times 10^5 = 10^{13}$ entries. With 10 factors:
+      $10^8 \cdot 10 + 10^5 \cdot 10 = 10^9 + 10^6$ numbers.
+
+  - id: intro-cf-idea
+    hy: true
+    q: |-
+      What is the basic idea of collaborative filtering?
+    a: |-
+      Predict a user's unknown rating from other ratings in the user-item matrix: from the
+      ratings that similar users gave the item (user-to-user), or from the user's own
+      ratings of similar items (item-to-item), weighting by similarity.
+    note: |-
+      Question 7. The rationale in the handbook: if the active user agreed with certain
+      users in the past, their other recommendations should be relevant to her too.
+
+  - id: intro-item-cf-compute
+    q: |-
+      Item-to-item CF. The two items most similar to Titanic are Forrest Gump
+      ($w = 1$) and Wall-E ($w = 0.9$). Eric rated them 5 and 4. Predict Eric's rating of
+      Titanic.
+    a: |-
+      $$r^* = \frac{0.9 \cdot 4 + 1 \cdot 5}{0.9 + 1} = \frac{8.6}{1.9} = 4.53$$
+    note: |-
+      A similarity-weighted average of the target user's own ratings of the neighbouring
+      items.
+
+  - id: intro-user-cf-compute
+    q: |-
+      User-to-user CF with one neighbour. Lucy is most similar to Eric ($w = 0.9$) and
+      rated Titanic 5 and Die Hard 2. Predict both for Eric. Eric's real Die Hard rating
+      is 3: what does that show?
+    a: |-
+      Titanic: $0.9 \cdot 5 / 0.9 = 5$. Die Hard: $0.9 \cdot 2 / 0.9 = 2$.
+
+      The Die Hard prediction is off by 1. Checking predictions against known ratings is
+      what train and test does.
+    note: |-
+      With a single neighbour the weight cancels: the prediction is the neighbour's
+      rating.
+
+  - id: intro-mf
+    q: |-
+      What does matrix factorization do, and how is one rating predicted?
+    a: |-
+      It predicts unknown ratings by discovering latent features that determine how users
+      rate items. The rating matrix is approximated by the product of a user-factor matrix
+      and an item-factor matrix, and one rating is the dot product of a user vector and an
+      item vector: $r = (a, b, c) \cdot (x, y, z) = ax + by + cz$.
+
+  - id: intro-mf-compute
+    q: |-
+      A user has factor vector $(1, 0.5, 2)$ and an item has $(2, 4, 0.5)$. What rating
+      does the model predict?
+    a: |-
+      $1 \cdot 2 + 0.5 \cdot 4 + 2 \cdot 0.5 = 2 + 2 + 1 = 5$
+
+  - id: intro-latent-factors
+    q: |-
+      What is a latent factor, in the slide's movie picture?
+    a: |-
+      A hidden feature along which both users and items are placed, such as serious
+      against escapist, or geared towards males against geared towards females. Users sit
+      near the films they like.
+
+  - id: intro-parameters
+    q: |-
+      A model has $10^{10}$ parameters stored as 32-bit numbers. How much memory is that?
+    a: |-
+      $10^{10} \times 4$ bytes $= 4 \times 10^{10}$ bytes $= 40$ GB.
+    note: |-
+      The slide's Netflix figure. ChatGPT at $1.75 \times 10^{11}$ parameters comes to
+      700 GB; Wikipedia is estimated at 50 GB.
+
+  - id: intro-ab-testing
+    q: |-
+      Why are recommender systems tested online with A/B experiments, and what are the
+      algorithms then tuned for?
+    a: |-
+      Offline, only predictions for withheld known ratings can be checked. The system also
+      makes many predictions for online users whose correctness is unknown, so two groups
+      of users are given different versions and compared. Algorithms are then adapted for
+      good online performance, which means increasing the platform owner's revenue.
+
+  - id: intro-selection
+    hy: true
+    q: |-
+      How are recommendations selected?
+    a: |-
+      The model predicts a rating, or a preference, for the items the user has not
+      experienced; the items are ranked by predicted value and the top ones are selected,
+      then arranged for presentation as a list, a feed or a chat answer.
+    note: |-
+      Question 8. Selection is not the end: the same selected items can be valued
+      differently depending on how they are shown.
+
+  - id: intro-presentation
+    hy: true
+    q: |-
+      Can we make a recommendation more or less appealing when we present it? How?
+    a: |-
+      Yes. Perceived value depends on the quality of the presentation, for instance the
+      image shown, and on the competing options presented with it. Anchoring and the
+      attraction effect are two ways the surrounding options change the choice.
+    note: |-
+      Question 9. The Florence slides show the same six sights with two sets of pictures.
+
+  - id: intro-good-recommendation
+    q: |-
+      The system knows the user perfectly and predicts her best option. Why might she
+      still not appreciate the recommendation?
+    a: |-
+      She chooses by her own context-dependent assessment of the items' utility at that
+      moment, which is shaped by the presentation and the alternatives, not by the
+      system's prediction.
+
+  - id: intro-anchoring
+    q: |-
+      Explain anchoring with the bicycle example.
+    a: |-
+      In a shop that shows only race bicycles above 3,000 euro, 1,500 seems too little, or
+      a bargain. The expensive models set the reference. Even if nobody buys them, listing
+      them leads people to buy the cheaper, still expensive ones.
+
+  - id: intro-attraction
+    q: |-
+      Describe Ariely's subscription experiment and what it shows.
+    a: |-
+      Offered web for \$59, print for \$125, and print plus web for \$125: 16% chose web,
+      nobody chose print, 84% chose the combination. Without the print-only option: 68%
+      web, 32% combination.
+
+      A dominated option makes the option that beats it more attractive (the attraction
+      effect): the decision context influences the estimate of an item's expected utility.
+
+  - id: intro-diversity
+    cloze: |-
+      {{Individual}} diversity means providing diverse recommendations to each user;
+      {{aggregate}} diversity means improving item diversity across all users. Diversity
+      is typically achieved by {{reranking}}.
+
+  - id: intro-fairness
+    q: |-
+      Give the lecture's two examples of unfairness in recommender systems.
+    a: |-
+      - Conventional users dominate the data, so the algorithm is biased by their observed
+        preferences and serves others worse.
+      - During A/B testing, two groups of users receive recommendations from a supposedly
+        superior and a supposedly inferior method.
+
+  - id: intro-tradeoffs
+    q: |-
+      How do fairness, precision and diversity relate?
+    a: |-
+      Fairness against precision: the same high precision cannot be achieved for all
+      users. Fairness against diversity: typically negatively correlated, because the more
+      the recommendations differ between users, the more differently users are treated.
+
+  - id: intro-privacy
+    q: |-
+      Name four privacy risks of a recommender system.
+    a: |-
+      - Data collected or shared without the user's explicit consent.
+      - Data leaked to actors outside the system.
+      - Data de-anonymised.
+      - Undesired inferences, such as predicting gender or ethnicity.
+
+  - id: intro-stakeholders
+    q: |-
+      Who are the stakeholders in a multistakeholder recommender system?
+    a: |-
+      Users, who receive recommendations and give feedback; suppliers, who supply the
+      items and receive insights; and side stakeholders, who set constraints and
+      limitations and receive insights and reports.
+    note: |-
+      The handbook names three: consumers, providers and the system owner.
+
+  - id: intro-good-set
+    hy: true
+    q: |-
+      List some important properties of a good recommendation set.
+    a: |-
+      Relevant and precise; timely; diverse, for each user and across users; fair across
+      users; respectful of privacy; good for the user's well-being; and of value to the
+      other stakeholders as well.
+    note: |-
+      Question 10. Precision is one property among several, and the properties trade off
+      against each other.

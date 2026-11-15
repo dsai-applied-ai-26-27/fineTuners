@@ -1,0 +1,65 @@
+title: "Lecture 1: probability and error models"
+topic: lecture-1
+lecture: 01-error-models
+cards:
+  - id: l1-unsupervised
+    hy: true
+    q: |-
+      What is the central task of unsupervised learning?
+    a: |-
+      Infer structure, patterns, or latent variables from unlabeled observations.
+    note: |-
+      Common applications include clustering, dimensionality reduction, anomaly detection, generative models, and association rules.
+  - id: l1-bayes
+    hy: true
+    q: |-
+      State Bayes' theorem for a latent variable $z$ and observed data $x$, and name its four terms.
+    a: |-
+      $$p(z\mid x)=\frac{p(x\mid z)p(z)}{p(x)}$$
+    note: |-
+      The posterior equals likelihood times prior divided by evidence.
+  - id: l1-covariance
+    q: |-
+      What does the sign of $\operatorname{Cov}(X,Y)$ indicate?
+    a: |-
+      Positive covariance indicates that the variables tend to increase together; negative covariance indicates opposite linear movement; zero indicates no linear relationship.
+    note: |-
+      Zero covariance does not prove independence.
+  - id: l1-independence
+    q: |-
+      Give two equivalent tests for independence of events $A$ and $B$.
+    a: |-
+      $$p(A\cap B)=p(A)p(B)$$
+      or, when $p(B)>0$, $p(A\mid B)=p(A)$.
+  - id: l1-gaussian
+    q: |-
+      Why is a Gaussian distribution a useful model for additive measurement noise?
+    a: |-
+      Many small approximately independent error sources add to a quantity that is approximately Gaussian by the Central Limit Theorem.
+  - id: l1-error-choice
+    hy: true
+    q: |-
+      How can rolling statistics distinguish additive from multiplicative noise?
+    a: |-
+      Plot rolling standard deviation against rolling mean. A roughly constant spread suggests additive noise; a spread that increases with the mean suggests multiplicative noise.
+  - id: l1-conditional
+    q: |-
+      For $x=z+\varepsilon$ with $\varepsilon\sim\mathcal{N}(0,\sigma^2)$, what is $p(x\mid z)$?
+    a: |-
+      $$p(x\mid z)=\mathcal{N}(x\mid z,\sigma^2).$$
+    note: |-
+      Conditioning on $z$ shifts the mean to $z$ but leaves the noise variance unchanged.
+  - id: l1-linear-covariance
+    q: |-
+      Derive $\operatorname{Cov}(w,x)$ for $w=x+y-z$.
+    steps:
+      - do: |-
+          Expand by linearity: $\operatorname{Cov}(x+y-z,x)$.
+        why: |-
+          Covariance is linear in its first argument.
+      - do: |-
+          $$\operatorname{Cov}(w,x)=\operatorname{Var}(x)+\operatorname{Cov}(y,x)-\operatorname{Cov}(z,x).$$
+        why: |-
+          $\operatorname{Cov}(x,x)=\operatorname{Var}(x)$ and the minus sign carries through.
+    a: |-
+      If $x$ and $y$ are positively correlated while $x$ and $z$ are negatively correlated, both cross-terms contribute positively.

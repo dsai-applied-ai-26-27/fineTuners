@@ -1,0 +1,103 @@
+title: Seminar work
+kind: project
+scope:
+  topics: [seminar, design]
+format: |-
+  The course is assessed through seminar work: a topic proposal, a literature review, a
+  prototype or analysis, a final report of 8 to 12 pages, and a presentation with defence.
+  It may be individual or in teams, as the instructor decides.
+
+  | Criterion | Weight |
+  |---|---|
+  | Problem definition and work plan | 15% |
+  | Literature and existing solutions review | 15% |
+  | Methodology and practical implementation | 25% |
+  | Evaluation and critical analysis | 20% |
+  | Final report | 15% |
+  | Presentation and discussion | 10% |
+
+  Submitting code or a presentation is not sufficient: you must show that you understand
+  the problem, method, results and limitations. Final deadlines are announced by the
+  instructor; the schedule below is the indicative one from the guidelines.
+
+plan:
+  intro: |-
+    The suggested semester workflow of the seminar guidelines, as six blocks with one
+    deliverable each. The schedule is indicative and may be adjusted to the calendar, the
+    number of students and the complexity of the topics.
+  phases:
+    - label: Weeks 1 and 2
+      title: Statement of interest or initial topic proposal
+      why: |-
+        Introduction to the seminar format, overview of application areas, topic
+        selection. Week 2 produces the project canvas.
+      tasks:
+        - tag: Read
+          text: |-
+            The anatomy of a project, the topic test and the sentence pattern for a
+            concept.
+          links: ["lecture:02-project-design"]
+        - tag: Do
+          text: |-
+            Fill in the project canvas on Moodle: areas ranked, then stakeholder, problem,
+            input, output, data, baseline, metric and risk. Submit only when instructed.
+          links: ["card:design-sentence-pattern", "card:design-eight-parts"]
+    - label: Weeks 3 and 4
+      title: Topic proposal with work plan
+      why: |-
+        Problem definition, literature review and identifying available data. The proposal
+        is 1 to 2 pages; the review needs 3 to 5 sources.
+      tasks:
+        - tag: Do
+          text: |-
+            Bring one realistic primary dataset and one backup candidate, two reliable
+            sources, and a feasibility explanation of 3 to 5 sentences.
+          links: ["card:design-data-check", "card:design-before-week-3"]
+        - tag: Check
+          text: |-
+            Answer the six questions that a topic must pass before approval.
+          links: ["guide:seminar-work-guidelines"]
+    - label: Weeks 5 and 6
+      title: Short interim presentation or consultation
+      why: |-
+        Methodology, tool selection, evaluation design and risk definition. Evaluation is
+        planned before implementation.
+      tasks:
+        - tag: Do
+          text: |-
+            Fix the baseline and the metrics for your task type before writing the
+            prototype.
+          links: ["card:design-baseline-check", "card:design-metric-match"]
+    - label: Weeks 7 to 10
+      title: Working version of the solution and preliminary results
+      why: |-
+        Prototype implementation, experiments, analysis or case study. Methodology and
+        practical implementation carry 25% of the assessment.
+      tasks:
+        - tag: Do
+          text: |-
+            Keep the stack small and the results verifiable: someone else should be able
+            to rerun the basic workflow.
+          links: ["card:design-smallest-stack"]
+    - label: Weeks 11 and 12
+      title: Draft final report
+      why: |-
+        Evaluation, error analysis, discussion of limitations and ethical aspects.
+        Evaluation and critical analysis carry 20%.
+      tasks:
+        - tag: Write
+          text: |-
+            Follow the ten-part report structure. Report the score, the baseline, error
+            examples and limitations, and state which AI tools were used and for what.
+          links: ["guide:seminar-work-guidelines", "card:seminar-ai-tools"]
+    - label: Weeks 13 to 15
+      title: Final report, repository or appendices, and presentation
+      why: |-
+        Finalisation, presentation and defence. In the defence the instructor assesses
+        understanding and argumentation, not only the result.
+      tasks:
+        - tag: Check
+          text: |-
+            Go through the minimum submission list: report, presentation, code or notebook,
+            run instructions, repository link, statement on sources, data and AI tools.
+          links: ["guide:seminar-work-guidelines", "card:seminar-weights"]

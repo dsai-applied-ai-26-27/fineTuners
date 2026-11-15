@@ -1,0 +1,169 @@
+title: Search trees
+topic: balanced-trees
+description: Tree vocabulary and traversals, BSTs and why they degrade, AVL, red-black, splay and treaps, then B-trees, B+ trees and the specialised trees (lectures 5 and 6).
+
+cards:
+  - id: st-depth-height
+    q: |-
+      Depth against height of a node?
+    a: |-
+      Depth: edges from the root to the node. Height: longest distance from the node down to a
+      leaf; the tree's height is the root's.
+
+  - id: st-traversals
+    hy: true
+    q: |-
+      Name the three depth-first traversals and what each is good for.
+    a: |-
+      Preorder (node, left, right): serialising. Inorder (left, node, right): sorted keys in a BST.
+      Postorder (left, right, node): deleting a tree, evaluating expressions.
+
+  - id: st-bst-delete
+    q: |-
+      The three cases of BST deletion?
+    a: |-
+      A leaf: remove it. One child: splice it out. Two children: replace by the in-order
+      successor or predecessor.
+
+  - id: st-bst-degrade
+    hy: true
+    q: |-
+      When does a BST degrade, and to what?
+    a: |-
+      Operations cost $O(h)$; inserting sorted keys makes it a linked list with $h = n$, so
+      $O(n)$. Balanced trees keep $h = O(\log n)$ in the worst case.
+
+  - id: st-rotation
+    cloze: |-
+      A rotation changes the tree's {{shape}} but not its {{in-order sequence of keys}}. Single
+      rotations fix simple imbalances, {{double}} rotations zig-zag ones.
+
+  - id: st-avl
+    hy: true
+    q: |-
+      AVL balance condition, cost, and best workload.
+    a: |-
+      At every node, subtree heights differ by at most 1, restored by rotations. All operations
+      $O(\log n)$; updates may need several rotations. Best when searches dominate.
+
+  - id: st-rb-rules
+    hy: true
+    q: |-
+      State the red-black tree properties.
+    a: |-
+      Every node red or black; the root black; no red node with a red child; every path from a
+      node to its leaves has the same number of black nodes; null leaves count as black.
+
+  - id: st-rb-height
+    q: |-
+      Why is a red-black tree's height $O(\log n)$?
+    a: |-
+      Equal black counts and no two reds in a row make the longest root-to-leaf path at most twice
+      the shortest.
+
+  - id: st-rb-insert
+    hy: true
+    q: |-
+      Red-black insertion: colour of the new node, and the fix-up cases.
+    a: |-
+      Red. Parent black: done. Parent and uncle red: recolour parent and uncle black, grandparent
+      red, continue upward. Parent red, uncle black: rotate (single or double) and recolour.
+
+  - id: st-rb-vs-avl
+    q: |-
+      Red-black against AVL?
+    a: |-
+      Red-black: looser balance, fewer rotations, faster updates (Java `TreeMap`, C++ `std::map`,
+      Linux). AVL: stricter balance, faster lookups.
+
+  - id: st-splay
+    hy: true
+    q: |-
+      What does a splay tree do on every access, and what does it guarantee?
+    a: |-
+      Splays the accessed node to the root (zig, zig-zig, zig-zag). Amortised $O(\log n)$ per
+      operation; a single one can be $O(n)$. Exploits locality.
+
+  - id: st-treap
+    hy: true
+    q: |-
+      What is a treap?
+    a: |-
+      A BST by key and a heap by random priority. Insert as in a BST then rotate up to restore the
+      heap order; delete by rotating down to a leaf. Expected height $O(\log n)$.
+
+  - id: st-why-btree
+    topic: multiway-trees
+    hy: true
+    q: |-
+      Why are binary trees slow on disk, and what do B-trees do instead?
+    a: |-
+      The bottleneck is disk I/O: one key per node means a page read per pointer jump. B-trees put
+      many keys in one page-sized node, so the tree is only a few levels deep.
+
+  - id: st-btree-rules
+    topic: multiway-trees
+    hy: true
+    q: |-
+      The rules of a B-tree of order $m$.
+    a: |-
+      At most $m$ children and $m - 1$ keys per node; internal non-root nodes at least
+      $\lceil m/2 \rceil$ children ($\lceil m/2 \rceil - 1$ keys); the root at least 2 children
+      unless a leaf; all leaves on one level.
+
+  - id: st-btree-split
+    topic: multiway-trees
+    hy: true
+    q: |-
+      How does insertion into a full B-tree node work, and when does the tree grow taller?
+    a: |-
+      Split the node in two and promote the middle key to the parent; splits can propagate up.
+      Only a root split creates a new root and adds a level.
+
+  - id: st-bplus
+    topic: multiway-trees
+    hy: true
+    q: |-
+      How does a B+ tree differ from a B-tree, and why do databases use it?
+    a: |-
+      All records are in the leaves, internal nodes only guide, and the leaves are linked. A range
+      query is one descent plus a scan along the leaves. PostgreSQL, MySQL InnoDB, SQLite.
+
+  - id: st-bplus-height
+    topic: multiway-trees
+    q: |-
+      Typical B+ tree height for very large tables, and why?
+    a: |-
+      2 to 4 levels: branching factors of 100 to 1000 reach billions of keys by height 4.
+
+  - id: st-trie
+    topic: multiway-trees
+    q: |-
+      Trie: structure, search cost, uses.
+    a: |-
+      Edges are characters, nodes are prefixes. Search is proportional to the query length, not
+      the number of strings. Autocomplete, spell checking, IP longest-prefix routing.
+
+  - id: st-suffix
+    topic: multiway-trees
+    q: |-
+      Suffix tree: what it stores and how fast it searches.
+    a: |-
+      A compressed trie of all suffixes of a string; finds a pattern of length $m$ in $O(m)$,
+      independent of the text length.
+
+  - id: st-kd
+    topic: multiway-trees
+    q: |-
+      KD tree: how is it built, and where does it fail?
+    a: |-
+      Split by a different coordinate at each level, at the median. Good for nearest neighbours in
+      low dimensions; degrades in high dimensions (curse of dimensionality).
+
+  - id: st-segment
+    topic: multiway-trees
+    q: |-
+      Segment tree: what does a node store, and its costs?
+    a: |-
+      An aggregate (sum, min, max) of an array segment. Build $O(n)$; range query and update
+      $O(\log n)$.

@@ -1,0 +1,256 @@
+# Terms of lectures 1 to 3. Definitions follow the lecture notes (Axler's and Folland's
+# numbering in brackets); ids are permanent.
+terms:
+  - id: g-sigma-algebra
+    term: σ-algebra
+    topic: measure
+    definition: |-
+      A collection $\mathcal{S}$ of subsets of $X$ that contains $\varnothing$ and is
+      closed under complements and countable unions (2.23). It is then also closed under
+      countable intersections and set differences.
+    see: [g-measurable-space, g-borel-set]
+
+  - id: g-algebra
+    term: Algebra of sets
+    topic: measure
+    definition: |-
+      A collection of subsets of $X$ that contains $\varnothing$ and is closed under
+      complements and **finite** unions. Every σ-algebra is one; the finite and co-finite
+      subsets of an infinite set form an algebra that is not a σ-algebra.
+    see: [g-sigma-algebra]
+
+  - id: g-measurable-space
+    term: Measurable space
+    topic: measure
+    definition: |-
+      A pair $(X, \mathcal{S})$: a set and a σ-algebra on it. The sets in $\mathcal{S}$
+      are called measurable.
+    see: [g-sigma-algebra, g-measure-space]
+
+  - id: g-generated-sigma-algebra
+    term: Smallest σ-algebra containing a collection
+    topic: measure
+    definition: |-
+      For a collection $\mathcal{A}$ of subsets of $X$, the intersection of all
+      σ-algebras on $X$ that contain $\mathcal{A}$. It is itself a σ-algebra, and it is
+      contained in every σ-algebra that contains $\mathcal{A}$.
+    see: [g-sigma-algebra, g-borel-set]
+
+  - id: g-borel-set
+    term: Borel set
+    topic: measure
+    definition: |-
+      A set in the smallest σ-algebra on $\mathbf{R}$ containing all open subsets. Every
+      interval, every single point and every countable set is Borel.
+    see: [g-generated-sigma-algebra, g-borel-measurable]
+
+  - id: g-measure
+    term: Measure
+    topic: measure
+    definition: |-
+      A function $\mu : \mathcal{S} \to [0, \infty]$ with $\mu(\varnothing) = 0$ and
+      $\mu\big(\bigcup_k E_k\big) = \sum_k \mu(E_k)$ for every disjoint sequence
+      $E_1, E_2, \dots$ in $\mathcal{S}$ (2.54).
+    see: [g-measure-space, g-lebesgue-measure]
+
+  - id: g-measure-space
+    term: Measure space
+    topic: measure
+    definition: |-
+      A triple $(X, \mathcal{S}, \mu)$: a set, a σ-algebra on it and a measure on that
+      σ-algebra (2.56).
+    see: [g-measure, g-measurable-space]
+
+  - id: g-outer-measure
+    term: Outer measure
+    topic: measure
+    definition: |-
+      For $A \subset \mathbf{R}$, $\lvert A \rvert$ is the infimum of
+      $\sum_k \ell(I_k)$ over all sequences of open intervals $I_1, I_2, \dots$ covering
+      $A$. Defined for every subset, but not additive on all of them.
+    see: [g-lebesgue-measure]
+
+  - id: g-lebesgue-measure
+    term: Lebesgue measure
+    topic: measure
+    definition: |-
+      Outer measure restricted to the Borel subsets of $\mathbf{R}$, where it is a
+      measure (2.68, 2.69). Written $\lambda$ or $m$. An interval has its length as
+      measure, and every countable set has measure $0$.
+    see: [g-outer-measure, g-almost-every]
+
+  - id: g-measurable-function
+    term: Measurable function
+    topic: measure
+    definition: |-
+      $f : X \to \mathbf{R}$ is $\mathcal{S}$-measurable if $f^{-1}(B) \in \mathcal{S}$ for
+      every Borel set $B$ (2.35). It suffices that $f^{-1}((a,\infty)) \in \mathcal{S}$
+      for every real $a$ (2.39).
+    see: [g-borel-measurable, g-simple-function]
+
+  - id: g-borel-measurable
+    term: Borel measurable function
+    topic: measure
+    definition: |-
+      A function $f : X \to \mathbf{R}$, $X \subset \mathbf{R}$, with $f^{-1}(B)$ Borel for
+      every Borel set $B$ (2.40). Every continuous function on a Borel set is one (2.41).
+    see: [g-measurable-function]
+
+  - id: g-characteristic-function
+    term: Characteristic function
+    topic: measure
+    definition: |-
+      $\chi_E(x) = 1$ for $x \in E$ and $0$ otherwise; also called the indicator function
+      $1_E$. It is measurable exactly when $E \in \mathcal{S}$, and
+      $\int \chi_E \, d\mu = \mu(E)$.
+    see: [g-simple-function]
+
+  - id: g-simple-function
+    term: Simple function
+    topic: measure
+    definition: |-
+      A function that takes only finitely many values (2.88). It can be written
+      $c_1\chi_{E_1} + \dots + c_n\chi_{E_n}$ with $E_k = f^{-1}(\{c_k\})$.
+    see: [g-characteristic-function, g-lebesgue-integral]
+
+  - id: g-s-partition
+    term: S-partition
+    topic: measure
+    definition: |-
+      A finite collection of disjoint sets in $\mathcal{S}$ whose union is $X$ (3.1).
+    see: [g-lower-lebesgue-sum]
+
+  - id: g-lower-lebesgue-sum
+    term: Lower Lebesgue sum
+    topic: measure
+    definition: |-
+      $\mathcal{L}(f, P) = \sum_j \mu(A_j) \inf_{A_j} f$ for an $\mathcal{S}$-partition
+      $P = A_1, \dots, A_m$ and measurable $f \ge 0$ (3.2).
+    see: [g-s-partition, g-lebesgue-integral]
+
+  - id: g-lebesgue-integral
+    term: Integral with respect to a measure
+    topic: measure
+    definition: |-
+      For measurable $f \ge 0$, the supremum of the lower Lebesgue sums over all
+      $\mathcal{S}$-partitions (3.3). For real-valued $f$,
+      $\int f^+ \, d\mu - \int f^- \, d\mu$ when at least one is finite (3.18). With
+      Lebesgue measure it is the Lebesgue integral.
+    see: [g-lower-lebesgue-sum, g-positive-negative-parts, g-integrable]
+
+  - id: g-positive-negative-parts
+    term: Positive and negative parts
+    topic: measure
+    definition: |-
+      $f^+ = \max(f, 0)$ and $f^- = \max(-f, 0)$, so that $f = f^+ - f^-$ and
+      $\lvert f \rvert = f^+ + f^-$ (3.17).
+    see: [g-lebesgue-integral]
+
+  - id: g-integrable
+    term: Integrable function
+    topic: measure
+    definition: |-
+      A measurable $f$ with $\int \lvert f \rvert \, d\mu < \infty$, equivalently both
+      $\int f^+$ and $\int f^-$ finite. Its integral is defined and finite.
+    see: [g-lebesgue-integral, g-dominated-convergence]
+
+  - id: g-almost-every
+    term: Almost every (a.e.)
+    topic: measure
+    definition: |-
+      $E \in \mathcal{S}$ contains $\mu$-almost every element of $X$ if
+      $\mu(X \setminus E) = 0$ (3.27). A property holds almost everywhere if it fails
+      only on a set of measure $0$.
+    see: [g-lebesgue-measure]
+
+  - id: g-null-set
+    term: Null set
+    topic: measure
+    definition: |-
+      A measurable set $N$ with $\mu(N) = 0$. A countable union of null sets is null
+      (2.58), and changing a function on a null set changes none of its integrals.
+    see: [g-almost-every, g-lebesgue-measure]
+
+  - id: g-monotone-convergence
+    term: Monotone Convergence Theorem
+    topic: measure
+    definition: |-
+      For measurable $0 \le f_1 \le f_2 \le \dots$ with limit $f$,
+      $\int f_k \, d\mu \to \int f \, d\mu$ (3.11).
+    see: [g-dominated-convergence, g-bounded-convergence]
+
+  - id: g-dominated-convergence
+    term: Dominated Convergence Theorem
+    topic: measure
+    definition: |-
+      If $f_k \to f$ almost everywhere and $\lvert f_k \rvert \le g$ for all $k$ with
+      $\int g \, d\mu < \infty$, then $\int f_k \, d\mu \to \int f \, d\mu$ (3.31).
+    see: [g-monotone-convergence, g-bounded-convergence, g-integrable]
+
+  - id: g-bounded-convergence
+    term: Bounded Convergence Theorem
+    topic: measure
+    definition: |-
+      If $\mu(X) < \infty$, $f_k \to f$ pointwise and $\lvert f_k \rvert \le c$ for a
+      constant $c$, then $\int f_k \, d\mu \to \int f \, d\mu$ (3.26). The case $g = c$ of
+      dominated convergence.
+    see: [g-dominated-convergence]
+
+  - id: g-norm
+    term: Norm
+    topic: functional
+    definition: |-
+      A function $\|\cdot\|$ on a vector space with definiteness ($\|f\| = 0$ only for
+      $f = 0$), homogeneity ($\|\lambda f\| = \lvert\lambda\rvert\|f\|$) and the triangle
+      inequality. A seminorm satisfies the last two only.
+    see: [g-lp-space]
+
+  - id: g-lp-space
+    term: Lᵖ space
+    topic: measure
+    definition: |-
+      For $1 \le p < \infty$, the measurable functions with
+      $\|f\|_p = \left(\int\lvert f\rvert^p d\mu\right)^{1/p} < \infty$, functions equal almost
+      everywhere being identified (7.3). With the $p$-norm it is a normed vector space.
+    see: [g-norm, g-essential-supremum, g-lp-convergence]
+
+  - id: g-essential-supremum
+    term: Essential supremum
+    topic: measure
+    definition: |-
+      $\|f\|_\infty = \inf\{a \ge 0 : \mu(\{\lvert f \rvert > a\}) = 0\}$, the smallest bound
+      on $\lvert f \rvert$ outside a set of measure 0. $L^\infty$ is the set of functions with
+      $\|f\|_\infty < \infty$.
+    see: [g-lp-space]
+
+  - id: g-conjugate-exponents
+    term: Conjugate exponents
+    topic: measure
+    definition: |-
+      Numbers $p, q$ with $\frac1p + \frac1q = 1$, i.e. $q = \frac{p}{p-1}$; 1 and $\infty$ count
+      as conjugate. They are the exponents of Hölder's inequality.
+    see: [g-holder]
+
+  - id: g-holder
+    term: Hölder's inequality
+    topic: measure
+    definition: |-
+      $\|fg\|_1 \le \|f\|_p\|g\|_q$ for conjugate exponents (6.2). For $p = q = 2$ it is the
+      Cauchy-Schwarz inequality.
+    see: [g-conjugate-exponents, g-minkowski]
+
+  - id: g-minkowski
+    term: Minkowski's inequality
+    topic: measure
+    definition: |-
+      $\|f + g\|_p \le \|f\|_p + \|g\|_p$ for $1 \le p < \infty$ (6.5), and for
+      $p = \infty$ (6.8b): the triangle inequality of the $p$-norm. It fails for $0 < p < 1$.
+    see: [g-holder, g-norm]
+
+  - id: g-lp-convergence
+    term: Convergence in Lᵖ
+    topic: measure
+    definition: |-
+      $f_n \to f$ in $L^p$ when $\|f_n - f\|_p \to 0$. For $p = 2$, convergence in mean square:
+      a mean squared error tending to 0.
+    see: [g-lp-space]

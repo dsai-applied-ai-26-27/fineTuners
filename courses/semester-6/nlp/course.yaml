@@ -1,0 +1,18 @@
+# One file per course. Field reference: docs/content-types/course.md
+title: "Introduction to Natural Language Processing"
+code: "NLP"
+year: "2026-27"
+# series: <folder of the first year>   only when this is another year of that course
+semester: 6               # semester of the programme, e.g. 5; groups the dashboard
+status: active          # active | archived
+enabled: false           # false: students do not see the course until it is opened in the admin
+has_educator: false     # true: someone is writing it, so its page does not ask for an educator
+hue: 290                # course colour, 0-359 on the hue wheel
+order: 3
+description: ""
+
+# Chapters or units, in teaching order. Lectures, cards, problems and exams all point at
+# these ids, so add a topic here before using it anywhere else. Ids are permanent.
+topics: []
+#  - id: intro
+#    title: Introduction

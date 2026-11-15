@@ -1,0 +1,194 @@
+title: Feature extraction, Fisher and PCA
+topic: features
+description: Statements, the compare-and-contrast answer, and Fisher's direction from numbers.
+
+cards:
+  - id: fisher-criterion
+    hy: true
+    q: |-
+      State Fisher's criterion.
+    a: |-
+      $$J(f) = \frac{f^\top \Sigma_T f}{f^\top \Sigma_W f}, \qquad \Sigma_W = \sum_{\kappa=1}^{K} \Sigma_\kappa$$
+
+      Projected between-class spread over projected within-class spread.
+    note: |-
+      You maximise the **ratio**, never either part alone. For two classes the maximiser is
+      $f \propto \Sigma_W^{-1}(\mu_1 - \mu_2)$.
+    hook: |-
+      Between over Within, and you want the ratio big.
+
+  - id: fisher-purpose
+    hy: true
+    q: |-
+      What is Fisher's criterion trying to do, in words?
+    a: |-
+      Find the direction to project onto so that the classes are as separable as possible in
+      one dimension: push the projected class means far apart while keeping each projected
+      class tight.
+    note: |-
+      Both halves matter. A large mean gap is useless if the classes are smeared across it; a
+      tight projection is useless if the means coincide. Separation is measured in units of
+      within-class spread, which is what determines overlap.
+    hook: |-
+      Push apart, pull tight.
+
+  - id: fisher-direction
+    hy: true
+    q: |-
+      Give the two-class Fisher direction.
+    a: |-
+      $$f_{\text{Fisher}} \propto \Sigma_W^{-1}(\mu_1 - \mu_2), \qquad \Sigma_W = \Sigma_1 + \Sigma_2$$
+    note: |-
+      Only the direction matters. Drop the $1/\det$ and any common factor: that is what
+      "simplest integer form" means.
+    hook: |-
+      Whiten, then aim. $\Sigma_W^{-1}$ undoes the within-class spread; the mean difference
+      aims at the other class.
+
+  - id: fisher-why-inverse
+    hy: true
+    q: |-
+      Why $\Sigma_W^{-1}(\mu_1 - \mu_2)$ and not just the mean difference?
+    a: |-
+      $\Sigma_W^{-1}$ rotates the mean-difference direction away from the directions in which
+      the classes are already wide.
+    note: |-
+      The pure mean-difference direction maximises the gap but ignores spread. Fisher trades
+      some gap for tightness and wins on the ratio that predicts overlap.
+    hook: |-
+      The gap is not the point. The gap in sigmas is.
+
+  - id: fisher-count
+    q: |-
+      How many useful Fisher features can you extract for $K$ classes, and how?
+    a: |-
+      At most $K - 1$. Solve $\Sigma_W^{-1} \Sigma_T F = F \Lambda$ and keep the eigenvectors
+      with the largest eigenvalues.
+    hook: |-
+      One fewer than the classes.
+
+  - id: pca-statement
+    hy: true
+    q: |-
+      State PCA and what it optimises.
+    a: |-
+      $$\Sigma v_j = \lambda_j v_j, \qquad \lambda_1 \ge \dots \ge \lambda_m, \qquad F = [\,v_1 \;\dots\; v_n\,]$$
+
+      Keep the eigenvectors of the largest covariance eigenvalues. They preserve maximum
+      variance and minimise the error of linear reconstruction.
+    note: |-
+      Unsupervised: the labels are never consulted.
+
+  - id: pca-vs-fisher
+    hy: true
+    q: |-
+      PCA against Fisher: the one-line answer.
+    a: |-
+      PCA is unsupervised and maximises retained variance. Fisher is supervised and maximises
+      the ratio of between-class to within-class spread.
+    note: |-
+      The direction of largest variance can be exactly the direction in which the classes
+      overlap. Variance is not class information.
+    hook: |-
+      PCA finds the spread. Fisher finds the split.
+
+  - id: pca-or-fisher-when
+    hy: true
+    q: |-
+      When do you use PCA and when do you use Fisher?
+    a: |-
+      **PCA:** no labels; compression, denoising or visualisation; preprocessing when the
+      dimension is large relative to the number of samples.
+
+      **Fisher:** labels are available and the goal is discrimination, with classes that a
+      mean and a covariance describe adequately.
+    note: |-
+      Fisher's limits: at most $K - 1$ directions, it needs an invertible $\Sigma_W$, and it
+      can lose a separator that a nonlinear description would keep. PCA can be used first to
+      make $\Sigma_W$ invertible.
+
+  - id: fisher-fails
+    hy: true
+    q: |-
+      When does Fisher's discriminant fail?
+    a: |-
+      When the class shape is not captured by a mean and a covariance. Two banana-shaped
+      classes can be separable by a line in 2-D and still project onto overlapping intervals.
+    note: |-
+      Fisher is not badly optimised in that case. Its ratio is just not the right summary of
+      the geometry.
+
+  - id: extraction-vs-selection
+    cloze: |-
+      **Extraction** {{builds new features}}, $x = F^\top y$: a {{continuous}} problem,
+      usually with an {{eigenvector}} solution. **Selection** {{keeps a subset}} of the
+      measurements: a {{discrete search}} over $\binom{m}{n}$ subsets.
+
+  - id: selection-when
+    q: |-
+      When would you prefer feature selection over extraction?
+    a: |-
+      When measurement cost matters (you can stop measuring something), when the original
+      units must be preserved, or when interpretability matters.
+    note: |-
+      Selection is the harder problem: the best single feature need not belong to the best
+      pair.
+
+  - id: feature-directions
+    q: |-
+      Name three simple feature directions and say how each one breaks.
+    a: |-
+      1. **Between the means**, $f \propto \mu_1 - \mu_2$. Fails when large class variance
+         lies along the mean difference.
+      2. **Most compact within-class**, the smallest eigenvector of $\Sigma_W$. Fails when
+         the projected means coincide.
+      3. **Largest total variance**, the top eigenvector of $\Sigma_T$ (PCA). Fails when the
+         spread comes from elongation inside the classes.
+    note: |-
+      Fisher is the principled compromise between 1 and 2.
+
+  - id: fisher-compute
+    hy: true
+    q: |-
+      Compute Fisher's direction in simplest integer form for
+
+      $\mu_A = (1, 1)^\top$, $\Sigma_A = \begin{pmatrix} 1 & 0 \\ 0 & 2 \end{pmatrix}$ and
+      $\mu_B = (3, 2)^\top$, $\Sigma_B = \begin{pmatrix} 4 & 2 \\ 2 & 4 \end{pmatrix}$.
+    steps:
+      - do: |-
+          Add the covariances:
+          $\Sigma_W = \Sigma_A + \Sigma_B = \begin{pmatrix} 5 & 2 \\ 2 & 6 \end{pmatrix}$
+        why: |-
+          For two classes the within-class scatter is just the sum, entry by entry.
+      - do: |-
+          Determinant: $\det \Sigma_W = 5 \cdot 6 - 2 \cdot 2 = 26$
+        why: |-
+          $ad - bc$. If it came out as $0$, Fisher would be undefined.
+      - do: |-
+          Invert:
+          $\Sigma_W^{-1} = \dfrac{1}{26} \begin{pmatrix} 6 & -2 \\ -2 & 5 \end{pmatrix}$
+        why: |-
+          Swap the diagonal entries, negate the off-diagonal ones, divide by the determinant.
+      - do: |-
+          Mean difference: $\mu_B - \mu_A = (2, 1)^\top$
+        why: |-
+          Either order works. The opposite order flips the sign of $w$, which is the same
+          line.
+      - do: |-
+          Multiply:
+
+          $$\frac{1}{26} \begin{pmatrix} 6 \cdot 2 - 2 \cdot 1 \\ -2 \cdot 2 + 5 \cdot 1 \end{pmatrix} = \frac{1}{26} \begin{pmatrix} 10 \\ 1 \end{pmatrix}$$
+        why: |-
+          Row times column, twice. Keep the $\tfrac{1}{26}$ outside; it is about to disappear.
+      - do: |-
+          Drop the scalar: $w = (10, 1)^\top$
+        why: |-
+          Only the direction matters, and $10$ and $1$ share no common factor. Check: the
+          plain mean difference was $(2, 1)$, and $\Sigma_W^{-1}$ has swung it towards the
+          first axis, which is sensible because class B is wide and correlated.
+    a: |-
+      The exam continues with the projections $\mu_{\kappa|x} = w^\top \mu_\kappa$ and
+      $\sigma^2_{\kappa|x} = w^\top \Sigma_\kappa w$: means $11$ and $32$, variances $102$
+      and $444$.
+    hook: |-
+      Add, invert, multiply, simplify.

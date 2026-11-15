@@ -1,0 +1,234 @@
+title: Lab Preparation practice
+topic: matlab
+instructions: |-
+  The Lab Preparation at the start of each session can be a C3 quiz with true/false,
+  multiple-choice or matching questions on the fundamentals an exercise needs. This set
+  uses that format on the only material there is so far: the MATLAB introduction and the
+  lab rules themselves. The real quizzes are not available; these questions are written
+  here.
+
+  In the session the preparation is individual and without AI tools. Practise it the same
+  way.
+
+questions:
+  - id: prep-q1
+    type: tf
+    title: Case sensitivity
+    points: 1
+    q: |-
+      In MATLAB, `Total` and `total` refer to the same variable.
+    correct: false
+    solution: |-
+      False. Variable names are case sensitive: `A` is different from `a`.
+
+  - id: prep-q2
+    type: mcq
+    title: Variable names
+    points: 1
+    q: |-
+      Which of these is a valid MATLAB variable name?
+    choices:
+      - text: '`2nd_value`'
+        why: A name must start with a letter.
+      - text: '`second value`'
+        why: Names may not contain spaces.
+      - text: '`second_value`'
+        correct: true
+        why: Starts with a letter; letters, digits and underscores are allowed.
+      - text: '`second-value`'
+        why: The minus sign makes this a subtraction of two variables.
+
+  - id: prep-q3
+    type: mcq
+    title: Element-wise product
+    points: 1
+    q: |-
+      `u` and `v` are row vectors of the same length. Which expression multiplies them
+      element by element?
+    choices:
+      - text: '`u*v`'
+        why: Matrix product. For two row vectors the dimensions do not match and MATLAB reports an error.
+      - text: '`u.*v`'
+        correct: true
+      - text: '`u^v`'
+        why: Matrix power, not defined for these operands.
+      - text: '`u:v`'
+        why: The colon builds a range; it does not multiply.
+
+  - id: prep-q4
+    type: mcq
+    title: Rounding toward zero
+    points: 1
+    q: |-
+      What does `fix(-1.9)` return?
+    choices:
+      - text: '`-2`'
+        why: That is `floor(-1.9)` or `round(-1.9)`.
+      - text: '`-1`'
+        correct: true
+        why: '`fix` rounds toward zero.'
+      - text: '`1`'
+        why: Rounding does not change the sign.
+      - text: '`-1.9`'
+        why: '`fix` always returns an integer value.'
+
+  - id: prep-q5
+    type: multi
+    title: Sine of thirty degrees
+    points: 2
+    q: |-
+      Which expressions evaluate to $\sin 30^\circ = 0.5$? Select all that apply.
+    choices:
+      - text: '`sind(30)`'
+        correct: true
+      - text: '`sin(30)`'
+        why: '`sin` takes radians; this is the sine of 30 radians, about -0.988.'
+      - text: '`sin(30*pi/180)`'
+        correct: true
+      - text: '`sin(pi/6)`'
+        correct: true
+
+  - id: prep-q6
+    type: tf
+    title: Logarithm
+    points: 1
+    q: |-
+      `log(100)` returns `2`.
+    correct: false
+    solution: |-
+      False. `log` is the natural logarithm, so `log(100)` is about `4.6052`. The base-10
+      logarithm is `log10(100) = 2`.
+
+  - id: prep-q7
+    type: mcq
+    title: Undefined operation
+    points: 1
+    q: |-
+      What does `Inf/Inf` return?
+    choices:
+      - text: '`1`'
+        why: Infinity divided by infinity is not defined, so there is no value to return.
+      - text: '`Inf`'
+        why: That is the result of `1/0` or `Inf*2`.
+      - text: '`NaN`'
+        correct: true
+        why: Not a number, the marker of an undefined mathematical operation.
+      - text: '`0`'
+        why: That is `1/Inf`.
+
+  - id: prep-q8
+    type: mcq
+    title: Not equal
+    points: 1
+    q: |-
+      Which operator tests "not equal" in MATLAB?
+    choices:
+      - text: '`!=`'
+        why: That is the operator of C, Python and others, not of MATLAB.
+      - text: '`~=`'
+        correct: true
+      - text: '`<>`'
+        why: Used in some other languages; not MATLAB.
+      - text: '`=/=`'
+
+  - id: prep-q9
+    type: mcq
+    title: Semicolon
+    points: 1
+    q: |-
+      What is the effect of ending the line `x = 3 + 4;` with a semicolon?
+    choices:
+      - text: The line is treated as a comment.
+        why: Comments start with a percent sign.
+      - text: The value is computed and stored, but not displayed.
+        correct: true
+      - text: The expression continues on the next line.
+        why: Continuation is written with three dots.
+      - text: The variable is declared without a value.
+        why: MATLAB has no declarations; the assignment is carried out.
+
+  - id: prep-q10
+    type: mcq
+    title: Magnitude of a complex number
+    points: 1
+    q: |-
+      With `z = 3 + 4j`, what is `abs(z)`?
+    choices:
+      - text: '`7`'
+        why: That adds the real and imaginary parts.
+      - text: '`5`'
+        correct: true
+        why: The magnitude is the square root of 9 + 16.
+      - text: '`3 - 4j`'
+        why: That is the complex conjugate, `conj(z)`.
+      - text: '`25`'
+        why: That is the squared magnitude.
+
+  - id: prep-q11
+    type: tf
+    title: Simulink
+    points: 1
+    q: |-
+      Simulink models dynamic systems as block diagrams and is integrated with MATLAB.
+    correct: true
+    solution: |-
+      True. That is how the introduction slides describe it. It also has a block library
+      for linear, non-linear and discrete systems and can generate C code.
+
+  - id: prep-q12
+    type: mcq
+    title: The 50% rule
+    points: 1
+    q: |-
+      A student scores 0.4 of 1.0 on the Lab Preparation of an exercise and then hands in a
+      flawless report on time. What is the most the student can get for that exercise?
+    choices:
+      - text: 1.4 of 2.0
+        why: That would be the total without the threshold rule.
+      - text: 0.9 of 2.0
+        correct: true
+        why: Below 50% on the preparation, the report is capped at 0.5, so 0.4 + 0.5.
+      - text: 0.4 of 2.0
+        why: The report still counts, up to half its points.
+      - text: 0.5 of 2.0
+        why: That is the best total for a student who missed the preparation entirely.
+
+  - id: prep-q13
+    type: tf
+    title: Late report
+    points: 1
+    q: |-
+      A Lab Report submitted eight days after the session is graded with a deduction.
+    correct: false
+    solution: |-
+      False. The deadline is 7 days. A report not submitted within it is not graded at
+      all: 0 points for the report component.
+
+  - id: prep-q14
+    type: tf
+    title: Missed session
+    points: 1
+    q: |-
+      A student who misses a session for a documented medical reason can take the Lab
+      Preparation at a later date.
+    correct: false
+    solution: |-
+      False. The preparation is held only at the start of the scheduled session, and no
+      replacement or extra attempt is organised, regardless of the reason. The report can
+      still be submitted on time, for at most half of its points.
+
+  - id: prep-q15
+    type: mcq
+    title: Plots in the report
+    points: 1
+    q: |-
+      How should simulation results appear in the Lab Report?
+    choices:
+      - text: As screenshots of the Scope windows.
+        why: The template forbids this explicitly.
+      - text: As plots made in MATLAB from signals exported to the workspace, with labelled axes.
+        correct: true
+      - text: As a table of the first ten samples of each signal.
+        why: The report is graded on clear, properly labelled figures.
+      - text: Only as the Simulink model file, with no figures.
+        why: The files accompany the report; they do not replace its results section.

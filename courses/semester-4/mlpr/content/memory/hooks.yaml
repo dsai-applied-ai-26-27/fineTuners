@@ -1,0 +1,69 @@
+# Hooks that are not tied to a single flashcard. Most hooks of this course are written on
+# the cards themselves and are collected onto the Memory page automatically.
+hooks:
+  - id: h-sandwich
+    for: How a covariance transforms under a linear feature map
+    kind: image
+    topic: representation
+    hook: |-
+      Sigma in a sandwich: transpose on the left, plain on the right.
+    explain: |-
+      $\Sigma_x = F^\top \Sigma_y F$. The covariance is the filling, and the slice with the
+      transpose always goes on the left.
+    refs: ["formula:f-transform"]
+
+  - id: h-one-f-two-fs
+    for: Projected mean against projected variance
+    kind: phrase
+    topic: representation
+    hook: |-
+      One $f$ for the mean, two $f$'s for the variance.
+    explain: |-
+      $\mu_x = f^\top \mu$ uses the direction once. $\sigma_x^2 = f^\top \Sigma f$ uses it
+      twice, because a variance is quadratic.
+    refs: ["formula:f-transform"]
+
+  - id: h-plus-minus
+    for: Eigenvalues of a symmetric matrix with equal diagonal entries
+    kind: phrase
+    topic: representation
+    hook: |-
+      Plus goes with plus, minus goes with minus.
+    explain: |-
+      For $\begin{pmatrix} a & b \\ b & a \end{pmatrix}$: eigenvalue $a + b$ belongs to the
+      direction $(1, 1)$, and $a - b$ to $(1, -1)$.
+    refs: ["formula:f-eigen-shortcut"]
+
+  - id: h-root-lambda
+    for: How long the axes of a covariance ellipse are
+    kind: phrase
+    topic: representation
+    hook: |-
+      The semi-axis is root lambda.
+    explain: |-
+      The ellipse shows standard deviations, not variances: the semi-axis along $v_j$ is
+      $\sqrt{\lambda_j}$.
+    refs: ["formula:f-contour"]
+
+  - id: h-same-cancellation
+    for: When a Mahalanobis boundary is straight
+    kind: phrase
+    topic: distance
+    hook: |-
+      Same covariance, same cancellation.
+    explain: |-
+      With a shared $\Sigma$ the quadratic terms are identical on both sides and cancel, just
+      as $x^\top x$ does for MED. With different covariances they do not, and the boundary is
+      quadratic.
+    refs: ["card:mmd-two-boundaries"]
+
+  - id: h-qq
+    for: The four readings of a QQ plot, in order
+    kind: story
+    topic: models
+    hook: |-
+      Straight, bend, ends, dots.
+    explain: |-
+      **Straight** line: same shape. A **bend**: skewness. The **ends** leaving the line:
+      different tail weight. Isolated **dots**: outliers.
+    refs: ["paper:final/past-paper"]

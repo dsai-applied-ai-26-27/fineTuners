@@ -1,0 +1,285 @@
+# Ids are permanent: people's progress is keyed by them.
+title: 'Recommenders'
+topic: 'rec'
+cards:
+  - id: 're01'
+    hy: true
+    q: |-
+      Give the formal model of a recommender system, and the three key problems.
+    a: |-
+      **X** = set of customers, **S** = set of items, and a **utility function u : X × S → R** where R is a totally ordered set of ratings (0–5 stars, or a real number in \[0,1]). The **utility matrix** holds the known values.\
+      \
+      **Three key problems:** **(1)** gathering known ratings to fill the matrix; **(2)** extrapolating unknown ratings from the known ones — mainly the *high* ones, since we care what you like, not what you don't; **(3)** evaluating the extrapolation methods.
+    note: |-
+      Gathering is **explicit** (ask people to rate — doesn't work well, people can't be bothered) or **implicit** (learn from actions, e.g. a purchase implies a high rating — but what does a low rating look like?).
+
+      The matrix is **sparse**, and **cold start** comes in two flavours: new items have no ratings, new users have no history.
+
+  - id: 're02'
+    hy: true
+    q: |-
+      Content-based recommendation: the main idea and the four steps.
+    a: |-
+      **Main idea:** recommend items to customer x that are **similar to previous items rated highly by the same customer x**.\
+      \
+      **1.** Build **item profiles** — a feature vector per item (actors, director, genre; for text, the important words by TF-IDF).\
+      **2.** Build a **user profile** — the (weighted) average of the profiles of the items that user rated.\
+      **3.** **Predict** with cosine similarity between user profile and item profile.\
+      **4.** **Recommend** the highest-scoring items the user hasn't seen.
+    note: |-
+      Examples from the lecture: recommend movies with the same actors, director or genre; recommend websites, blogs and news with similar content.
+
+  - id: 're03'
+    hy: true
+    q: |-
+      User x watched 6 movies: 3 with actor A, 2 with actor B, 1 with actor C. Build the profile and recommend.
+    a: |-
+      Item profiles are boolean vectors over actors. The user profile is the **mean of the item profiles**:\
+      \
+      weight(A) = 3/6 = **0.5** · weight(B) = 2/6 = **0.333** · weight(C) = 1/6 = **0.167**\
+      \
+      Then score each unseen movie i by **cos(x, i) = (x · i) / (‖x‖·‖i‖)** and recommend the highest.\
+      \
+      This is **content-based** filtering — it uses only item features and this one user's history, no other users.
+    note: |-
+      It is the lecture's own Example 1 with different numbers (there: 5 movies, 2 with A and 3 with B, giving 0.4 and 0.6).
+
+      **A detail worth the extra mark:** the top-scoring candidate is often *not* the pure actor-A movie. A movie with both A and B scores higher, because cosine rewards matching the profile's **direction**, and the profile has weight on B too.
+
+  - id: 're04'
+    hy: true
+    q: |-
+      Same setup but with star ratings: actor A's movies rated 3 and 5; actor B's rated 1, 2 and 4. Build the profile.
+    steps:
+      - do: |-
+          Compute the **user's mean rating** across all their ratings: (3+5+1+2+4)/5 = **3**.
+        why: |-
+          Raw star values can't be averaged into a profile directly — a rating of 1 would still add positive weight to that actor, which is the opposite of what the user meant.
+
+      - do: |-
+          **Normalise by subtracting the mean** from each rating. Actor A: 3−3 = 0 and 5−3 = +2. Actor B: 1−3 = −2, 2−3 = −1, 4−3 = +1.
+        why: |-
+          Now positive means 'liked more than this user usually likes things' and negative means the reverse. The lecture's note: **normalisation helps capture negative ratings**.
+
+      - do: |-
+          **Average the normalised values per feature.** Actor A: (0 + 2)/2 = **1**. Actor B: (−2 −1 +1)/3 = **−2/3**.
+        why: |-
+          The profile weight for a feature is the mean normalised rating of the items carrying it.
+
+      - do: |-
+          **Read the result:** actor A has weight +1, actor B has weight **−2/3** — a negative weight, meaning movies with actor B should be pushed *down* the ranking.
+        why: |-
+          A boolean count profile could never produce this: it would have given B the larger weight (3 movies vs 2). Normalising is what turns 'watched a lot of' into 'actually liked'.
+
+  - id: 're05'
+    hy: true
+    q: |-
+      Write the content-based prediction heuristic and define each symbol.
+    a: |-
+      u(x, i) = cos(x, i) = ( x · i ) / ( ‖x‖ · ‖i‖ )\
+      \
+      **x** = the user profile vector · **i** = an item profile vector · **x · i** = dot product · **‖x‖** = length (norm) of x.\
+      \
+      **Making a prediction:** compute cosine similarity between the user and all items, take those with the highest similarity, suggest those.
+    note: |-
+      The lecture's own footnote, worth a clause: the cosine *distance* is really the angle θ; for convenience we use cos(θ) as a similarity measure and call it cosine similarity.
+
+  - id: 're06'
+    hy: true
+    q: |-
+      Pros and cons of the content-based approach.
+    a: |-
+      **Pros:** no need for data on other users, so **no cold-start or sparsity problem**; can recommend to users with **unique tastes**; can recommend **new and unpopular items** — no first-rater problem, since the item profile depends only on the item's features; can **provide explanations** by listing the content features that caused the recommendation.\
+      \
+      **Cons:** **finding the appropriate features is hard** (images, movies, music); **overspecialisation** — never recommends outside the user's profile, people have multiple interests, and it cannot exploit other users' quality judgements; **no recommendations for new users**, because the profile is built by aggregating rated items and a new user has rated none.
+    note: |-
+      Note the asymmetry to state explicitly: content-based solves the **new item** problem but not the **new user** problem.
+
+  - id: 're07'
+    hy: true
+    q: |-
+      What is collaborative filtering?
+    a: |-
+      Consider user x. **Find the set N of other users whose ratings are similar to x's ratings.** Then **estimate x's ratings from the ratings of the users in N**.\
+      \
+      It uses only the user–item rating matrix — **no item features at all**, which is why it works for any kind of item.
+    note: |-
+      The variant to name: **item-item** CF, where for item i you find similar *items* and estimate the rating from this user's ratings of those. Same similarity metrics, same prediction function.
+
+  - id: 're08'
+    hy: true
+    q: |-
+      Three similarity metrics for CF — and the problem with the first two.
+    a: |-
+      **Jaccard:** treats the ratings as sets. **Problem: ignores the rating values entirely** — it can rank a pair of users as more similar when they merely rated the same items, regardless of whether they agreed.\
+      \
+      **Cosine:** sim(x,y) = (rₓ · r\_y) / (‖rₓ‖·‖r\_y‖). **Problem: treats missing ratings as 'negative'** — a zero in one vector against a positive in the other shrinks the dot product, widening the angle and understating similarity.\
+      \
+      **Pearson correlation:** the fix. Subtract each user's mean rating first, over S\_(xy), the items rated by **both** users.
+    note: |-
+      The identity that ties it together: **centred cosine is Pearson correlation** — cosine similarity *is* Pearson when the data is centred at 0. After centring, positive values mean the user liked the item more than their average, negative less.
+
+  - id: 're09'
+    hy: true
+    q: |-
+      Write the Pearson similarity for CF and define every symbol.
+    a: |-
+      sim(x, y) = Σ\_(s∈S\_(xy)) (rₓₛ − r̄ₓ)(r\_(ys) − r̄\_y) / √\[ Σ\_(s∈S\_(xy))(rₓₛ − r̄ₓ)² · Σ\_(s∈S\_(xy))(r\_(ys) − r̄\_y)² ]\
+      \
+      **S\_(xy)** = the set of items rated by **both** x and y · **rₓₛ** = user x's rating of item s · **r̄ₓ, r̄\_y** = the average ratings of users x and y.
+
+  - id: 're10'
+    hy: true
+    q: |-
+      Write both CF rating-prediction formulas and say why the second is better.
+    a: |-
+      **Simplest — plain average over the neighbourhood:**\
+      rₓᵢ = (1/k) Σ\_(y∈N) r\_(yi)\
+      \
+      **Weighted average:**\
+      rₓᵢ = Σ\_(y∈N) s\_(xy)·r\_(yi) / Σ\_(y∈N) s\_(xy)\
+      \
+      **N** = the k users most similar to x *who have rated item i* · **s\_(xy)** = sim(x, y) · **r\_(yi)** = user y's rating of item i.\
+      \
+      The weighted version is better because it lets the **most similar** neighbours count most; the plain average gives an unreliable neighbour the same vote as a close one.
+    note: |-
+      The lecture's note on the simple version: it *ignores other items*.
+
+      Item-item form: rₓᵢ = Σ\_(j∈N(i;x)) sᵢⱼ·rₓⱼ / Σ sᵢⱼ, where N(i;x) is the set of items rated by x that are similar to i.
+
+  - id: 're11'
+    hy: true
+    q: |-
+      Item-item CF with |N| = 2: predict user 5's rating for movie 1 (the **?**). Ratings 1–5, `·` = unrated.
+
+      ```python
+                u1 u2 u3 u4 u5 u6 u7 u8 u9 u10 u11 u12
+      movie 1    1  ·  3  ·  ?  5  ·  ·  5   ·   4   ·
+      movie 2    ·  ·  5  4  ·  ·  4  ·  ·   2   1   3
+      movie 3    2  4  ·  1  2  ·  3  ·  4   3   5   ·
+      movie 4    ·  2  4  ·  5  ·  ·  4  ·   ·   2   ·
+      movie 5    ·  ·  4  3  4  2  ·  ·  ·   ·   2   5
+      movie 6    1  ·  3  ·  3  ·  ·  2  ·   ·   4   ·
+      ```
+    steps:
+      - do: |-
+          **Centre each row on its own mean**, computed over **rated cells only**. Row 1's rated cells are u1=1, u3=3, u6=5, u9=5, u11=4 — five of them, so m₁ = (1+3+5+5+4)/**5** = **3.6** (not ÷12; the blanks and the **?** don't count). Subtract 3.6 from each rated cell and leave the blanks alone:\
+          row 1 = \[−2.6, 0, −0.6, 0, 0, 1.4, 0, 0, 1.4, 0, 0.4, 0]
+        why: |-
+          A blank is already stored as 0, and centring touches only the rated cells — so the blanks stay at 0, which is now the row's *average*. That is the point: an unrated item contributes nothing instead of reading as 'hated it'. Centred cosine is what the lecture calls Pearson.
+
+      - do: |-
+          **cos(a, b) = (a · b) / (‖a‖ · ‖b‖)** on the centred rows. Only columns where **both** rows are non-zero contribute to the dot product — every other term is multiplied by 0 — so you only ever look at the overlap. \
+          \
+          You have to do this **five times**: row 1 against rows 2, 3, 4, 5, 6. There is no shortcut and nothing tells you in advance which one will win, so just start at the top and grind through them in order. \
+          \
+          **‖c₁‖ is computed once and reused in all five.** \
+          ‖c₁‖ = √(2.6² + 0.6² + 1.4² + 1.4² + 0.4²) = √11.20 = **3.347** \
+          \
+          **First one, sim(1,2), worked in full** — nothing special about row 2 beyond it being next. \
+          m₂ = (5+4+4+2+1+3)/**6** = 19/6 = 3.167, so \
+          c₁ = \[−2.6, 0, **−0.6**, 0, 0, 1.4, 0, 0, 1.4, 0,  **0.4**, 0] \
+          c₂ = \[ 0, 0,  **1.833**, 0.833, 0, 0, 0.833, 0, 0, −1.167, **−2.167**, −0.167] \
+          overlap = **u3, u11** only (u1, u6, u9 are blank in row 2; u4, u7, u10, u12 are blank in row 1) \
+          dot = (−0.6)(1.833) + (0.4)(−2.167) = −1.100 − 0.867 = **−1.967** \
+          ‖c₂‖ = √(1.833² + 0.833² + 0.833² + 1.167² + 2.167² + 0.167²) = √10.83 = **3.291** \
+          **sim(1,2) = −1.967 / (3.347 × 3.291) = −1.967 / 11.015 = −0.179 ≈ −0.18** \
+          \
+          **Now the other four, identical procedure:** \
+          sim(1,3): overlap u1, u9, u11 → dot = (−2.6)(−1) + (1.4)(1) + (0.4)(2) = 4.80; ‖c₃‖ = 3.464 → 4.80 / 11.593 = **0.41** \
+          sim(1,4): overlap u3, u11 → dot = (−0.6)(0.6) + (0.4)(−1.4) = −0.92; ‖c₄‖ = 2.683 → −0.92 / 8.980 = **−0.10** \
+          sim(1,5): overlap u3, u6, u11 → dot = (−0.6)(0.667) + (1.4)(−1.333) + (0.4)(−1.333) = −2.80; ‖c₅‖ = 2.708 → −2.80 / 9.063 = **−0.31** \
+          sim(1,6): overlap u1, u3, u11 → dot = (−2.6)(−1.6) + (−0.6)(0.4) + (0.4)(1.4) = 4.48; ‖c₆‖ = 2.280 → 4.48 / 7.632 = **0.59** \
+          \
+          **Only now, with all five in hand, can you rank them:** \
+          movie 6 (0.59) > movie 3 (0.41) > movie 4 (−0.10) > movie 2 (−0.18) > movie 5 (−0.31).
+        why: |-
+          The overlap decides the *numerator*, but each norm uses **every** non-zero entry of its own row, not just the shared ones — that asymmetry is the usual slip. Centred cosine is what the lecture calls Pearson, so these are correlations, and the negatives are real information: on the two users they share, movie 2 is rated in the *opposite* direction to movie 1.
+
+      - do: |-
+          **Select the neighbourhood N(i; x):** the |N| = 2 most similar movies **that user 5 actually rated**. Check the u5 column first: user 5 rated movies **3, 4, 5 and 6** (movie 2 is blank, so it drops out whatever its similarity). Of those four, the top two by similarity are **movie 6 (0.59) and movie 3 (0.41)**.
+        why: |-
+          A similar movie the user never rated contributes nothing, so the neighbourhood must be restricted to items x has rated. This is the N(i;x) in the formula.
+
+      - do: |-
+          **Read off user 5's ratings** of those: r\_(3,5) = 2 and r\_(6,5) = 3.
+        why: |-
+          Prediction uses the same user's ratings of similar items — that is the item-item direction.
+
+      - do: |-
+          **Weighted average:** r\_(1,5) = (0.41·2 + 0.59·3) / (0.41 + 0.59) = 2.59 ≈ **2.6**
+        why: |-
+          Dividing by the sum of similarities normalises the weights to 1, keeping the prediction on the original rating scale.
+
+  - id: 're12'
+    hy: true
+    q: |-
+      Pros and cons of collaborative filtering.
+    a: |-
+      **Pro:** **works for any kind of item** — no feature selection needed.\
+      \
+      **Cons:** **cold start** — needs enough users in the system to find a match; **sparsity** — the user/ratings matrix is sparse, so it's hard to find users who have rated the same items; **first rater** — cannot recommend an item that has not been previously rated, which hits new and esoteric items; **popularity bias** — cannot recommend well to someone with unique taste, and tends to recommend popular items.
+    note: |-
+      Set this against content-based and the complementarity is the point: CF fixes overspecialisation and needs no features, but breaks on new items; content-based handles new items and explains itself, but never leaves the user's existing profile.
+
+  - id: 're13'
+    hy: true
+    q: |-
+      Which method covers collaborative filtering's limitations?
+    a: |-
+      **Hybrid methods.** Implement two or more different recommenders and combine their predictions, perhaps with a **linear model**.\
+      \
+      Specifically: add **content-based methods** to collaborative filtering — **item profiles** solve the new-item problem, and **demographics** solve the new-user problem.
+    note: |-
+      If the question hands you a hybrid formula like `0.5·predicted_rating + 0.5·content_similarity`, the planted flaw is scale: predicted rating runs 0–5 and similarity 0–1, so the rating dominates despite equal weights. **Normalise both to \[0,1] before combining**, and remove items the user has already rated.
+
+  - id: 're14'
+    hy: false
+    q: |-
+      Why does item-item CF generally work better than user-user?
+    a: |-
+      **Items are simpler; users are complex and have multiple tastes.** A film is reliably one kind of thing, so its rating pattern is consistent; a person can like both horror and documentaries, which makes their overall rating vector a blend of several tastes and a poor match for anybody.
+    note: |-
+      Stated as an observation from practice in the lecture, not a theorem — say 'it has been observed that…' and you're quoting it correctly.
+
+  - id: 're15'
+    hy: false
+    q: |-
+      How are recommenders evaluated, and what's wrong with the obvious metric?
+    a: |-
+      Hold out known ratings as a test set and compare predictions against them. **RMSE = √( Σₓᵢ(rₓᵢ − r\*ₓᵢ)² / n )**, where rₓᵢ is predicted and r\*ₓᵢ is the true rating.\
+      \
+      **What's wrong:** in practice we care only about predicting **high** ratings, and RMSE penalises a method that does well on those and badly elsewhere. Narrow accuracy also misses **prediction diversity** (all items too similar), **context**, and the **order** of predictions.\
+      \
+      **Alternatives:** precision at top k, rank correlation (Spearman), coverage, ROC.
+
+  - id: 're16'
+    hy: false
+    q: |-
+      What is TF-IDF for, in the recommender context, and why the logarithm?
+    a: |-
+      It picks the important features for a **text item profile**. TF-IDF score wᵢⱼ = TFᵢⱼ × IDFᵢ, where fᵢⱼ is the frequency of term i in document j, nᵢ is the number of documents mentioning term i, and N is the total number of documents. The **document profile is the set of words with the highest TF-IDF scores, together with their scores**.\
+      \
+      **The log dampens** the importance of very frequent terms and avoids document-length bias, so rare terms that appear in few documents get higher weight.
+    note: |-
+      Steps as the slide lists them: compute the TF-IDF score for each term in the document; sort by it; set a threshold and pick some words; that set is the profile.
+
+  - id: 're17'
+    hy: false
+    q: |-
+      Why is collaborative filtering expensive at runtime, and what can be done?
+    a: |-
+      The expensive step is **finding the k most similar customers, which is O(|X|)** in the number of customers — too expensive to do at request time. Naïve pre-computation takes O(k·|X|).\
+      \
+      **Fixes:** pre-compute the neighbourhoods offline; use **clustering**; use **dimensionality reduction**.
+    note: |-
+      The lecture's closing practical tip is worth quoting: **leverage all the data** — don't shrink it to make a fancy algorithm work. Simple methods on large data do best, and **more informative data beats better algorithms**.
+
+  - id: 're18'
+    hy: false
+    q: |-
+      Name the three approaches to recommender systems.
+    a: |-
+      **1.** Content-based. **2.** Collaborative filtering. **3.** Latent-factor based.
+    note: |-
+      Only the first two are covered in detail in Lecture 7, and only those two have been examined.

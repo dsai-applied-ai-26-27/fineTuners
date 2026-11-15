@@ -1,0 +1,136 @@
+# Ids are permanent: people's progress is keyed by them.
+title: 'Code debugging'
+topic: 'debug'
+cards:
+  - id: 'db01'
+    hy: true
+    q: |-
+      A snippet calls train\_test\_split on ECG features where each patient contributed many 5-minute segments. What's wrong and what's the fix?
+    a: |-
+      **Problem:** segments from the **same patient** can land in both the training and the test set.\
+      **Why it matters:** the model can learn patient-specific or record-specific patterns instead of general differences between classes, so test performance is **overly optimistic** and does not predict how it will do on a *new* patient.\
+      **Fix:** a **group-based split**, where the group is the patient ID or record ID. All segments from one patient go either to train or to test, never both.
+    note: |-
+      The group column is whatever identifies the **source**, not the row: patient ID here, but subject ID, device ID or recording session elsewhere. Name it explicitly in the answer.
+
+  - id: 'db02'
+    hy: true
+    q: |-
+      The code reports accuracy on a cancer-detection dataset. Is that an error, and what should be reported instead?
+    a: |-
+      **Yes, if the dataset is imbalanced** — which cancer detection invariably is. A model predicting 'no cancer' for everything scores high accuracy and catches nothing.\
+      **Instead:** the confusion matrix, plus **recall** if false negatives are costly — which they are when a missed cancer is the failure — or **F1** if they are not. **Deciding which requires domain knowledge.**\
+      \
+      Precision–recall AUC is the right curve for imbalanced data; ROC is for balanced data.
+    note: |-
+      That 'requires domain knowledge' clause is straight out of the 26.8 answer key, and it is worth writing: it shows you know the metric choice is a cost decision, not a default.
+
+  - id: 'db03'
+    hy: true
+    q: |-
+      Feature selection appears before the train/test split. Why is that wrong?
+    a: |-
+      **Data leakage.** The selector has seen the **test labels** when deciding which features matter, so the test set has influenced the model and the test score is partly a measurement of the test set itself.\
+      **Fix:** split first, fit the selector on the **training set only**, then apply it to test with `.transform()`. Put it inside a `Pipeline` so that inside cross-validation the leakage is structurally impossible.
+    note: |-
+      Same argument applies to **scaling, imputation and PCA**. Feature selection is the worst case only because it consults the labels directly.
+
+  - id: 'db04'
+    hy: true
+    q: |-
+      SMOTE is applied before the train/test split. What's the problem?
+    a: |-
+      SMOTE synthesises new minority-class examples by **interpolating between existing ones**. Applied before the split, synthetic points derived from test examples end up in training — and near-duplicates of training points end up in test. The model is partly evaluated on data it was built from.\
+      **Fix:** resample **only the training set**, after the split, ideally inside the pipeline so it is re-applied per CV fold.
+    note: |-
+      Also: never resample the *test* set at all. The test set must keep the real class distribution, or the metrics no longer describe deployment.
+
+  - id: 'db05'
+    hy: true
+    q: |-
+      The code does a global forward-fill on a multi-sensor time series. Why is that wrong?
+    a: |-
+      A global `ffill()` carries the last value across **sensor boundaries** — one sensor gets imputed from a different sensor's reading. It must be a **group-based forward fill**.\
+      **Fix:** `df.sort_values([sensor_id, timestamp])` then `df.groupby(sensor_id)[col].ffill()`.
+    note: |-
+      Two neighbouring errors worth distinguishing: filling **before sorting by time**, where 'forward' is meaningless; and **backward fill** on a time series, which is outright leakage because it imports a future value the model would not have had.
+
+  - id: 'db06'
+    hy: true
+    q: |-
+      The split on a time-series dataset is random. What should it be?
+    a: |-
+      A **temporal split**: train on the earliest period, validate on the next, test on the most recent. A random split lets the model train on the future and predict the past, which cannot happen in deployment, so the score is meaningless.
+    note: |-
+      Lecture 10 shows exactly this as 'temporal division', beside the ordinary class-preserving split. Note the distinction from Q8's other split error: **grouped** data needs a group split, **temporal** data needs a temporal split. Naming the wrong one costs you the mark.
+
+  - id: 'db07'
+    hy: true
+    q: |-
+      A whole feature called 'urgent' is dropped because it has many missing values. Is that right?
+    a: |-
+      **No.** Here missingness is not noise — the feature represents a **rare but meaningful event**, and rarity is exactly why it is mostly empty. Dropping it discards the signal you most want.\
+      **Fix:** treat 'missing' as its own category — fill with a sentinel or add an explicit `was_missing` indicator — rather than deleting the column.
+    note: |-
+      Straight from the 26.8 answer key. The general principle: before dropping anything for missingness, ask whether the **pattern of missingness itself carries information**.
+
+  - id: 'db08'
+    hy: true
+    q: |-
+      k-means is run on BALANCE, PURCHASES, CASH\_ADVANCE, CREDIT\_LIMIT, PAYMENTS and PRC\_FULL\_PAYMENT without scaling. Explain and correct.
+    a: |-
+      **k-means is a distance-based method** and these variables are on very different scales — BALANCE, PURCHASES, CREDIT\_LIMIT and PAYMENTS run into the thousands while PRC\_FULL\_PAYMENT is between 0 and 1. Unscaled, the large-range variables **dominate the distance calculation**, so the clusters reflect **scale rather than customer behaviour**.\
+      \
+      **Corrected workflow:** **1.** check identifier columns are removed · **2.** handle missing values · **3.** consider a log transformation for highly skewed financial variables · **4.** scale the numerical features · **5.** apply k-means · **6.** interpret the clusters using the **original** business variables.
+    note: |-
+      Those six steps are the exam-prep document's own list — reproduce them in that order.
+
+  - id: 'db09'
+    hy: true
+    q: |-
+      A hybrid recommender does 0.5\*predicted\_rating + 0.5\*content\_similarity. What's wrong?
+    a: |-
+      The two scores are **not on the same scale** — predicted\_rating is 0–5 and content\_similarity is 0–1. Even with equal 0.5 weights, the predicted rating **dominates** because its numeric range is five times larger, so the weights do not mean what they appear to.\
+      \
+      **Fix:** normalise **both** scores to the same range, e.g. \[0,1], *before* combining. Only then does α correctly control the balance between collaborative and content-based. Also remove items the user has already rated before generating recommendations.
+    note: |-
+      Same root cause as the k-means scaling question: **never combine or compare quantities on different scales**. That one idea covers Q2, Q4, Q5 and Q8.
+
+  - id: 'db10'
+    hy: true
+    q: |-
+      Is `len(A.intersection(B)) / len(A)` Jaccard similarity? A = \{1,2,5,8}, B = \{2,5,6}.
+    a: |-
+      **No.** It divides by |A| instead of |A ∪ B|, and it is **asymmetric** — swapping A and B changes the answer, whereas Jaccard is symmetric.\
+      \
+      A ∩ B = \{2, 5}, so |A ∩ B| = **2**.\
+      A ∪ B = \{1, 2, 5, 6, 8}, so |A ∪ B| = **5**.\
+      **J(A,B) = 2/5 = 0.4.** (The buggy code returns 2/4 = 0.5.)\
+      \
+      Correct code: `len(A & B) / len(A | B)`
+
+  - id: 'db11'
+    hy: true
+    q: |-
+      The answer key mentions 'wrong join or wrong variable joined on'. How do you spot that, and what do you say?
+    a: |-
+      **Spot it** by checking the **row count before and after** the merge. If it grew, the key is **not unique** on one side and the join has duplicated rows; if it shrank, an inner join has silently dropped records.\
+      \
+      **Also check:** the key has the same **data type** on both sides (an int against a string never matches); no leading/trailing whitespace or case differences; and the join **type** (`how=`) matches the intent.\
+      \
+      Duplicated rows then bias the model toward the duplicated observations, and can put the same record on both sides of the split.
+    note: |-
+      Lab 2's own 'Good To Know' list names exactly these three: duplicate keys, key mismatches from formatting, and data-type mismatches.
+
+  - id: 'db12'
+    hy: true
+    q: |-
+      How many errors should you write down in Q8, and how should you phrase the ones you're unsure about?
+    a: |-
+      There are typically **one, two or three intended issues**. **−0.2 per incorrect error detection.**\
+      \
+      Assert only the ones you are sure of. Phrase anything uncertain **conditionally** — "*if* the segments come from the same patient, the split also leaks" — rather than as a flat claim. An asserted wrong claim costs 0.2; a hedged observation reads as reasoning.\
+      \
+      And structure each one as: **(1)** identify · **(2)** explain why it's a problem · **(3)** propose a corrected workflow · **(4)** corrected code or pseudocode.
+    note: |-
+      The exam-prep document is blunt about it: *"Students should not write random lists of possible errors. Incorrect additional claims will be penalized."*

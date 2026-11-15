@@ -1,0 +1,43 @@
+# One file per course. Field reference: docs/content-types/course.md
+title: "Robotics Fundamentals"
+code: "RF"
+year: "2026-27"
+semester: 5
+status: active          # active | archived
+has_educator: true      # someone writes it: its page does not ask for an educator
+hue: 95                # course colour, 0-359 on the hue wheel
+order: 7
+description: Fundamental concepts and basic algorithms of robotic manipulators. Rigid-body transformations, direct, inverse and differential kinematics, motion planning, dynamics and control, with an introduction to AI reasoning, probabilistic robotics and robot vision.
+
+# The thematic units of the course overview (slides 5 and 6), in teaching order. Only the
+# first has content so far. Ids are permanent.
+topics:
+  - id: intro
+    title: Introduction to robotics
+    short: Introduction
+  - id: sensors
+    title: Sensors and actuators
+  - id: transformations
+    title: Position and orientation of a rigid body
+    short: Transformations
+  - id: kinematics
+    title: Direct and inverse kinematics
+    short: Kinematics
+  - id: diffkin
+    title: Differential kinematics and the Jacobian
+    short: Jacobian
+  - id: planning
+    title: Trajectory and motion planning
+    short: Planning
+  - id: dynamics
+    title: Dynamics of robotic manipulators
+    short: Dynamics
+  - id: control
+    title: Robot control
+    short: Control
+  - id: ai
+    title: AI reasoning, probabilistic robotics and task planning
+    short: AI and task planning
+  - id: vision
+    title: Robot vision
+    short: Vision

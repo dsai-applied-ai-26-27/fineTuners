@@ -1,0 +1,60 @@
+title: Final exam
+kind: final
+
+scope:
+  topics: [features, distance, models]
+
+format: |-
+  Closed book, five questions, each with several parts. Going by the previous term's paper:
+  one question to **explain and compare**, two to **compute and sketch**, one on
+  **reading a plot**, and one to **write code** from memory.
+
+weights:
+  - topic: features
+    weight: 5
+    note: |-
+      Questions 1 and 2 of the past paper: state and compare Fisher and PCA, then compute
+      Fisher's direction from numbers.
+  - topic: distance
+    weight: 5
+    note: |-
+      Questions 4 and 5: derive and sketch the MED line, and write kNN.
+  - topic: models
+    weight: 3
+    note: |-
+      Question 3, on QQ plots. Pure recall, no derivation.
+
+predictions:
+  - q: |-
+      What is Fisher's criterion and what is it trying to do? What is the difference between
+      PCA and Fisher's, and when do you use each?
+    why: |-
+      Question 1 of the previous paper, in three parts.
+    likelihood: high
+    refs: ["card:fisher-criterion", "card:pca-vs-fisher", "card:pca-or-fisher-when"]
+  - q: |-
+      Compute Fisher's direction in simplest integer form, then the projected means and
+      variances.
+    why: |-
+      Question 2. Only the numbers change from year to year.
+    likelihood: high
+    refs: ["card:fisher-compute", "problems:fisher-and-boundaries#fb-p2"]
+  - q: |-
+      Compute the MED line for two given classes. Is it always a straight line?
+    why: |-
+      Question 4, parts (b) and (c).
+    likelihood: high
+    refs: ["card:med-derive", "card:med-straight"]
+  - q: |-
+      Write `knn_predict_one` and `knn_predict`.
+    why: |-
+      Question 5. The same two function signatures were used in the labs.
+    likelihood: medium
+    refs: ["guide:distance-and-boundaries#knn-in-code"]
+  - q: |-
+      Show that the minimum Mahalanobis distance classifier can have two boundaries.
+    why: |-
+      Not on the past paper, but it is the natural follow-up to "is MED always straight" and
+      reuses the same derivation.
+    likelihood: low
+    refs: ["card:mmd-two-boundaries"]

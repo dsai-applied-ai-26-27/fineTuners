@@ -1,0 +1,88 @@
+# Ids are permanent: people's progress is keyed by them.
+title: 'Room 8 · Bedroom: Support Vector Machines'
+topic: svm
+encodes: |-
+  The room built around one idea: leave the widest possible corridor between the bed and the wardrobe. 6 stops, one exam-ready code pattern or idea at each.
+intro: |-
+  Room 8 of 12 on the walk from the front door to the roof: your own bedroom, or whatever you substituted for it. Put each scene on the object itself, in this order: the bed, the two nightstands, the window latch, the door hinge, the wardrobe, the mattress. The method is in [](guide:memory-palace).
+
+loci:
+  - id: s8-1
+    place: 'The bed'
+    image: |-
+      **The bed placed for the widest possible walkway.** The bed is not against the wall — it is positioned so the gap between it and the wardrobe is **as wide as it can possibly be**. Anyone can walk through without brushing either side. A wider corridor means you can stumble and still not knock anything over.
+    means: |-
+      **Maximum margin.** **SVM** is a binary linear classifier built on geometry: find the hyperplane that separates the classes with the **maximum margin**. A larger margin is more robust to noise and generalises better.
+    refs: ["guide:08-svm"]
+
+  - id: s8-2
+    place: 'The two nightstands'
+    image: |-
+      **Only the furniture touching the corridor matters.** Exactly two nightstands touch the edges of the corridor. Everything else in the room could be deleted and the corridor would not move by a millimetre. Move one nightstand and the whole room is rearranged.
+    means: |-
+      **Support vectors.** **Support vectors** are the instances lying exactly on the margin boundaries. The final solution depends *only* on them, not on the rest of the dataset — which is why SVMs are memory-efficient at prediction time and sensitive to a few critical points.
+    refs: ["guide:08-svm"]
+
+  - id: s8-3
+    place: 'The window latch'
+    image: |-
+      **A latch labelled C, from soft to rigid.** A brass latch on the window is marked **C**. Screw it to infinity and the room becomes rigid: **nothing** may ever poke into the corridor, and if the furniture does not fit perfectly, the room cannot be built at all. Loosen C and a few things are allowed to stick out, and the corridor gets pleasantly wide.
+    means: |-
+      **Hard and soft margin, and C.** A **hard-margin** SVM requires perfect linear separability, which real data rarely offers. **Soft margin** introduces **slack variables ξ** that permit violations, with C controlling the trade-off between maximising the margin and minimising violations.
+
+      ```python
+      from sklearn.svm import SVC, LinearSVC
+      SVC(kernel="linear", C=float("inf"))    # hard margin
+      SVC(kernel="linear", C=100)             # soft margin
+      LinearSVC(C=1, loss="hinge", random_state=42)
+      ```
+
+      - `C` (dial): Cost of margin violations. LARGE C = narrow margin, few violations, risk of overfitting. SMALL C = wide margin, more violations, more regularisation. It is the inverse of alpha.
+      - `loss="hinge"` (structural): Makes LinearSVC the true SVM loss; its default is squared_hinge.
+    refs: ["guide:08-svm"]
+
+  - id: s8-4
+    place: 'The door hinge'
+    image: |-
+      **The hinge that only complains when you cross the line.** The bedroom door has a hinge that is completely silent while you stay outside the corridor, and starts creaking — louder the further you go — the instant you step inside it or onto the wrong side.
+    means: |-
+      **Hinge loss.** **Hinge loss**: zero for points correctly classified and outside the margin; grows linearly for points inside the margin or misclassified. So an SVM is just **regularised ERM with hinge loss** — the same machinery as everything else in this course, with a different loss function.
+    refs: ["guide:08-svm"]
+
+  - id: s8-5
+    place: 'The wardrobe'
+    image: |-
+      **The wardrobe that opens into another dimension.** When the furniture simply cannot be separated by a straight corridor, you open the wardrobe and step into a room with **more dimensions**, where a flat corridor does exist. The trick is that you never actually build that room — the wardrobe just tells you the distances as if you had.
+    means: |-
+      **Kernels and the kernel trick.** **The kernel trick**: explicitly computing a high-dimensional feature map is expensive or impossible. A **kernel function** computes the inner product in that space implicitly, using only the original coordinates. **Polynomial kernel** ↔ monomials up to a degree. **RBF/Gaussian** ↔ similarity based on distance, allowing smooth and highly flexible boundaries.
+
+      ```python
+      SVC(kernel="poly", degree=3, coef0=1, C=5)
+      SVC(kernel="poly", degree=10, coef0=100, C=5)
+      SVC(kernel="rbf", gamma=5, C=0.001)
+      SVC(kernel="rbf", gamma="scale", probability=True, random_state=42)
+      ```
+
+      - `kernel` (structural): "linear", "poly" (monomials up to a degree), "rbf"/Gaussian (similarity by distance), "sigmoid".
+      - `degree` (dial): Polynomial order. Higher = more flexible = more overfitting risk.
+      - `coef0` (dial): How much the high-degree terms count relative to the low-degree ones in a polynomial kernel.
+      - `gamma` (dial): Reach of a single training point's influence in RBF. LARGE gamma = narrow bell = wiggly, overfit boundary. SMALL gamma = wide bell = smoother. gamma and C both increase complexity: if overfitting, reduce BOTH.
+      - `probability=True` (structural): SVC has no predict_proba by default. Required for soft voting in an ensemble; it fits an extra calibration and slows training.
+    refs: ["guide:08-svm"]
+
+  - id: s8-6
+    place: 'The mattress'
+    image: |-
+      **A mattress with a tolerance band sewn into it.** For regression the room flips inside out. Instead of keeping people **out** of the corridor, you now want to fit **as many as possible inside** a padded tube of width ε running through the room.
+    means: |-
+      **SVM regression.** **SVR inverts the objective**: classification pushes instances off the street, regression fits as many instances as possible on the street. Adding instances inside the tube does not change the model at all.
+
+      ```python
+      from sklearn.svm import LinearSVR, SVR
+      LinearSVR(epsilon=1.5, random_state=42)
+      SVR(kernel="poly", degree=2, C=100, epsilon=0.1, gamma="scale")
+      ```
+
+      - `epsilon` (dial): Half-width of the insensitive tube. Errors smaller than ε cost nothing. Larger ε = flatter, simpler model.
+      - `C` (dial): In SVR, LARGE C means less regularisation (tighter fit), same direction as in SVC.
+    refs: ["guide:08-svm"]

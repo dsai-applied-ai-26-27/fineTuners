@@ -1,0 +1,50 @@
+# One file per course. Field reference: docs/content-types/course.md
+# Written from "ADS REVISION", a student's revision guide to the 2025-26 run covering
+# lectures 1 to 11.
+title: "Algorithms and Data Structures II"
+code: "ADS2"
+year: "2025-26"
+# series: <folder of the first year>   only when this is another year of that course
+semester: 3               # semester of the programme, e.g. 5; groups the dashboard
+status: active          # active | archived
+enabled: true           # false: students do not see the course until it is opened in the admin
+has_educator: false     # true: someone is writing it, so its page does not ask for an educator
+hue: 100                # course colour, 0-359 on the hue wheel
+order: 2
+description: Randomized algorithms, graph search and graph algorithms, balanced and multiway search trees, dynamic programming, metaheuristics and swarm intelligence, and the structure of social and document graphs.
+
+# The eleven lectures of the 2025-26 run, in teaching order. Ids are permanent.
+topics:
+  - id: overview
+    title: From ADS I to ADS II
+    short: Overview
+  - id: randomized
+    title: Randomized algorithms
+    short: Randomized
+  - id: graph-search
+    title: Graphs and graph search
+    short: Graph search
+  - id: graph-algorithms
+    title: Shortest paths and minimum spanning trees
+    short: Shortest paths and MSTs
+  - id: balanced-trees
+    title: Balanced search trees
+    short: Balanced trees
+  - id: multiway-trees
+    title: B-trees and specialised trees
+    short: B-trees and more
+  - id: dp
+    title: Dynamic programming
+    short: DP
+  - id: metaheuristics
+    title: Optimisation, local search and genetic algorithms
+    short: Metaheuristics
+  - id: swarm
+    title: Swarm intelligence and nature-inspired algorithms
+    short: Swarm intelligence
+  - id: social-graphs
+    title: Social graphs, power laws and epidemics
+    short: Social graphs
+  - id: document-graphs
+    title: Document graphs, ranking and retrieval
+    short: Document graphs

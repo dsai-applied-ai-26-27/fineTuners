@@ -1,0 +1,413 @@
+title: Introduction to Responsible AI
+topic: pillars
+lecture: 01-introduction
+description: Definitions, the four cases, the six pillars, fairness metrics, the EU AI Act tiers and the practice checklists from lecture 1.
+
+cards:
+  - id: foundations-definition
+    hy: true
+    topic: foundations
+    cloze: |-
+      Responsible AI is {{designing, building, deploying and governing}} AI so that its
+      benefits are {{shared}} and its harms are {{anticipated}}, {{measured}} and
+      {{mitigated}}.
+
+  - id: foundations-trustworthy
+    topic: foundations
+    q: |-
+      Name the three properties of trustworthy AI and say what each means.
+    a: |-
+      - **Lawful:** complies with regulation such as the GDPR and the EU AI Act.
+      - **Ethical:** respects rights, fairness and human autonomy.
+      - **Robust:** technically reliable and socially aware.
+    note: |-
+      Slide 9. The definition applies to the whole lifecycle, not only the model.
+
+  - id: foundations-why-stakes
+    topic: foundations
+    q: |-
+      Why does an error in an AI system matter more in hiring, credit or justice than in a
+      video game? Name four such domains.
+    a: |-
+      When AI informs decisions about people, errors become harm to people, not just bugs.
+      Domains: hiring, credit and insurance, healthcare, justice and policing, education,
+      public services.
+
+  - id: foundations-compas
+    topic: foundations
+    q: |-
+      What did the 2016 ProPublica analysis of COMPAS risk scores find?
+    a: |-
+      Black defendants who did not reoffend were nearly twice as likely as white defendants
+      to be labelled high risk.
+    note: |-
+      In fairness-metric terms this is an unequal false-positive rate between groups.
+      (The link to the metric is not made on the slide.)
+
+  - id: foundations-recruiting
+    topic: foundations
+    q: |-
+      What went wrong with the CV-screening tool reported by Reuters in 2018?
+    a: |-
+      Trained on about ten years of past hires, mostly men, it learned to penalise résumés
+      mentioning "women's". It was abandoned.
+    note: |-
+      Slides 8 and 30. Historical data encodes historical bias; models then scale it.
+
+  - id: foundations-gender-shades
+    topic: foundations
+    q: |-
+      What did Gender Shades (2018) show about commercial face analysis?
+    a: |-
+      Error rates of up to about 35% for darker-skinned women, against under 1% for
+      lighter-skinned men.
+
+  - id: foundations-dutch
+    topic: foundations
+    q: |-
+      What happened in the Dutch childcare benefits case (2021)?
+    a: |-
+      Algorithmic fraud-risk flags wrongly accused thousands of families of fraud. The Dutch
+      government resigned.
+
+  - id: foundations-socio-technical
+    hy: true
+    topic: foundations
+    q: |-
+      The four documented failures are called socio-technical. What does that mean here?
+    a: |-
+      The cause was not a single technical bug. Data, objectives, deployment and oversight
+      each contributed.
+
+  - id: foundations-related-terms
+    topic: foundations
+    cloze: |-
+      {{Responsible AI}} is about practices and accountability. {{Ethical AI}} is about
+      moral values and what is right. {{Trustworthy AI}} names the properties a system
+      needs to deserve trust. {{Human-centred AI}} is a design approach keeping human needs
+      and control central. {{Explainable AI}} is a set of techniques that make model
+      behaviour understandable.
+
+  - id: pillars-six
+    hy: true
+    q: |-
+      Name the six pillars of Responsible AI, with one line each.
+    a: |-
+      1. **Fairness:** avoid unjustified discrimination.
+      2. **Explainability:** understand and communicate how decisions are made.
+      3. **Accountability:** clear responsibility, audit and redress.
+      4. **Privacy and security:** protect data and resist attacks.
+      5. **Robustness and safety:** reliable under real-world conditions.
+      6. **Human oversight:** people stay in control.
+    note: |-
+      They are interdependent: improving one can create a trade-off with another.
+    hook: |-
+      **FEA-PRO**: Fairness, Explainability, Accountability, Privacy, Robustness, Oversight.
+
+  - id: pillars-timeline
+    q: |-
+      Put in order, with years: UNESCO ethics standard, EU AI Act, Asilomar AI Principles,
+      NIST AI RMF and ISO/IEC 42001, OECD principles and the EU expert group's requirements,
+      GDPR and the Montreal Declaration.
+    a: |-
+      2017 Asilomar · 2018 GDPR and Montreal · 2019 OECD and EU HLEG · 2021 UNESCO ·
+      2023 NIST AI RMF and ISO/IEC 42001 · 2024 EU AI Act.
+    note: |-
+      The direction of travel is from voluntary declarations to binding rules. The EU AI
+      Act entered into force in August 2024.
+
+  - id: pillars-fairness-meaning
+    q: |-
+      What does fairness require, according to the lecture? Give the three statements.
+    a: |-
+      - Similar people should receive similar treatment.
+      - Outcomes should not systematically disadvantage groups defined by protected
+        attributes (gender, ethnicity, age, disability).
+      - Fairness is contextual: no single definition fits every application.
+
+  - id: pillars-bias-sources
+    hy: true
+    q: |-
+      Name the four stages at which bias can enter an AI system, with one example each.
+    a: |-
+      - **Data:** past discrimination in the records, unrepresentative samples, biased
+        labels.
+      - **Model:** an objective that ignores subgroups, proxies such as postcode.
+      - **Deployment:** a different population than in training, use outside the intended
+        scope, over-trust by users.
+      - **Feedback loop:** predictions shape future data, so errors reinforce themselves.
+
+  - id: pillars-proxy
+    q: |-
+      Why is removing the protected attribute from the data not enough to make a model fair?
+    a: |-
+      Proxies leak it back in. Other features, such as postcode, correlate with the
+      protected attribute, so the model can still reconstruct it.
+
+  - id: pillars-demographic-parity
+    q: |-
+      State demographic parity as a formula and in words.
+    a: |-
+      $$P(\hat Y = 1 \mid A = a) = P(\hat Y = 1 \mid A = b)$$
+
+      The same positive rate in every group.
+    note: |-
+      $\hat Y$ is the prediction and $A$ the protected attribute. The true outcome $Y$ does
+      not appear, so the metric ignores whether the positives were deserved.
+
+  - id: pillars-equal-opportunity
+    q: |-
+      State equal opportunity as a formula and in words. How does equalized odds extend it?
+    a: |-
+      $$P(\hat Y = 1 \mid Y = 1, A = a) = P(\hat Y = 1 \mid Y = 1, A = b)$$
+
+      The same true-positive rate for qualified people in every group. Equalized odds asks
+      for equal TPR **and** equal FPR: the same error profile for every group.
+
+  - id: pillars-predictive-parity
+    q: |-
+      State predictive parity as a formula and in words.
+    a: |-
+      $$P(Y = 1 \mid \hat Y = 1, A = a) = P(Y = 1 \mid \hat Y = 1, A = b)$$
+
+      A positive prediction means the same in every group.
+    note: |-
+      The conditioning is reversed compared with equal opportunity: here we condition on
+      the prediction and ask about the truth.
+
+  - id: pillars-parity-compute
+    q: |-
+      A loan model approves 62% of group A and 41% of group B. Which fairness metric does
+      this speak to, and is it satisfied?
+    a: |-
+      Demographic parity. It is violated: the positive rates differ by
+      $62 - 41 = 21$ percentage points.
+    note: |-
+      The numbers are the illustration on slide 14. They say nothing about equal
+      opportunity or predictive parity, which need the true outcomes as well.
+
+  - id: pillars-tpr-compute
+    q: |-
+      Group a: 50 qualified applicants, 40 approved. Group b: 20 qualified applicants, 16
+      approved. Does equal opportunity hold?
+    a: |-
+      Yes. The true-positive rates are $40/50 = 0.80$ and $16/20 = 0.80$.
+    note: |-
+      Equal opportunity looks only at qualified people. The groups can still differ in
+      overall approval rate if they have different shares of qualified applicants.
+
+  - id: pillars-metrics-conflict
+    q: |-
+      What does the lecture say about satisfying all group-fairness metrics together, and
+      what follows for practice?
+    a: |-
+      They cannot all hold at once. So choose a metric consciously and document why.
+
+  - id: pillars-intrinsic-posthoc
+    q: |-
+      Distinguish intrinsic from post-hoc explainability and give examples of each.
+    a: |-
+      **Intrinsic:** use a model that is interpretable in itself, such as a linear model, a
+      decision tree or a rule list.
+
+      **Post-hoc:** explain a complex model afterwards, with SHAP, LIME, Grad-CAM or
+      counterfactual examples.
+
+  - id: pillars-explanation-audience
+    q: |-
+      Three audiences need three different kinds of explanation. Which?
+    a: |-
+      Users need actionable reasons. Regulators need evidence. Developers need debugging
+      insight.
+    note: |-
+      An explanation is only useful if the person receiving it can act on it.
+
+  - id: pillars-accountability-needs
+    q: |-
+      What four things does accountability need?
+    a: |-
+      - A named accountable owner for every system.
+      - Audit trails: data sources, versions, decisions.
+      - Redress: people can contest and appeal outcomes.
+      - Independent audits before and after launch.
+
+  - id: pillars-documentation
+    cloze: |-
+      {{Datasheets for datasets}} record origin, collection, intended use and known gaps.
+      {{Model cards}} record intended use, metrics per subgroup and limitations.
+      {{Impact assessments}} record risks to people, mitigations and sign-off.
+
+  - id: pillars-privacy-techniques
+    q: |-
+      Name three privacy measures from the lecture and what each does.
+    a: |-
+      - **Data minimisation and purpose limitation** (GDPR): collect only what the stated
+        purpose needs.
+      - **Differential privacy:** calibrated noise protects individuals.
+      - **Federated learning:** train without centralising the data.
+    note: |-
+      Privacy threats named on the same slide: membership inference, model inversion,
+      memorised training data.
+
+  - id: pillars-security-threats
+    q: |-
+      Name four security threats to AI systems from the lecture.
+    a: |-
+      - Adversarial examples: tiny changes flip predictions.
+      - Data poisoning: corrupting the training set.
+      - Prompt injection in LLM-based applications.
+      - Model theft and unauthorised extraction.
+
+  - id: pillars-robustness
+    q: |-
+      What is distribution shift, and which practices does the lecture list for robustness?
+    a: |-
+      Distribution shift: deployment data differs from training data (a new population,
+      season or sensor).
+
+      Practices: stress testing and red-teaming; continuous monitoring and drift detection;
+      incident reporting and a rollback plan.
+    note: |-
+      Test where the system is most likely to fail, not only on the average case.
+
+  - id: pillars-oversight-modes
+    hy: true
+    cloze: |-
+      Human-{{in-the-loop}}: a person approves or reviews each decision.
+      Human-{{on-the-loop}}: a person monitors the system and can intervene.
+      Human-{{in-command}}: people decide whether and how the system is used at all.
+
+  - id: pillars-automation-bias
+    q: |-
+      What is automation bias, and what does meaningful human oversight need to counter it?
+    a: |-
+      People over-trust confident output. Meaningful oversight needs time, training,
+      authority and the ability to say no.
+    note: |-
+      A human in the loop is only oversight if they can really disagree.
+
+  - id: pillars-societal
+    q: |-
+      Name the four societal and environmental concerns that go beyond the individual model.
+    a: |-
+      Energy and resources (energy and water use), labour (labelling, moderation, job
+      displacement), the information ecosystem (deepfakes, misinformation) and
+      concentration of power (compute, data and expertise with few organisations).
+
+  - id: regulation-ai-act-tiers
+    hy: true
+    topic: regulation
+    q: |-
+      Give the four risk tiers of the EU AI Act, the consequence of each, and one example.
+    a: |-
+      | Tier | Consequence | Example |
+      |---|---|---|
+      | Unacceptable | Prohibited | Social scoring |
+      | High | Strict obligations | Hiring, credit |
+      | Limited | Transparency duties | Chatbots |
+      | Minimal | No new obligations | Spam filters |
+    hook: |-
+      A ladder of duties: banned, burdened, badged, free.
+
+  - id: regulation-classify
+    topic: regulation
+    q: |-
+      Assign an EU AI Act risk tier to each: (a) a CV-screening tool, (b) a customer-service
+      chatbot, (c) a spam filter, (d) a social scoring system.
+    a: |-
+      (a) High risk (b) Limited risk (c) Minimal risk (d) Unacceptable risk
+    note: |-
+      The tier decides the duty: (a) strict obligations, (b) must disclose that it is AI,
+      (c) nothing new, (d) prohibited.
+
+  - id: regulation-nist
+    topic: regulation
+    q: |-
+      Name the four functions of the NIST AI Risk Management Framework and what each does.
+    a: |-
+      - **Govern:** culture, policies, roles and accountability across the organisation.
+      - **Map:** understand context, intended use, stakeholders and potential impacts.
+      - **Measure:** assess, test and track risks with metrics and evaluations.
+      - **Manage:** prioritise and treat risks, respond to incidents, keep improving.
+    note: |-
+      Govern spans the other three on the slide.
+
+  - id: regulation-iso
+    topic: regulation
+    q: |-
+      What is ISO/IEC 42001?
+    a: |-
+      A certifiable AI management-system standard (2023): policies, roles, risk assessment,
+      improvement.
+    note: |-
+      Frameworks give a repeatable process, not a guarantee of good outcomes.
+
+  - id: practice-lifecycle
+    topic: practice
+    q: |-
+      Name the six lifecycle stages and one responsibility check at each.
+    a: |-
+      1. Problem framing: is AI needed, and who is affected?
+      2. Data: representative, with consent and provenance?
+      3. Modelling: set objectives and constraints; prefer the simpler model if equal.
+      4. Evaluation: metrics per subgroup; red-teaming.
+      5. Deployment: human oversight; user information and appeals.
+      6. Monitoring: drift and incidents; periodic audit; retire.
+    note: |-
+      Responsibility is built in, not bolted on at the end.
+
+  - id: practice-checklist
+    hy: true
+    topic: practice
+    q: |-
+      List the eight headings of the impact assessment checklist.
+    a: |-
+      Purpose, alternatives, data, fairness, explainability, oversight, safety and
+      security, redress.
+    note: |-
+      No clear answer to one of them means the system is not ready to deploy.
+
+  - id: practice-hiring-case
+    topic: practice
+    q: |-
+      Walk through the AI hiring tool case: data, model, outcome, lesson. What would
+      responsible practice have added?
+    a: |-
+      - **Data:** ten years of résumés, mostly from men.
+      - **Model:** learns that patterns of past hires predict "success".
+      - **Outcome:** women's résumés downgraded; tool abandoned.
+      - **Lesson:** audit data, test by subgroup, keep humans decisive.
+
+      Added by responsible practice: a pre-deployment bias audit, a recruiter who always
+      decides, ongoing monitoring of outcomes.
+
+  - id: practice-tools
+    topic: practice
+    q: |-
+      Match each tool to its purpose: Fairlearn, SHAP, Opacus, Model Cards Toolkit,
+      AI Fairness 360, LIME, Adversarial Robustness Toolbox.
+    a: |-
+      - Fairness: Fairlearn, AI Fairness 360.
+      - Explainability: SHAP, LIME.
+      - Privacy and robustness: Opacus (differential privacy), Adversarial Robustness
+        Toolbox.
+      - Documentation: Model Cards Toolkit.
+    note: |-
+      Tools help to measure and document; they do not replace judgement.
+
+  - id: practice-open-challenges
+    topic: practice
+    q: |-
+      Name four open challenges of Responsible AI.
+    a: |-
+      Any four of: trade-offs between accuracy, fairness, privacy and explainability;
+      generative AI (hallucination, provenance, copyright, misuse); measurement (benchmarks
+      rarely capture real harm); global differences in values and laws; supply chains (who
+      is accountable for third-party fine-tuning); ethics washing.
+
+  - id: practice-ethics-washing
+    topic: practice
+    q: |-
+      What is ethics washing?
+    a: |-
+      Principles on paper without practice in the product.

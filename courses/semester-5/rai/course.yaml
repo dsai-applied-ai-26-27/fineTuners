@@ -1,0 +1,26 @@
+# One file per course. Field reference: docs/content-types/course.md
+title: "Responsible AI"
+code: "RAI"
+year: "2026-27"
+semester: 5
+status: active          # active | archived
+has_educator: true      # someone writes it: its page does not ask for an educator
+hue: 40                # course colour, 0-359 on the hue wheel
+order: 6
+description: A teaching seminar on building AI that people can trust, understand and contest. Real-world harms, the six pillars from fairness to human oversight, regulation such as the EU AI Act, and practice across the AI lifecycle.
+
+# The four sections of the introductory lecture (slide 5). The seminar's paper topics are
+# not known yet; add topics here as they are announced. Ids are permanent.
+topics:
+  - id: foundations
+    title: Why Responsible AI
+    short: Foundations
+  - id: pillars
+    title: Principles and the six pillars
+    short: Pillars
+  - id: regulation
+    title: Regulation and frameworks
+    short: Regulation
+  - id: practice
+    title: Responsible AI in practice
+    short: Practice

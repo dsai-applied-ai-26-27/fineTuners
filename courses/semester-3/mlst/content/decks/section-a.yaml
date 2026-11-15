@@ -1,0 +1,316 @@
+# Ids are permanent: people's progress is keyed by them.
+title: 'Section A: the explain questions'
+topic: classifiers
+description: 'Bullet answers for the theory half. The first five were on the previous year''s paper.'
+
+cards:
+  - id: seca-01
+    hy: true
+    topic: preprocessing
+    q: |-
+      **Encoding categorical variables.** One-hot, the indicator function $\mathbb{I}(\cdot)$, dummy encoding, and why dummy is preferred for linear regression.
+    a: |-
+      A categorical feature with $k$ levels has no meaningful numeric value. Coding the levels as one number would invent an order and distances, so the feature is **encoded as a vector of binary columns**.
+
+      - **One-hot encoding:** $k$ new binary columns, one per category. For an observation $x$, column $j$ holds $\mathbb{I}(x = \text{category}_j)$. Exactly one column is 1 and the rest are 0.
+      - **Indicator function:** $\mathbb{I}(\text{condition})$ returns 1 when the condition is true and 0 otherwise. It generates each column: it turns a test of category membership into a number the model can use.
+      - **Dummy encoding:** $k - 1$ columns. One level is chosen as the reference (baseline) and is represented by all zeros. The information is identical, because the missing level follows by elimination.
+      - **Why dummy encoding for linear regression:** the $k$ one-hot columns always sum to 1, which is exactly the constant intercept column. The columns are therefore **perfectly collinear** (the dummy variable trap), $X^\top X$ is singular, and the normal equation $\theta = (X^\top X)^{-1} X^\top y$ has no unique solution: the coefficients are not identifiable. Dropping one level removes the redundancy, and each coefficient then reads as the difference from the reference level.
+      - Models that do not invert $X^\top X$ (decision trees, random forests, regularised models such as Ridge) cope with one-hot encoding perfectly well.
+    note: |-
+      The examinable core is the collinearity argument. Say 'the columns sum to the intercept, so $X^\top X$ is singular and coefficients are not identifiable'.
+
+      **In plain words.** A model can only do arithmetic, so a column of words has to become numbers. Coding red/green/blue as 1/2/3 would tell the model that blue is three times red, which is nonsense — so instead you make **one yes/no column per category**.
+
+      The catch: those columns always add up to 1, which is exactly what the intercept column already is. In linear regression that redundancy makes the matrix impossible to invert, so you drop one category and the problem vanishes.
+
+      ```text
+      colour = red     →  [1, 0, 0]
+      colour = green   →  [0, 1, 0]     one-hot,  k columns
+      colour = blue    →  [0, 0, 1]
+
+      red [0,0] · green [1,0] · blue [0,1]   dummy, k−1
+      (red is the reference: all zeros)
+      ```
+
+  - id: seca-02
+    hy: true
+    topic: linear
+    q: |-
+      **ERM.** What does it mean to find optimal parameters by Empirical Risk Minimisation, and how is it solved (a) analytically for linear regression and (b) numerically by gradient descent?
+    a: |-
+      - We want the model that minimises the **theoretical risk**, the expected loss over the true data-generating distribution. That distribution is unknown, so it cannot be computed.
+      - **ERM** replaces it with the **empirical risk**: the average loss over the observed training data. "Optimal parameters" are the $\theta$ minimising that average, which is a well-defined optimisation problem.
+      - **(a) Analytically (closed form).** For linear regression with L2 (squared) loss the empirical risk is convex and differentiable in $\theta$. Set its gradient to zero and solve directly: $\theta = (X^\top X)^{-1} X^\top y$, the OLS estimator. Exact and obtained in one step, but it needs $X^\top X$ to be invertible and becomes impractical when the number of features is very large.
+      - **(b) Numerically (iteratively).** Start from a random $\theta$ and repeatedly step in the direction of steepest descent, $\theta \leftarrow \theta - \alpha \nabla_\theta(\text{empirical risk})$, until a stationary point. The **learning rate $\alpha$** matters: too high and the model oversteps and fails to converge; too low and convergence is needlessly slow. Variants differ in how many instances the gradient uses: **batch** (all $m$), **stochastic** (one random instance, needing a decaying learning schedule to settle) and **mini-batch**.
+      - The numerical route is **necessary** when no closed form exists (logistic regression, L1/Lasso, neural networks) or when the dataset is too large for the matrix algebra.
+    note: |-
+      Structure: risk we want → risk we can compute → two ways to minimise it → when each is used.
+
+      **In plain words.** You want the model that will do best on **all future data**, but you only have the data in front of you. So you settle for the model that does best on the data you have — that is Empirical Risk Minimisation.
+
+      Then there are two ways to find it: solve for the best parameters with a **formula** (possible for linear regression with squared loss), or **walk downhill** towards them step by step (needed for everything else).
+
+      ```text
+      Analytic:  one shot, exact, needs inv(X^T X)
+      Numeric:   many small steps, works on anything,
+                 needs a learning rate
+      ```
+
+  - id: seca-03
+    hy: true
+    q: |-
+      **Gower distance.** What it is, which feature types it handles, how it is computed, how numeric and categorical features differ, and why it beats Euclidean on real data.
+    a: |-
+      - **What:** a general dissimilarity measure for observations described by **mixed feature types**, giving a single distance in $[0, 1]$.
+      - **Handles:** numerical (continuous), categorical (nominal), binary and ordinal features, in the same dataset.
+      - **How:** for each feature separately, compute a partial dissimilarity between the two observations, scaled to $[0, 1]$. The Gower distance is the **(weighted) average of those per-feature scores**. A feature with a missing value in either observation is skipped and the average renormalised.
+      - **Numerical features:** the absolute difference $\lvert x_i - x_j \rvert$ divided by the observed **range** of that feature.
+      - **Categorical features:** simple matching, 0 if the two observations share the category and 1 if they do not. There is no notion of how far apart two categories are.
+      - **Why it beats Euclidean distance:** Euclidean distance is defined only for numerical features and assumes a common, meaningful scale. Real datasets mix types, and one-hot encoding categories before applying Euclidean distance distorts the geometry. It also lets a large-range feature such as income dominate a small-range one such as age unless you standardise first. Gower normalises **every** feature to $[0, 1]$ by construction, so all features contribute comparably and no separate scaling step is needed.
+    note: |-
+      It comes up as the k-NN question: k-NN is distance-based, so mixed types and unscaled features break it — Gower is the fix.
+
+      **In plain words.** Euclidean distance can't cope with a table where one column is salary and the next is "married/single". Gower **compares two rows one column at a time**, scores each comparison between 0 and 1, and averages the scores.
+
+      Numbers: how far apart they are, relative to that column's range. Categories: simply same or not same.
+
+      ```text
+      age    30 vs 45, range 60   →  15/60 = 0.25
+      salary 40k vs 42k, range 80k →  2/80  = 0.025
+      status married vs single     →  1
+
+      Gower distance = (0.25 + 0.025 + 1) / 3 = 0.425
+      ```
+
+  - id: seca-04
+    hy: true
+    topic: svm
+    q: |-
+      **Hard-margin SVM.** The primal problem, the Lagrange multipliers, the construction of the dual, and why the dual is useful in practice.
+    a: |-
+      **Primal.**
+
+      $$\min_{w,\, b}\ \tfrac12 \lVert w \rVert^2 \qquad \text{subject to} \qquad y_i (w^\top x_i + b) \ge 1 \ \text{ for every training instance } i$$
+
+      The margin width is $2 / \lVert w \rVert$, so shrinking $\lVert w \rVert$ widens the margin; the constraints force every point onto the correct side, at least one margin away. It is a convex quadratic program with linear constraints, so any local optimum is global.
+
+      **Lagrange multipliers.** Introduce one multiplier $\alpha_i \ge 0$ per constraint:
+
+      $$L(w, b, \alpha) = \tfrac12 \lVert w \rVert^2 - \sum_i \alpha_i \big[ y_i (w^\top x_i + b) - 1 \big]$$
+
+      Setting the partial derivatives to zero gives the stationarity conditions
+
+      $$w = \sum_i \alpha_i y_i x_i \qquad \text{and} \qquad \sum_i \alpha_i y_i = 0 .$$
+
+      **Constructing the dual.** Substitute those two results back into $L$ to eliminate $w$ and $b$. What remains depends only on the multipliers:
+
+      $$\max_{\alpha}\ \sum_i \alpha_i - \tfrac12 \sum_i \sum_j \alpha_i \alpha_j\, y_i y_j\, x_i^\top x_j \qquad \text{subject to} \qquad \alpha_i \ge 0,\ \ \sum_i \alpha_i y_i = 0$$
+
+      By KKT complementary slackness $\alpha_i > 0$ only for points lying exactly on the margin, the **support vectors**, so $w$ is a weighted sum of just those points.
+
+      **Why the dual is useful.**
+
+      1. The training data enters **only through inner products** $x_i^\top x_j$, which can be replaced by a kernel $K(x_i, x_j)$ to get non-linear boundaries without ever computing the high-dimensional feature map: the **kernel trick**.
+      2. The number of variables is the number of **instances** $m$ rather than features $d$, which is far cheaper when $d \gg m$.
+      3. The solution is **sparse**: most $\alpha_i$ are zero, so prediction only touches the support vectors.
+      4. The constraints become simple bounds, which specialised QP solvers handle efficiently.
+    note: |-
+      Four beats to hit: minimise $\tfrac12 \lVert w \rVert^2$ with margin constraints → Lagrangian → eliminate w and b → the data appears only as inner products, so kernels.
+
+      **In plain words.** The **primal** is "find the widest empty street between the two classes". The **dual** is the same problem rewritten so that, instead of solving for the street directly, you solve for a weight on each data point — and nearly all those weights turn out to be zero except the few points touching the kerb.
+
+      The payoff: the rewritten version only ever needs the **dot products between pairs of points**, and a kernel can hand you those dot products for a far higher-dimensional space without ever going there.
+
+      ```text
+      primal:  variables = w (one per feature)
+      dual:    variables = α (one per training point)
+
+      So if you have 10,000 features and 200 points,
+      the dual is a much smaller problem.
+      ```
+
+  - id: seca-05
+    hy: true
+    topic: evaluation
+    q: |-
+      **Classification models.** Score-based classifiers, probabilistic classifiers, and the role of thresholding.
+    a: |-
+      - A classifier assigns categorical class labels, and its raw output comes in three forms: **hard labels**, **scores** or **probabilities**. Continuous outputs are preferred because they are more informative and easier to optimise.
+      - **Score-based classifier:** outputs a real-valued score $f(x)$ with no probabilistic interpretation; larger means more confidence in the positive class. The label is obtained by thresholding, $\hat y = \mathbb{I}(f(x) > c)$, with $c = 0$ as the standard choice, since the boundary is where the model is undecided. Examples: the SVM decision function, `SGDClassifier.decision_function`.
+      - **Probabilistic classifier:** outputs an estimate of the posterior $P(y = 1 \mid x) \in [0, 1]$. In the binary case the label is $\mathbb{I}(p > 0.5)$; in the multi-class case you take the class with the highest predicted probability (argmax). Examples: logistic regression, Naive Bayes, `RandomForestClassifier.predict_proba`.
+      - **Thresholding:** the standard thresholds (0 for scores, 0.5 for probabilities) implicitly assume balanced classes and symmetric misclassification costs. Real problems rarely satisfy either.
+      - **Why you move the threshold:** when a false negative is much more costly than a false positive (a missed diagnosis, undetected fraud) you **lower** the threshold to raise **recall** at the cost of precision. When false alarms are expensive, you **raise** it to raise **precision** at the cost of recall. Sweeping the threshold traces the ROC and precision-recall curves, and the operating point is then chosen from a requirement such as "the lowest threshold reaching 90% precision".
+    note: |-
+      Precision and recall move in opposite directions as the threshold moves. Say that sentence explicitly — it is what the question is testing.
+
+      **In plain words.** Some classifiers give you a number that just means "higher = more likely positive" (a **score**); others give an actual **probability**. Either way you need a cut-off to turn it into a yes/no.
+
+      The default cut-off assumes a false alarm and a miss are equally bad. For cancer screening they are not, so you move it.
+
+      ```text
+      score  → threshold at 0     (SVM, SGDClassifier)
+      prob   → threshold at 0.5   (logistic, Naive Bayes)
+
+      Lower the threshold → catch more, more false alarms
+      Raise  the threshold → fewer alarms, miss more
+      ```
+
+  - id: seca-06
+    topic: evaluation
+    q: |-
+      **Bias–variance.** Explain the trade-off, what each error source looks like, and how it relates to model complexity.
+    a: |-
+      - Model error decomposes into two sources you can trade against each other.
+      - **Bias (underfitting):** the model is too simple to represent the underlying pattern. Symptom: **high error on both the training and the test set**, and the two learning curves sit high and close together. More data does not help.
+      - **Variance (overfitting):** the model is too flexible and fits the random noise in the training sample. Symptom: **very low training error but high test error** — a large, persistent gap between the curves. More data or more regularisation does help.
+      - **Complexity:** as model complexity increases, bias falls and variance rises, so test error traces a **U-shape**. The sweet spot is the bottom of the U, where the two are balanced.
+      - Examples: a high-degree polynomial or a fully grown decision tree is high variance; a linear model on curved data or a very large k in k-NN is high bias. Regularisation (Ridge, Lasso, pruning, early stopping) trades a little bias for a large reduction in variance.
+    note: |-
+      Always answer with the two symptom patterns — training vs test error — not just the definitions.
+
+      **In plain words.** **Underfitting**: the model is too simple to see the pattern, so it does badly everywhere — including on the data it trained on. **Overfitting**: it memorised the training data along with its noise, so it aces training and falls apart on anything new.
+
+      The give-away is the **gap** between training and test error, not the size of either one alone.
+
+      ```text
+      train 0.30, test 0.32  →  both bad, both close  = bias
+      train 0.01, test 0.40  →  huge gap              = variance
+      ```
+
+  - id: seca-07
+    topic: evaluation
+    q: |-
+      **Resampling.** Why resample at all, and explain k-fold CV, the bootstrap, and Leave-One-Object-Out CV.
+    a: |-
+      - A single train/test split gives an unreliable estimate of the generalisation error: if the training part is too small the estimate is **pessimistically biased**, and if the test part is too small it has **high variance** — it changes by chance. Resampling repeatedly splits the data and averages, which stabilises the estimate.
+      - **k-fold cross-validation:** split into k folds, train on k−1 and test on the held-out one, rotate so each fold is the test fold once, and average. **k=10** is a common choice because it balances bias and variance. **Stratified** k-fold keeps each fold's class distribution equal to the full dataset's — critical for imbalanced classes.
+      - **Bootstrap:** sample n instances **with replacement** to build each training set. On average about **63.2%** of the unique instances appear; the remaining ~36.8% are **out-of-bag** and serve as a free test set. This is the resampling underneath bagging and random forests.
+      - **Subsampling / Monte-Carlo CV:** randomly re-split into train and test many times (50–200) and average the errors.
+      - **Leave-One-Object-Out CV:** standard CV assumes i.i.d. data, but in medical imaging or speech several observations come from the same **object** (patient, speaker). If those are split across train and test, the model can memorise object-specific quirks — **data leakage** — and the result is over-optimistic. LOOO-CV keeps **all** observations of an object entirely on one side of the split.
+    note: |-
+      The examinable numbers: k=10, 63.2% in-bag, ~37% out-of-bag.
+
+      **In plain words.** One train/test split is a **single roll of the dice** — you might land a lucky or an unlucky test set and never know. Resampling rolls many times and averages, which gives a far more trustworthy estimate of how the model will really do.
+
+      ```text
+      63.2% — the share of unique rows that end up in a
+      bootstrap sample. The other ~37% are out-of-bag
+      and test the model for free.
+      ```
+
+  - id: seca-08
+    topic: ensembles
+    q: |-
+      **Ensembles.** Explain bagging, random forests and boosting, and how they differ.
+    a: |-
+      - An ensemble combines many predictors; it beats its members only when the members are **diverse**, i.e. they make different mistakes.
+      - **Bagging (bootstrap aggregating):** train the same algorithm on many bootstrap resamples of the training set **in parallel** and aggregate by majority vote or average. It reduces **variance** without raising bias, so it suits unstable, high-variance learners such as fully grown trees. Sampling *without* replacement instead is called **pasting**. The unused ~37% give **out-of-bag** evaluation for free.
+      - **Random Forest = bagging + random feature subsets at each split.** Restricting each split to a random subset of features (the **mtry** hyperparameter) **decorrelates** the trees so their errors are more independent, which makes the average far more accurate and stable than a single tree. It also recovers some interpretability through **feature importance**: MDI (mean decrease in impurity during training) or PFI (drop in performance when a feature's values are shuffled).
+      - **Boosting** trains predictors **sequentially**, each one correcting its predecessor, and mainly reduces **bias**. **AdaBoost** reweights the instances that were misclassified so the next predictor pays them more attention. **Gradient Boosting** instead fits each new tree to the **residual errors** of the ensemble so far.
+      - **Key differences:** bagging is parallel and cannot really overfit by adding trees; boosting is sequential, cannot be parallelised, and **does** overfit with too many estimators — which is why boosting needs early stopping and a low learning rate.
+    note: |-
+      If you remember one line: bagging cuts variance in parallel, boosting cuts bias in sequence.
+
+      **In plain words.** One model is one opinion. An ensemble asks many and combines them — which only helps if they are **wrong in different ways**.
+
+      **Bagging** gets that diversity by giving each model a different random sample of the data, all at the same time. **Boosting** trains them one after another, each new one focusing on what the last got wrong.
+
+      ```text
+      Bagging  : parallel, cuts VARIANCE, more trees is safe
+      Boosting : sequential, cuts BIAS, too many trees overfits
+      ```
+
+  - id: seca-09
+    topic: svm
+    q: |-
+      **The kernel trick.** Why it exists and what a kernel actually does.
+    a: |-
+      - Data that is not linearly separable in its original space often becomes separable when **projected into a higher-dimensional feature space** — for example by adding polynomial combinations of the features.
+      - **The problem:** computing that feature map explicitly is expensive, and for some maps (infinite-dimensional ones) impossible.
+      - **The trick:** in the SVM dual, the training data appears **only through inner products** between pairs of instances. So you never need the coordinates in the high-dimensional space — only the inner product there. A **kernel function $K(x_i, x_j)$** computes exactly that inner product implicitly, using only the original coordinates.
+      - **Common kernels:** the **polynomial** kernel corresponds to monomials up to a given degree (parameters: degree, coef0 for how much high-degree terms count); the **RBF / Gaussian** kernel measures similarity by distance, allowing smooth and highly flexible boundaries (parameter: gamma, the reach of each point's influence).
+      - **Consequence:** you get non-linear decision boundaries at roughly the cost of a linear model, and the solution still depends only on the support vectors.
+    note: |-
+      One sentence version: a kernel gives you the inner product in a high-dimensional space without ever going there.
+
+      **In plain words.** If two classes can't be split by a straight line, they often can be in a **higher-dimensional space**. Actually building that space is expensive or impossible. A kernel is the shortcut: it computes the one quantity the maths needs — the dot product in that space — directly from the original coordinates.
+
+      ```text
+      Two circles, one inside the other: no straight line works.
+      Add a third axis z = x² + y² and the inner circle lifts
+      up — now a flat plane separates them.
+      The kernel gives you that without computing z.
+      ```
+
+  - id: seca-10
+    q: |-
+      **Generative vs discriminant.** Explain the two approaches to building a classifier, with examples.
+    a: |-
+      - **Discriminant approach** asks: *what is the best prediction of the class given this data?* It models the decision boundary directly, by choosing a loss function and applying Empirical Risk Minimisation. Examples: **logistic regression** (probabilistic discriminant, trained by minimising negative log-likelihood / log loss) and **SVM** (trained with hinge loss).
+      - **Generative approach** asks: *which class tends to produce data that looks like this?* It models the feature distribution of each class separately — p(x | y) — plus the class priors, then applies **Bayes' theorem** to obtain the posterior p(y | x).
+      - **Gaussian Discriminant Analysis** assumes each class is multivariate Gaussian. **LDA** forces all classes to share one covariance matrix, so the quadratic terms cancel and the boundary is **linear**. **QDA** gives each class its own covariance matrix, producing **curved, quadratic** boundaries but requiring more parameters and more data.
+      - **Naive Bayes** is generative and adds the **conditional independence assumption**: features are independent given the class. That turns an intractable joint density into a product of one-dimensional densities. The assumption is almost always false, yet it works very well on high-dimensional data such as spam filtering.
+    note: |-
+      Discriminant = draw the boundary. Generative = model each class, then use Bayes.
+
+      **In plain words.** **Discriminant**: learn where the border between the classes is. **Generative**: learn what each class looks like, then ask which class most likely produced this point.
+
+      Logistic regression and SVM draw the border. Naive Bayes and LDA/QDA describe the classes and use Bayes' theorem to work backwards.
+
+      ```text
+      Discriminant: "what separates cats from dogs?"
+      Generative:   "what does a typical cat look like?
+                     what does a typical dog look like?
+                     which is this more likely to be?"
+      ```
+
+  - id: seca-11
+    topic: trees
+    q: |-
+      **Decision trees (CART).** How is a tree fitted, what are the splitting criteria, and how is overfitting controlled?
+    a: |-
+      - A CART model **hierarchically partitions the feature space into rectangular regions** by binary splits, and predicts a constant in each leaf. Structure: root node → internal nodes → terminal nodes (leaves).
+      - **Fitting is a recursive greedy search:** at each node the algorithm exhaustively tries every feature and every candidate split point, and keeps the split that minimises the empirical risk (impurity) of the two resulting child nodes. It then recurses. Greedy means it never revisits an earlier split, so the tree found is locally, not globally, optimal.
+      - **Splitting criteria — regression:** minimise the total squared error (L2 loss) or the variance in the children. **Classification:** minimise **Gini impurity** (equivalent to the Brier score) or **entropy** (equivalent to log loss).
+      - **Overfitting:** left unrestricted a tree grows until every leaf holds a single observation, which fits the training data perfectly and generalises terribly.
+      - **Control — pre-pruning (stopping criteria):** limits on max_depth, max_leaf_nodes, min_samples_split, min_samples_leaf. **Post-pruning — cost-complexity pruning (CCP):** grow a large tree, then remove the least informative branches, governed by a parameter α that penalises complexity.
+      - Trees are highly interpretable but **unstable** — a small change in the data can produce a very different tree. That instability is exactly what ensembles fix.
+    note: |-
+      Greedy + exhaustive is the phrase they want for fitting. Gini ↔ Brier, entropy ↔ log loss is the pairing they want for criteria.
+
+      **In plain words.** A decision tree is a **flowchart of yes/no questions, built automatically**. At each step it tries every possible question on every column, keeps whichever one best separates the data, and repeats on each half.
+
+      Left alone it keeps splitting until every leaf holds one example — that's memorisation — so you either stop it early or grow it fully and cut it back.
+
+      ```text
+      petal length < 2.45 ?
+         yes → setosa
+         no  → petal width < 1.75 ?
+                  yes → versicolor
+                  no  → virginica
+      ```
+
+  - id: seca-12
+    q: |-
+      **k-NN.** Explain the prediction rule, distance metrics, the role of scaling, and how k affects bias and variance.
+    a: |-
+      - **Idea:** predict for a new point by looking at the **k most similar (closest) points** in the training set. It is **lazy and non-parametric**: there is no training phase, all the work happens at prediction time.
+      - **Prediction rules:** classification uses a **majority vote** among the k neighbours; regression uses the **average** (or a weighted average) of their target values.
+      - **Distance metrics:** **Euclidean** is typical for continuous data; **Manhattan** and the general **Minkowski** distance are alternatives; **Gower** handles mixed numeric and categorical features.
+      - **Weighting:** uniform k-NN treats all k neighbours equally; **weighted** k-NN gives closer points more influence (w = 1/d), giving smoother transitions and better capture of local detail.
+      - **Scaling is mandatory:** the method is entirely distance-based, so without standardisation a feature with a large range (income) dominates one with a small range (age) and the neighbourhood is decided by the units you happened to use.
+      - **k and the trade-off:** a **small k** gives a complex, jagged boundary — low bias, **high variance**, overfitting. A **large k** smooths everything into broad trends — **high bias**, low variance. k is chosen by cross-validation.
+    note: |-
+      Two things always score: scaling is mandatory, and small k = high variance, large k = high bias.
+
+      **In plain words.** There is **no training at all**. To classify a new point you look at the k nearest stored examples and take the majority vote.
+
+      "Nearest" is a distance, so if one column is in euros and another in years, the euros swamp everything — scaling is not optional here.
+
+      ```text
+      k = 1   →  boundary hugs every point, jagged (overfit)
+      k = 100 →  boundary is a smooth blob (underfit)
+
+      Small k = high variance. Large k = high bias.
+      ```

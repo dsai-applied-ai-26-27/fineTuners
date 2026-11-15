@@ -1,0 +1,190 @@
+title: Forward kinematics
+topic: kinematics
+lecture: 03-forward-kinematics
+description: Homogeneous transformations, their composition and inverse, motion commands, and the standard Denavit-Hartenberg convention from lecture 3.
+
+cards:
+  - id: fk-homogeneous
+    hy: true
+    q: |-
+      Write a homogeneous transformation and what each block means.
+    a: |-
+      $$\boldsymbol{T}^0_1 = \begin{bmatrix} \boldsymbol{R}^0_1 & \boldsymbol{d}^0 \\ \boldsymbol{0}^\top & 1 \end{bmatrix}$$
+      The rotation block holds the local axes in frame $\{0\}$, the last column the position
+      of the local origin in frame $\{0\}$; the last row keeps the final coordinate 1.
+
+  - id: fk-why-4x4
+    q: |-
+      Why is a fourth coordinate needed?
+    a: |-
+      $\boldsymbol{p}^0 = \boldsymbol{R}\boldsymbol{p}^1 + \boldsymbol{d}$ is affine. A
+      $3 \times 3$ matrix maps zero to zero and cannot add a translation; appending a 1 lets
+      one matrix product do rotation and translation.
+
+  - id: fk-point-vector
+    hy: true
+    q: |-
+      What final homogeneous coordinate does a point get, and a free vector? Why?
+    a: |-
+      A point 1, a direction 0. The 0 multiplies the translation column, so directions are
+      only rotated.
+    hook: |-
+      One for places, zero for directions.
+
+  - id: fk-compose
+    hy: true
+    q: |-
+      Compose $\boldsymbol{T}^0_1$ and $\boldsymbol{T}^1_2$: rotation and translation of
+      $\boldsymbol{T}^0_2$.
+    a: |-
+      $\boldsymbol{R}^0_2 = \boldsymbol{R}^0_1\boldsymbol{R}^1_2$ and
+      $\boldsymbol{d}^0_2 = \boldsymbol{d}^0_1 + \boldsymbol{R}^0_1\boldsymbol{d}^1_2$. The
+      second translation is rotated into frame $\{0\}$ before adding.
+
+  - id: fk-add-translations
+    q: |-
+      Camera at $(0.40, 0.20, 0.10)$ with $\boldsymbol{R}_z(90^\circ)$ sees a workpiece at
+      $(0.10, 0.20, 0)$ in camera coordinates. Why is $(0.50, 0.40, 0.10)$ wrong?
+    a: |-
+      The two columns are in different frames. Rotating first gives $(-0.20, 0.10, 0)$, so the
+      workpiece is at $(0.20, 0.30, 0.10)$.
+
+  - id: fk-inverse
+    hy: true
+    q: |-
+      Write the inverse of a homogeneous transformation.
+    a: |-
+      $$\boldsymbol{T}^{-1} = \begin{bmatrix} \boldsymbol{R}^\top & -\boldsymbol{R}^\top\boldsymbol{d} \\ \boldsymbol{0}^\top & 1 \end{bmatrix}$$
+    note: |-
+      Not the transpose of the whole matrix: only the rotation block is orthogonal.
+
+  - id: fk-checks
+    q: |-
+      Three quick checks of a transformation?
+    a: |-
+      The local origin maps to the translation column; a local unit direction (final
+      coordinate 0) maps to its rotation column; forward then inverse returns the start.
+
+  - id: fk-handedness
+    hy: true
+    q: |-
+      A completed frame has orthonormal columns. What else must hold?
+    a: |-
+      Right-handedness, $\boldsymbol{n} \times \boldsymbol{s} = \boldsymbol{a}$, i.e.
+      $\det\boldsymbol{R} = +1$. With $-1$ it is a reflection, not a rotation.
+
+  - id: fk-current-fixed
+    hy: true
+    q: |-
+      Current-frame against fixed-frame motion commands: which side does $\boldsymbol{U}$ go on?
+    a: |-
+      Current frame: $\boldsymbol{T}\boldsymbol{U}$ (right). Fixed frame:
+      $\boldsymbol{U}\boldsymbol{T}$ (left).
+
+  - id: fk-approach-move
+    q: |-
+      Move the tool $h$ along its approach axis. New origin?
+    a: |-
+      $\boldsymbol{d} + h\boldsymbol{a}$, with $\boldsymbol{a}$ the third rotation column.
+
+  - id: fk-rotation-centre
+    hy: true
+    q: |-
+      Rotate a body by $\boldsymbol{Q}$ about an axis through the point $\boldsymbol{c}$:
+      the motion matrix?
+    a: |-
+      $$\boldsymbol{U}_c = \begin{bmatrix} \boldsymbol{Q} & (\boldsymbol{I} - \boldsymbol{Q})\boldsymbol{c} \\ \boldsymbol{0}^\top & 1 \end{bmatrix}$$
+      Premultiplying by plain $\boldsymbol{T}(\boldsymbol{Q})$ rotates about the world origin
+      and moves the body's origin too.
+    hook: |-
+      An axis needs a direction and a location.
+
+  - id: fk-chain
+    cloze: |-
+      Forward kinematics computes the {{tool pose}} from known {{joint values}}:
+      $\boldsymbol{T}^0_n(\boldsymbol{q}) =$ {{$\boldsymbol{A}_1(q_1)\cdots\boldsymbol{A}_n(q_n)$}}.
+
+  - id: fk-dh-axis
+    hy: true
+    q: |-
+      In standard DH, which axis describes joint $i$?
+    a: |-
+      $z_{i-1}$. The axis of joint 2 is $z_1$; $z_n$ belongs to the final frame and adds no
+      joint.
+
+  - id: fk-dh-x
+    q: |-
+      How are $x_i$, $O_i$ and $y_i$ chosen?
+    a: |-
+      $x_i$ along a common normal of $z_{i-1}$ and $z_i$; $O_i$ where it meets $z_i$;
+      $\boldsymbol{y}_i = \boldsymbol{z}_i \times \boldsymbol{x}_i$.
+
+  - id: fk-dh-params
+    hy: true
+    q: |-
+      Name and define the four DH parameters.
+    a: |-
+      - $\theta_i$, joint angle: from $x_{i-1}$ to $x_i$ about $z_{i-1}$.
+      - $d_i$, joint offset: along $z_{i-1}$ from $O_{i-1}$ to $C_i$.
+      - $\ell_i$, link length: along $x_i$ from $C_i$ to $O_i$.
+      - $\alpha_i$, link twist: from $z_{i-1}$ to $z_i$ about $x_i$.
+
+  - id: fk-dh-four
+    q: |-
+      Why do four DH parameters suffice when a pose has six degrees of freedom?
+    a: |-
+      The frame assignment is restricted: $x_i$ must meet $z_{i-1}$ and be perpendicular to
+      it. The reduction comes from the geometry of the frames, not the robot.
+
+  - id: fk-dh-matrix
+    hy: true
+    q: |-
+      Write $\boldsymbol{A}_i$ as a product of elementary transforms.
+    a: |-
+      $$\boldsymbol{A}_i = \boldsymbol{T}_z(\theta_i)\,\boldsymbol{T}_{trans}(0,0,d_i)\,\boldsymbol{T}_{trans}(\ell_i,0,0)\,\boldsymbol{T}_x(\alpha_i)$$
+      Each step about the current frame, so postmultiplied. Translation column
+      $(\ell_i\cos\theta_i, \ell_i\sin\theta_i, d_i)$.
+
+  - id: fk-revolute-prismatic
+    q: |-
+      Which DH parameter is the variable for a revolute joint, and for a prismatic one?
+    a: |-
+      Revolute: $\theta_i = q_i + \theta_{i,0}$. Prismatic: $d_i = q_i + d_{i,0}$. The other
+      three stay fixed.
+
+  - id: fk-intersecting
+    q: |-
+      Two successive joint axes intersect. What is zero, and how is $x_i$ chosen?
+    a: |-
+      $\ell_i = 0$; $O_i$ at the intersection, $x_i$ along $\pm\boldsymbol{z}_{i-1} \times \boldsymbol{z}_i$.
+      The offset $d_i$ may still be non-zero.
+
+  - id: fk-parallel
+    q: |-
+      Two successive axes are parallel. What about $d_i$ and $\alpha_i$?
+    a: |-
+      Infinitely many common normals; one through $O_{i-1}$ gives $d_i = 0$. $\alpha_i = 0$
+      if the positive directions agree, $\pi$ if they are opposite.
+
+  - id: fk-2r
+    hy: true
+    q: |-
+      DH table and TCP of the planar 2R arm.
+    a: |-
+      Rows $(q_1, 0, l_1, 0)$ and $(q_2, 0, l_2, 0)$:
+      $$x = l_1\cos q_1 + l_2\cos(q_1+q_2), \quad y = l_1\sin q_1 + l_2\sin(q_1+q_2), \quad \phi = q_1 + q_2 .$$
+
+  - id: fk-tool-base
+    hy: true
+    q: |-
+      Where do base and tool calibration go in the chain?
+    a: |-
+      $\boldsymbol{T}^G_E = \boldsymbol{T}^G_0\boldsymbol{A}_1\cdots\boldsymbol{A}_n\boldsymbol{T}^n_E$:
+      base on the left, tool on the right, by the frame indices.
+
+  - id: fk-modified
+    q: |-
+      Can a modified-DH table be used in the standard DH matrix?
+    a: |-
+      No: modified DH places frames differently and multiplies in another order. Label
+      every table "standard DH".

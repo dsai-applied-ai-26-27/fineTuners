@@ -1,0 +1,99 @@
+# Ids are permanent: people's progress is keyed by them.
+title: 'Morning warm-up'
+topic: framing
+description: 'Six cards for the way in on exam morning. Not for the night before.'
+
+cards:
+  - id: warm-01
+    q: |-
+      Any sklearn model, three lines.
+    a: |-
+      ```python
+      model = SomeModel(hyperparameters)
+      model.fit(X_train, y_train)
+      y_pred = model.predict(X_test)
+      ```
+    note: |-
+      Only the constructor changes.
+
+      **In plain words.** Build it, fit it, predict with it. The only thing that changes between questions is the first line.
+
+  - id: warm-02
+    topic: preprocessing
+    q: |-
+      Any transformer, three lines.
+    a: |-
+      ```python
+      scaler = StandardScaler()
+      X_train_scaled = scaler.fit_transform(X_train)
+      X_test_scaled  = scaler.transform(X_test)
+      ```
+    note: |-
+      fit_transform on train, transform on test.
+
+      **In plain words.** Learn on train, apply to test. fit_transform then transform — never fit on the test set.
+
+  - id: warm-03
+    q: |-
+      The end-to-end task shape.
+    a: |-
+      ```python
+      X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+      scaler = StandardScaler()
+      X_train_scaled = scaler.fit_transform(X_train)
+      X_test_scaled  = scaler.transform(X_test)
+      model = SomeModel(random_state=42)
+      model.fit(X_train_scaled, y_train)
+      print(mean_squared_error(y_test, model.predict(X_test_scaled)))
+      ```
+    note: |-
+      Split → scale → fit → predict → metric.
+
+      **In plain words.** Split → scale → fit → predict → measure. The shape of every "train a model and report the error" question.
+
+  - id: warm-04
+    topic: preprocessing
+    q: |-
+      Pipeline and ColumnTransformer — how many items per tuple?
+    a: |-
+      ```python
+      Pipeline([("name", Transformer()), ("model", Estimator())])          # 2-tuples
+
+      ColumnTransformer([("num", num_pipeline, num_attribs),
+                         ("cat", OneHotEncoder(), cat_attribs)])           # 3-tuples
+      ```
+    note: |-
+      Count the tuple. Two = Pipeline, three = ColumnTransformer.
+
+      **In plain words.** Count the tuple. Two items = Pipeline (steps in order). Three items = ColumnTransformer (which columns go where).
+
+  - id: warm-05
+    topic: sequences
+    q: |-
+      Keras Sequential, all the way to training.
+    a: |-
+      ```python
+      model = keras.models.Sequential([ ...layers... ])
+      model.compile(loss="mse", optimizer="adam", metrics=["accuracy"])
+      history = model.fit(X_train, y_train, epochs=20)
+      ```
+    note: |-
+      Build → compile → fit.
+
+      **In plain words.** Build the list of layers, compile, fit. Every Keras question is only asking what goes in the list.
+
+  - id: warm-06
+    topic: sequences
+    q: |-
+      The recurrent trio.
+    a: |-
+      ```python
+      keras.layers.SimpleRNN(20, return_sequences=True, input_shape=[None, 1]),
+      keras.layers.LSTM(20, return_sequences=True),
+      keras.layers.GRU(20, return_sequences=True),
+      keras.layers.TimeDistributed(keras.layers.Dense(10))
+      ```
+    note: |-
+      Interchangeable names in the same slot. return_sequences on every layer feeding another.
+
+      **In plain words.** SimpleRNN, LSTM and GRU are interchangeable names in the same slot. return_sequences=True on every layer that feeds another one.

@@ -1,0 +1,141 @@
+# Ids are permanent: people's progress is keyed by them.
+title: 'Room 5 · Bathroom: Evaluation, metrics, resampling'
+topic: evaluation
+encodes: |-
+  The room of honest mirrors. How well does it really do — and how do you get a stable estimate when data is scarce? 9 stops, one exam-ready code pattern or idea at each.
+intro: |-
+  Room 5 of 12 on the walk from the front door to the roof: your own bathroom, or whatever you substituted for it. Put each scene on the object itself, in this order: the mirror, the two taps, the shower dial, the bathroom scales, the medicine cabinet, the towel rail, the washing machine, the fogged mirror, the measuring jug on the shelf. The method is in [](guide:memory-palace).
+
+loci:
+  - id: s5-1
+    place: 'The mirror'
+    image: |-
+      **A mirror cracked into four panes.** The bathroom mirror is split into four panes. Top-left shows the healthy people you correctly ignored, top-right the healthy people you dragged to hospital, bottom-left the sick people you sent home, bottom-right the sick people you saved. You have to look at all four; the whole room is about refusing to look at only one.
+    means: |-
+      **Confusion matrix from cross-validated predictions.** **cross_val_predict returns predictions** (one clean out-of-fold prediction per training instance), whereas **cross_val_score returns scores** (one number per fold). You need predictions to build a confusion matrix. Layout: rows = actual, columns = predicted, so [[TN, FP], [FN, TP]].
+
+      ```python
+      from sklearn.model_selection import cross_val_predict
+      from sklearn.metrics import confusion_matrix, precision_score, recall_score
+
+      y_train_pred = cross_val_predict(sgd_clf, X_train, y_train, cv=3)
+
+      print(confusion_matrix(y_train, y_train_pred))
+      print(precision_score(y_train, y_train_pred))
+      print(recall_score(y_train, y_train_pred))
+      ```
+
+      - `cv=3` (dial): Number of folds. Each prediction comes from a model that never saw that instance.
+    refs: ["guide:05-evaluation"]
+
+  - id: s5-2
+    place: 'The two taps'
+    image: |-
+      **Hot tap, cold tap — turning one turns the other.** Two taps over the sink. **Precision**: of the water you called hot, how much actually was. **Recall**: of all the hot water in the building, how much you caught. They are plumbed together — open one and the other closes. The little brass fitting joining them is stamped **F1**.
+    means: |-
+      **Precision, recall and F1.** **Precision = TP / (TP + FP)** — trustworthiness of a positive prediction. **Recall (sensitivity, TPR) = TP / (TP + FN)** — coverage of the actual positives. **F1 = harmonic mean**, which punishes imbalance between them far harder than an average would. Which one you optimise is a business decision: a spam filter wants precision, a cancer screen wants recall.
+    refs: ["guide:05-evaluation"]
+
+  - id: s5-3
+    place: 'The shower dial'
+    image: |-
+      **The dial that trades one tap for the other.** You reach for the shower dial. Turn it **up** and the model only shouts when it is very sure: fewer alarms, almost all correct — precision up, recall down. Turn it **down** and it screams at everything — recall up, precision down. There is no setting where both are perfect.
+    means: |-
+      **Moving the decision threshold.** Classifiers output **hard labels, probabilities, or scores**. Continuous outputs are preferred — more informative and easier to optimise. A threshold c turns them into labels: typically **0.5 for probabilities, 0 for scores**. `np.argmax(boolean_array)` returns the first True, which is the idiom for 'the first threshold that reaches this precision'.
+
+      ```python
+      y_scores = sgd_clf.decision_function([some_digit])
+      y_some_digit_pred = (y_scores > 8000)
+
+      # get out-of-fold scores, not labels, to sweep the threshold
+      y_scores = cross_val_predict(sgd_clf, X_train, y_train_5, cv=3,
+                                   method="decision_function")
+
+      from sklearn.metrics import precision_recall_curve
+      precisions, recalls, thresholds = precision_recall_curve(y_train_5, y_scores)
+
+      # smallest threshold that reaches 90% precision
+      threshold_90 = thresholds[np.argmax(precisions >= 0.90)]
+      y_train_pred_90 = (y_scores >= threshold_90)
+      ```
+
+      - `method="decision_function"` (structural): Ask for raw scores instead of hard labels. Use method="predict_proba" for models that give probabilities (RandomForest, Naive Bayes) and take column [:, 1].
+    refs: ["guide:05-evaluation"]
+
+  - id: s5-4
+    place: 'The bathroom scales'
+    image: |-
+      **Two scales, one lies when the room is empty.** Two sets of scales sit on the tiles. The **ROC** scale weighs true alarms against false alarms and looks magnificent in an empty building, because it gets credit for all the rooms it correctly left alone. The **PR** scale refuses to count empty rooms at all, and it is the one that tells you the truth when the thing you are hunting is rare.
+    means: |-
+      **ROC and precision-recall curves.** **ROC** plots TPR against FPR across all thresholds; **AUC** = 1.0 perfect, 0.5 random. A model 'dominates' another if its curve is above everywhere. **PR curves are superior for heavily imbalanced data** precisely because they ignore true negatives: an ROC curve can look excellent purely because a huge majority of negatives are handled correctly, while the PR curve exposes that performance on the rare positive class is poor.
+
+      ```python
+      from sklearn.metrics import roc_curve, roc_auc_score
+      fpr, tpr, thresholds = roc_curve(y_train_5, y_scores)
+      roc_auc_score(y_train_5, y_scores)
+      ```
+    refs: ["guide:05-evaluation"]
+
+  - id: s5-5
+    place: 'The medicine cabinet'
+    image: |-
+      **The cabinet that is right 99.5% of the time and kills you.** Open the medicine cabinet and a doctor inside says **"you're fine"** to everyone who ever opens it. His accuracy is 99.5%. He has never once caught the thing you came in for.
+    means: |-
+      **The accuracy paradox and imbalanced costs.** **Accuracy paradox**: with a rare positive class, always predicting negative scores brilliantly on accuracy and is useless. **Imbalanced costs**: a false negative (sick patient sent home) is usually far more damaging than a false positive. Hence confusion matrix, precision/recall, F1 and PR curves instead of accuracy.
+    refs: ["guide:05-evaluation"]
+
+  - id: s5-6
+    place: 'The towel rail'
+    image: |-
+      **One towel folded into ten, each corner taking a turn.** A single towel is folded into ten sections. Nine sections dry you; the tenth judges the job. Then they rotate, and rotate again, ten times — and the honest score is the average. A **fresh, unused towel** is unfolded for each round, never the damp one from the last.
+    means: |-
+      **k-fold cross-validation.** **k-fold CV**: split into k folds, train on k−1, test on the held-out one, rotate, average. **Stratified** CV keeps each fold's class distribution equal to the whole dataset's — critical for imbalanced classes. A single train/test split has **high pessimistic bias** if the training part is too small, and **high variance** if the test part is too small; resampling fixes both.
+
+      ```python
+      from sklearn.model_selection import cross_val_score, StratifiedKFold
+      from sklearn.base import clone
+
+      cross_val_score(sgd_clf, X_train, y_train_5, cv=3, scoring="accuracy")
+
+      skfolds = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
+      for train_index, test_index in skfolds.split(X_train, y_train_5):
+          clone_clf = clone(sgd_clf)          # fresh, UNTRAINED copy each fold
+          clone_clf.fit(X_train[train_index], y_train_5[train_index])
+          y_pred = clone_clf.predict(X_train[test_index])
+      ```
+
+      - `n_splits=3` (dial): Number of folds. k=10 is the common default — it balances bias and variance of the estimate.
+      - `shuffle=True` (dial): Shuffle before splitting, in case the data arrived sorted by class or time.
+      - `clone(model)` (structural): Returns an untrained copy with the same hyperparameters, so fold 2 has not already seen fold 1's data.
+    refs: ["guide:05-evaluation"]
+
+  - id: s5-7
+    place: 'The washing machine'
+    image: |-
+      **The drum that draws the same sock twice.** The washing machine tumbles the laundry and pulls out a full load — but it puts each sock **back in the drum after picking it**, so some socks come out twice and roughly a third never come out at all. Those left inside are dry, unused, and free to judge the wash: **out-of-bag**.
+    means: |-
+      **Bootstrap, subsampling and leave-one-object-out.** **Bootstrap**: sample n instances *with replacement*. On average about **63.2%** of the unique instances appear; the remaining ~36.8% are **out-of-bag** and can serve as a test set for free. **Subsampling / Monte-Carlo CV**: randomly re-split train/test 50–200 times and average the errors. **Leave-One-Object-Out CV**: when several observations come from the same object (multiple scans of one patient, several clips of one speaker), the i.i.d. assumption fails — splitting them across train and test lets the model memorise object-specific quirks and leak. LOOO-CV keeps every observation of an object entirely on one side of the split.
+    refs: ["guide:05-evaluation"]
+
+  - id: s5-8
+    place: 'The fogged mirror'
+    image: |-
+      **The mirror that fogs from either direction.** Steam builds and the mirror clouds two different ways. Wipe too roughly with a coarse cloth and you see only a blurry outline of yourself — that is **bias**. Polish obsessively and you start seeing every fingerprint and dust mote as if it were part of your face — that is **variance**.
+    means: |-
+      **Bias, variance, inner and outer loss.** **Bias / underfitting**: model too simple, misses the real pattern, high error on *both* training and test. **Variance / overfitting**: model too flexible, fits noise, very low training error but high test error. Test error against complexity is a **U**; the sweet spot balances the two. Also note **inner vs outer loss**: the inner loss is what training optimises (log loss, MSE) because it is differentiable; the outer loss is what you actually care about (cost-sensitive accuracy, F1) and may not be differentiable at all.
+    refs: ["guide:05-evaluation"]
+
+  - id: s5-9
+    place: 'The measuring jug on the shelf'
+    image: |-
+      **Three ways to measure a miss.** On the shelf stand three jugs. The first **squares** every error, so one wild miss fills it to the brim. The second just **adds up** the misses honestly. The third throws the numbers away and only keeps the **finishing order**.
+    means: |-
+      **Regression metrics.** **MSE/RMSE**: common, heavily influenced by outliers (it is the L2 loss again). **MAE**: more robust and more intuitive — average error in the target's own units. **Spearman's ρ**: correlation of ranks, so it measures any monotonic relationship, is invariant to monotone transformations and extremely robust to extreme values. Naming convention: `*_error` means lower is better, `*_score` means higher is better, and both take `(y_true, y_pred)` in that order.
+
+      ```python
+      mse = mean_squared_error(y_test, y_pred)
+      rmse = np.sqrt(mse)
+      mae = mean_absolute_error(y_test, y_pred)
+      accuracy = accuracy_score(y_test, y_pred)
+      ```
+    refs: ["guide:05-evaluation"]

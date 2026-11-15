@@ -1,0 +1,222 @@
+# Terms of lecture 1 and the labs so far. Definitions follow the lecture slides and lab
+# sheets; ids are permanent.
+terms:
+  - id: g-system
+    term: System
+    topic: dynamic-systems
+    definition: |-
+      A collection of interacting components that transforms inputs and internal
+      conditions into observable outputs according to physical, logical or empirical
+      relationships.
+    see: [g-system-boundary]
+
+  - id: g-system-boundary
+    term: System boundary
+    topic: dynamic-systems
+    definition: |-
+      The modeller's choice of what the model includes and what is environment. Variables
+      crossing it become inputs, outputs or disturbances.
+    see: [g-system]
+
+  - id: g-dynamic-system
+    term: Dynamic system
+    topic: dynamic-systems
+    definition: |-
+      A system whose current behaviour depends on how it has evolved over time, not only on
+      the current input. Its memory comes from internal storage of energy, mass,
+      information or another quantity.
+    see: [g-static-system, g-state]
+
+  - id: g-static-system
+    term: Static system
+    topic: dynamic-systems
+    definition: |-
+      A system whose output is determined by the current input alone, such as an ideal gain
+      $y = Ku$: no state and no memory.
+    see: [g-dynamic-system, g-memoryless]
+
+  - id: g-input
+    term: Input
+    topic: dynamic-systems
+    definition: |-
+      A quantity intentionally applied to the system, $u(t)$. A control input can be
+      manipulated deliberately to influence it.
+    see: [g-disturbance, g-output]
+
+  - id: g-state
+    term: State
+    topic: dynamic-systems
+    definition: |-
+      The minimum internal information that, together with the future inputs, determines
+      the system's future evolution; it summarises the relevant past. Generally a vector,
+      and not necessarily measured.
+    see: [g-output, g-initial-condition]
+
+  - id: g-output
+    term: Output
+    topic: dynamic-systems
+    definition: |-
+      The observed quantity or variable of interest, $y(t) = h(x, u)$. Not a synonym of
+      the state: often only part, or a function, of the state is observed.
+    see: [g-state]
+
+  - id: g-parameter
+    term: Parameter
+    topic: dynamic-systems
+    definition: |-
+      A model property treated as fixed (or slowly varying) during one simulation, such as
+      a mass, a stiffness or a thermal resistance.
+
+  - id: g-disturbance
+    term: Disturbance
+    topic: dynamic-systems
+    definition: |-
+      An external influence on the system that the modeller does not command, $d(t)$; for
+      a room, the outdoor temperature or an opened window.
+    see: [g-input]
+
+  - id: g-initial-condition
+    term: Initial condition
+    topic: dynamic-systems
+    definition: |-
+      The state at the start of a simulation. It summarises the effect of the system's past
+      at $t = 0$.
+    see: [g-state]
+
+  - id: g-equilibrium
+    term: Equilibrium point
+    topic: dynamic-systems
+    definition: |-
+      A pair $(x_e, u_e)$ with $f(x_e, u_e) = 0$ for $\dot x = f(x, u)$: the state stays
+      constant while the input and conditions do. An operating point is an equilibrium a
+      system normally works near.
+
+  - id: g-feedback
+    term: Feedback
+    topic: dynamic-systems
+    definition: |-
+      A path through which the current or past output influences the system's future
+      evolution. Negative feedback counteracts deviations; positive feedback reinforces
+      change.
+
+  - id: g-linear-system
+    term: Linear system
+    topic: dynamic-systems
+    definition: |-
+      A system that obeys superposition: if $u_1 \to y_1$ and $u_2 \to y_2$ then
+      $au_1 + bu_2 \to ay_1 + by_2$.
+    see: [g-lti]
+
+  - id: g-lti
+    term: LTI system
+    topic: dynamic-systems
+    definition: |-
+      Linear time-invariant: responses scale and add, and the same input applied at a
+      later time gives the same response shifted. Such a system is described by one fixed
+      transfer function $G(s)$.
+    see: [g-linear-system, g-transfer-function]
+
+  - id: g-deterministic
+    term: Deterministic model
+    topic: dynamic-systems
+    definition: |-
+      A model that produces a unique trajectory for given inputs, parameters and initial
+      conditions.
+    see: [g-stochastic]
+
+  - id: g-stochastic
+    term: Stochastic model
+    topic: dynamic-systems
+    definition: |-
+      A model that includes random variables or processes explicitly, such as
+      $\dot x = f(x, u) + w(t)$ with noise $w$.
+    see: [g-deterministic]
+
+  - id: g-causal
+    term: Causal system
+    topic: dynamic-systems
+    definition: |-
+      A system whose output at time $t$ depends only on present and past information, not
+      on future inputs. Physical real-time systems are modelled as causal.
+    see: [g-memoryless]
+
+  - id: g-memoryless
+    term: Memoryless system
+    topic: dynamic-systems
+    definition: |-
+      A system whose output uses only the current input, such as $y(t) = u^2(t)$.
+    see: [g-causal, g-static-system]
+
+  - id: g-siso-mimo
+    term: SISO and MIMO
+    topic: dynamic-systems
+    definition: |-
+      Single-input single-output against multiple inputs and/or outputs, decided by the
+      dimensions of $u$ and $y$.
+
+  - id: g-autonomous
+    term: Autonomous system
+    topic: dynamic-systems
+    definition: |-
+      A system with no external input, $\dot x = f(x)$, driven only by its initial state.
+      A forced system has an input acting on it.
+
+  - id: g-lumped-distributed
+    term: Lumped and distributed models
+    topic: dynamic-systems
+    definition: |-
+      Lumped: a finite set of time-dependent variables, ordinary differential equations.
+      Distributed: the state depends on time and position, partial differential equations
+      such as the heat equation.
+
+  - id: g-state-space
+    term: State-space model
+    topic: dynamic-systems
+    definition: |-
+      A model in first-order vector form $\dot x = f(x, u, t)$, $y = g(x, u, t)$; for LTI
+      systems $\dot x = Ax + Bu$, $y = Cx + Du$.
+    see: [g-state, g-transfer-function]
+
+  - id: g-transfer-function
+    term: Transfer function
+    topic: dynamic-systems
+    definition: |-
+      $G(s) = Y(s)/U(s)$, the Laplace-domain input-output relation of an LTI system with
+      zero initial conditions. The internal state is not explicit in it.
+    see: [g-lti, g-state-space]
+
+  - id: g-transient-steady-state
+    term: Transient and steady state
+    topic: dynamic-systems
+    definition: |-
+      The split $y = y_{tr} + y_{ss}$ of a response into the transition from the initial
+      condition and the long-term behaviour under the applied input.
+
+  - id: g-time-constant
+    term: Time constant
+    topic: dynamic-systems
+    definition: |-
+      $T$ (or $\tau$) in a first-order system $T\dot y + y = Ku$: the step response reaches
+      63% of its final value $K$ at $t = T$.
+
+  - id: g-verification-validation
+    term: Verification and validation
+    topic: dynamic-systems
+    definition: |-
+      Verification asks whether the equations and code were implemented correctly;
+      validation asks whether the model is adequate for its real-world purpose.
+
+  - id: g-step-size
+    term: Step size
+    topic: simulink
+    definition: |-
+      The distance between two consecutive instants at which a solver computes the
+      solution. Too large a fixed step makes results inaccurate or unstable; it must
+      resolve the fastest dynamics that matter.
+
+  - id: g-identification
+    term: System identification
+    topic: matlab
+    definition: |-
+      Finding the parameters of a model from measured input-output data, as in Lab 2: the
+      gain $K$ and time constant $T$ that make $K(1 - e^{-t/T})$ fit a step response.

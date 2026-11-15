@@ -1,0 +1,20 @@
+# One file per course. Field reference: docs/content-types/course.md
+title: "Applied AI"
+code: "AAI"
+year: "2026-27"
+semester: 5
+status: active          # active | archived
+has_educator: true      # someone writes it: its page does not ask for an educator
+hue: 285                # course colour, 0-359 on the hue wheel
+order: 1
+description: A seminar course in which each student or team takes an AI idea to an evaluated project. Defining a problem, finding data, setting a baseline, choosing a method, evaluating it and defending the result.
+
+# Two units so far: how the seminar work runs, and the week 2 material on designing a
+# project. Add units as the weeks arrive. Ids are permanent.
+topics:
+  - id: seminar
+    title: Seminar work
+    short: Seminar
+  - id: design
+    title: Designing an Applied AI project
+    short: Project design

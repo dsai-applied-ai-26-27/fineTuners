@@ -1,0 +1,256 @@
+sections:
+  - title: Control and joints
+    topic: intro
+    rows:
+      - id: f-position-error
+        name: Joint position error
+        formula: |-
+          $$e(t) = q_d(t) - q(t)$$
+        note: |-
+          $q_d$ is the desired and $q$ the measured joint coordinate at time $t$.
+      - id: f-proportional
+        name: Proportional control law
+        formula: |-
+          $$u(t) = K_p\, e(t)$$
+        note: |-
+          $u$ is the actuator command and $K_p$ the gain. Illustrative only: a larger gain
+          can cause overshoot or oscillation.
+      - id: f-configuration
+        name: Configuration vector of a serial arm
+        formula: |-
+          $$\boldsymbol{q} = \begin{bmatrix} q_1 & q_2 & \cdots & q_n \end{bmatrix}^\top$$
+        note: |-
+          One coordinate per one-DoF joint: an angle for a revolute joint, a displacement
+          for a prismatic joint.
+      - id: f-helical
+        name: Advance of a helical joint
+        formula: |-
+          $$d = \frac{h\,\theta}{2\pi}$$
+        note: |-
+          $h$ is the screw lead (advance per full revolution), $\theta$ the rotation in
+          radians. Translation is tied to rotation, so the joint has one DoF.
+
+  - title: Coordinates
+    topic: intro
+    rows:
+      - id: f-cylindrical
+        name: Cylindrical to Cartesian coordinates
+        formula: |-
+          $$x = r \cos\theta, \qquad y = r \sin\theta$$
+        note: |-
+          $r$ is the radius, $\theta$ the angle about the vertical axis. The height $z$ is
+          unchanged.
+      - id: f-spherical
+        name: Spherical to Cartesian coordinates
+        formula: |-
+          $$x = \rho \cos\alpha \cos\theta, \qquad y = \rho \cos\alpha \sin\theta, \qquad z = \rho \sin\alpha$$
+        note: |-
+          $\rho$ is the distance from the origin, $\alpha$ the elevation from the horizontal
+          plane, $\theta$ the azimuth about the vertical axis. Other conventions exist.
+
+  - title: Planar 2R arm
+    topic: intro
+    rows:
+      - id: f-2r-forward
+        name: Forward kinematics of the planar 2R arm
+        formula: |-
+          $$\begin{aligned} x &= l_1 \cos q_1 + l_2 \cos(q_1 + q_2) \\ y &= l_1 \sin q_1 + l_2 \sin(q_1 + q_2) \\ \phi &= q_1 + q_2 \end{aligned}$$
+        note: |-
+          $l_1, l_2$ are the link lengths; $q_1$ is measured from the base $x$ axis and
+          $q_2$ relative to link 1; $\phi$ is the orientation of link 2.
+      - id: f-2r-workspace
+        name: Workspace bound of the ideal planar 2R arm
+        formula: |-
+          $$\lvert l_1 - l_2 \rvert \le \sqrt{x^2 + y^2} \le l_1 + l_2$$
+        note: |-
+          An annulus, or a disk when $l_1 = l_2$. Assumes unrestricted joints and no
+          collisions.
+      - id: f-differential-kinematics
+        name: Differential kinematics
+        formula: |-
+          $$\begin{bmatrix} \boldsymbol{v} \\ \boldsymbol{\omega} \end{bmatrix} = \boldsymbol{J}(\boldsymbol{q})\, \dot{\boldsymbol{q}}$$
+        note: |-
+          $\boldsymbol{v}$ is the linear velocity of the TCP, $\boldsymbol{\omega}$ the
+          angular velocity of the tool, $\dot{\boldsymbol{q}}$ the joint velocities and
+          $\boldsymbol{J}$ the geometric Jacobian.
+      - id: f-2r-singular
+        name: Tip velocity of the planar 2R arm at full extension
+        formula: |-
+          $$\dot x = 0, \qquad \dot y = (l_1 + l_2)\, \dot q_1 + l_2\, \dot q_2$$
+        note: |-
+          Holds at $q_1 = q_2 = 0$. No joint velocity moves the tip along $x$ at that
+          instant: a kinematic singularity.
+
+  - title: Rotation matrices
+    topic: transformations
+    rows:
+      - id: f-rot-planar
+        name: Planar rotation matrix
+        formula: |-
+          $$\boldsymbol{R}(\theta) = \begin{bmatrix} \cos\theta & -\sin\theta \\ \sin\theta & \cos\theta \end{bmatrix}$$
+        note: |-
+          Columns are the local $\boldsymbol{n}$ and $\boldsymbol{s}$ axes in global
+          coordinates. $\boldsymbol{R}^\top(\theta) = \boldsymbol{R}(-\theta)$.
+      - id: f-rot-columns
+        name: Rotation matrix from the local axes
+        formula: |-
+          $$\boldsymbol{R} = \begin{bmatrix} \boldsymbol{n} & \boldsymbol{s} & \boldsymbol{a} \end{bmatrix} = \begin{bmatrix} n_x & s_x & a_x \\ n_y & s_y & a_y \\ n_z & s_z & a_z \end{bmatrix}$$
+        note: |-
+          Normal, sliding and approach axes of the local frame, each expressed in the
+          global frame. Columns are axes; rows are global components.
+      - id: f-point-conversion
+        name: Point coordinates between a local and the global frame
+        formula: |-
+          $$\boldsymbol{p}^0 = \boldsymbol{d}^0 + \boldsymbol{R}\boldsymbol{p}^1, \qquad \boldsymbol{p}^1 = \boldsymbol{R}^\top(\boldsymbol{p}^0 - \boldsymbol{d}^0)$$
+        note: |-
+          $\boldsymbol{d}^0$ is the local origin in global coordinates. With coincident
+          origins $\boldsymbol{d}^0 = \boldsymbol{0}$.
+      - id: f-rot-properties
+        name: Defining properties of a rotation matrix
+        formula: |-
+          $$\boldsymbol{R}^\top\boldsymbol{R} = \boldsymbol{I}, \qquad \det(\boldsymbol{R}) = 1, \qquad \boldsymbol{R}^{-1} = \boldsymbol{R}^\top$$
+        note: |-
+          Together they define $SO(3)$. Determinant $-1$ would be a reflection.
+      - id: f-rot-z
+        name: Elementary rotation about z
+        formula: |-
+          $$\boldsymbol{R}_z(\theta) = \begin{bmatrix} \cos\theta & -\sin\theta & 0 \\ \sin\theta & \cos\theta & 0 \\ 0 & 0 & 1 \end{bmatrix}$$
+      - id: f-rot-x
+        name: Elementary rotation about x
+        formula: |-
+          $$\boldsymbol{R}_x(\theta) = \begin{bmatrix} 1 & 0 & 0 \\ 0 & \cos\theta & -\sin\theta \\ 0 & \sin\theta & \cos\theta \end{bmatrix}$$
+      - id: f-rot-y
+        name: Elementary rotation about y
+        formula: |-
+          $$\boldsymbol{R}_y(\theta) = \begin{bmatrix} \cos\theta & 0 & \sin\theta \\ 0 & 1 & 0 \\ -\sin\theta & 0 & \cos\theta \end{bmatrix}$$
+        note: |-
+          The minus sign is bottom left, unlike the other two.
+      - id: f-rot-chain
+        name: Orientation through a chain of frames
+        formula: |-
+          $$\boldsymbol{R}^0_N = \boldsymbol{R}^0_1 \boldsymbol{R}^1_2 \cdots \boldsymbol{R}^{N-1}_N, \qquad \boldsymbol{R}^N_0 = (\boldsymbol{R}^0_N)^\top$$
+        note: |-
+          $\boldsymbol{R}^0_1$ converts components from frame $\{1\}$ to frame $\{0\}$.
+      - id: f-rot-update
+        name: Adding a rotation about a current or a fixed axis
+        formula: |-
+          $$\boldsymbol{R}_{\text{new}} = \boldsymbol{R}\,\boldsymbol{Q}_{\text{local}} \quad \text{(current axis)}, \qquad \boldsymbol{R}_{\text{new}} = \boldsymbol{Q}_{\text{global}}\,\boldsymbol{R} \quad \text{(fixed axis)}$$
+        note: |-
+          Current: postmultiply. Fixed: premultiply.
+      - id: f-rot-similarity
+        name: The same rotation expressed in the global frame
+        formula: |-
+          $$\boldsymbol{Q}_{\text{global}} = \boldsymbol{R}\,\boldsymbol{Q}_{\text{local}}\,\boldsymbol{R}^\top$$
+        note: |-
+          A similarity transformation.
+
+  - title: Orientation parameterizations
+    topic: transformations
+    rows:
+      - id: f-zyz-matrix
+        name: Rotation matrix of intrinsic ZYZ Euler angles
+        formula: |-
+          $$\boldsymbol{R}_z(\phi)\boldsymbol{R}_y(\theta)\boldsymbol{R}_z(\psi) = \begin{bmatrix} c_\phi c_\theta c_\psi - s_\phi s_\psi & -c_\phi c_\theta s_\psi - s_\phi c_\psi & c_\phi s_\theta \\ s_\phi c_\theta c_\psi + c_\phi s_\psi & -s_\phi c_\theta s_\psi + c_\phi c_\psi & s_\phi s_\theta \\ -s_\theta c_\psi & s_\theta s_\psi & c_\theta \end{bmatrix}$$
+        note: |-
+          $\phi$ about $z$, $\theta$ about the current $y$, $\psi$ about the current $z$.
+          The third column is free of $\psi$.
+      - id: f-zyz-recover
+        name: ZYZ Euler angles from a rotation matrix
+        formula: |-
+          $$\theta = \operatorname{atan2}\!\Big(\sqrt{a_x^2 + a_y^2},\ a_z\Big), \qquad \phi = \operatorname{atan2}(a_y, a_x), \qquad \psi = \operatorname{atan2}(s_z, -n_z)$$
+        note: |-
+          Valid for $0 < \theta < \pi$. At $\theta = 0$ only $\phi + \psi$ is determined, at
+          $\theta = \pi$ only $\phi - \psi$.
+      - id: f-rpy-matrix
+        name: Rotation matrix of fixed-axis XYZ roll, pitch, yaw
+        formula: |-
+          $$\boldsymbol{R}_z(\gamma)\boldsymbol{R}_y(\beta)\boldsymbol{R}_x(\alpha) = \begin{bmatrix} c_\gamma c_\beta & c_\gamma s_\beta s_\alpha - s_\gamma c_\alpha & c_\gamma s_\beta c_\alpha + s_\gamma s_\alpha \\ s_\gamma c_\beta & s_\gamma s_\beta s_\alpha + c_\gamma c_\alpha & s_\gamma s_\beta c_\alpha - c_\gamma s_\alpha \\ -s_\beta & c_\beta s_\alpha & c_\beta c_\alpha \end{bmatrix}$$
+        note: |-
+          Roll $\alpha$ about fixed $x$, then pitch $\beta$ about fixed $y$, then yaw
+          $\gamma$ about fixed $z$. The first column is free of roll.
+      - id: f-rpy-recover
+        name: Roll, pitch and yaw from a rotation matrix
+        formula: |-
+          $$\beta = \operatorname{atan2}\!\Big(-n_z,\ \sqrt{n_x^2 + n_y^2}\Big), \qquad \gamma = \operatorname{atan2}(n_y, n_x), \qquad \alpha = \operatorname{atan2}(s_z, a_z)$$
+        note: |-
+          Valid for $-\pi/2 < \beta < \pi/2$. At $\beta = \pm\pi/2$ (gimbal lock) only
+          $\alpha - \gamma$ or $\alpha + \gamma$ is determined.
+      - id: f-axis-condition
+        name: Equation for the rotation axis
+        formula: |-
+          $$(\boldsymbol{R} - \boldsymbol{I})\,\boldsymbol{u} = \boldsymbol{0}, \qquad \boldsymbol{u}^\top\boldsymbol{u} = 1$$
+        note: |-
+          The axis is unchanged by the rotation. $\boldsymbol{u}$ and $-\boldsymbol{u}$ are
+          the same line; flipping the axis flips the sign of the angle.
+      - id: f-axis-angle
+        name: Rotation angle from the trace
+        formula: |-
+          $$\vartheta = \arccos\!\left(\frac{\operatorname{tr}(\boldsymbol{R}) - 1}{2}\right)$$
+        note: |-
+          Principal value $0 \le \vartheta \le \pi$, from
+          $\operatorname{tr}(\boldsymbol{R}) = 1 + 2\cos\vartheta$.
+
+  - title: Homogeneous transformations
+    topic: transformations
+    rows:
+      - id: f-homogeneous-matrix
+        name: Homogeneous transformation
+        formula: |-
+          $$\boldsymbol{T}^0_1 = \begin{bmatrix} \boldsymbol{R}^0_1 & \boldsymbol{d}^0 \\ \boldsymbol{0}^\top & 1 \end{bmatrix}, \qquad \boldsymbol{T}^0_1\begin{bmatrix} \boldsymbol{p}^1 \\ 1 \end{bmatrix} = \begin{bmatrix} \boldsymbol{p}^0 \\ 1 \end{bmatrix}$$
+        note: |-
+          A free vector takes final coordinate 0, so the translation does not act on it.
+      - id: f-homogeneous-compose
+        name: Composition
+        formula: |-
+          $$\boldsymbol{T}^0_2 = \boldsymbol{T}^0_1\boldsymbol{T}^1_2, \qquad \boldsymbol{d}^0_2 = \boldsymbol{d}^0_1 + \boldsymbol{R}^0_1\boldsymbol{d}^1_2$$
+        note: |-
+          Rotate the second translation into the first frame before adding.
+      - id: f-homogeneous-inverse
+        name: Inverse
+        formula: |-
+          $$\boldsymbol{T}^{-1} = \begin{bmatrix} \boldsymbol{R}^\top & -\boldsymbol{R}^\top\boldsymbol{d} \\ \boldsymbol{0}^\top & 1 \end{bmatrix}$$
+        note: |-
+          Not the transpose of the whole $4 \times 4$ matrix.
+      - id: f-motion-commands
+        name: Motion in the current and the fixed frame
+        formula: |-
+          $$\boldsymbol{T}_{new} = \boldsymbol{T}\boldsymbol{U}_{local}, \qquad \boldsymbol{T}_{new} = \boldsymbol{U}_{global}\boldsymbol{T}$$
+        note: |-
+          A move $h$ along the approach axis gives the origin $\boldsymbol{d} + h\boldsymbol{a}$.
+      - id: f-rotation-about-point
+        name: Rotation about an axis through a point
+        formula: |-
+          $$\boldsymbol{U}_c = \begin{bmatrix} \boldsymbol{Q} & (\boldsymbol{I} - \boldsymbol{Q})\boldsymbol{c}^0 \\ \boldsymbol{0}^\top & 1 \end{bmatrix}$$
+        note: |-
+          Leaves the point $\boldsymbol{c}^0$ fixed. Plain $\boldsymbol{T}(\boldsymbol{Q})$
+          rotates about the world origin.
+
+  - title: Denavit-Hartenberg
+    topic: kinematics
+    rows:
+      - id: f-dh-product
+        name: Standard DH link transformation
+        formula: |-
+          $$\boldsymbol{A}_i = \boldsymbol{T}_z(\theta_i)\,\boldsymbol{T}_{trans}(0,0,d_i)\,\boldsymbol{T}_{trans}(\ell_i,0,0)\,\boldsymbol{T}_x(\alpha_i)$$
+        note: |-
+          Joint angle $\theta_i$, offset $d_i$, link length $\ell_i$ (usually $a_i$), twist
+          $\alpha_i$. The axis of joint $i$ is $z_{i-1}$.
+      - id: f-dh-matrix
+        name: Standard DH matrix
+        formula: |-
+          $$\boldsymbol{A}_i = \begin{bmatrix} c_{\theta} & -s_{\theta}c_{\alpha} & s_{\theta}s_{\alpha} & \ell c_{\theta} \\ s_{\theta} & c_{\theta}c_{\alpha} & -c_{\theta}s_{\alpha} & \ell s_{\theta} \\ 0 & s_{\alpha} & c_{\alpha} & d \\ 0 & 0 & 0 & 1 \end{bmatrix}$$
+        note: |-
+          Subscripts $i$ dropped; $c_\theta = \cos\theta_i$, $s_\alpha = \sin\alpha_i$.
+      - id: f-forward-kinematics
+        name: Forward kinematics with base and tool
+        formula: |-
+          $$\boldsymbol{T}^G_E(\boldsymbol{q}) = \boldsymbol{T}^G_0\,\boldsymbol{A}_1(q_1)\cdots\boldsymbol{A}_n(q_n)\,\boldsymbol{T}^n_E$$
+        note: |-
+          Revolute joints vary $\theta_i$, prismatic joints vary $d_i$.
+      - id: f-revolute-prismatic-tcp
+        name: Revolute-prismatic arm
+        formula: |-
+          $$x = L\cos q_1, \qquad y = L\sin q_1, \qquad z = h + q_2$$
+        note: |-
+          Horizontal arm $L$ at height $h$, vertical prismatic joint $q_2$ (lecture 3,
+          Example 8).

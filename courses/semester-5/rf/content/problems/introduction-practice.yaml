@@ -1,0 +1,228 @@
+title: Introduction practice
+topic: intro
+instructions: |-
+  Short problems on lecture 1. The numbers are new; the shapes are the worked examples of
+  the notes (the planar 2R arm, the workspace bound, accuracy against repeatability). Work
+  on paper before opening a solution. Angles are in degrees unless a formula needs radians.
+
+questions:
+  - id: intro-p1
+    title: Forward kinematics of a planar 2R arm
+    points: 6
+    q: |-
+      A planar 2R arm has link lengths $l_1 = 2$ m and $l_2 = 1$ m. Its joints are at
+      $q_1 = 90^\circ$ and $q_2 = -90^\circ$.
+    parts:
+      - q: |-
+          Find the TCP position $(x, y)$ and the orientation $\phi$ of link 2.
+        points: 4
+        solution: |-
+          Link 2 points at angle $q_1 + q_2 = 0^\circ$.
+
+          $$x = l_1 \cos q_1 + l_2 \cos(q_1 + q_2) = 2 \cos 90^\circ + 1 \cos 0^\circ = 0 + 1 = 1 \text{ m}$$
+
+          $$y = l_1 \sin q_1 + l_2 \sin(q_1 + q_2) = 2 \sin 90^\circ + 1 \sin 0^\circ = 2 + 0 = 2 \text{ m}$$
+
+          $$\phi = q_1 + q_2 = 0^\circ$$
+
+          Link 1 points straight up and link 2 points to the right from its tip.
+      - q: |-
+          Check that this point respects the workspace bound of the ideal arm.
+        points: 2
+        solution: |-
+          The distance from the base is $\sqrt{1^2 + 2^2} = \sqrt{5} = 2.24$ m. The bound is
+          $\lvert l_1 - l_2 \rvert = 1 \le 2.24 \le 3 = l_1 + l_2$, so the point lies in the
+          annulus, as it must.
+    answer: |-
+      $(x, y) = (1, 2)$ m, $\phi = 0^\circ$.
+
+  - id: intro-p2
+    title: Two configurations for one target
+    points: 6
+    q: |-
+      A planar 2R arm has $l_1 = l_2 = 1$ m. The TCP must be at $(x, y) = (0, \sqrt{2})$ m;
+      the tool orientation is free. Find both configurations $(q_1, q_2)$ and the tool
+      orientation $\phi$ in each.
+    steps:
+      - do: |-
+          The target is at distance $\sqrt{2}$ from the base. With two unit links, the base,
+          the elbow and the TCP form a right angle at the elbow, so $q_2 = \pm 90^\circ$.
+        why: |-
+          Two sides of length $1$ meeting at $90^\circ$ span a diagonal of $\sqrt{2}$
+          (Pythagoras). Lecture 1 does not derive inverse kinematics; this problem is
+          solved by geometry and then checked with the forward equations.
+      - do: |-
+          The target lies along the $y$ axis, at $90^\circ$. The first link must point
+          $45^\circ$ to one side of that direction: $q_1 = 45^\circ$ or $q_1 = 135^\circ$.
+        why: |-
+          Base, elbow and TCP are three corners of a square whose diagonal runs from the
+          base to the TCP; a side makes $45^\circ$ with the diagonal.
+      - do: |-
+          Pair them so the second link turns back toward the target:
+          $(q_1, q_2) = (45^\circ, 90^\circ)$ and $(135^\circ, -90^\circ)$.
+        why: |-
+          From $q_1 = 45^\circ$ the arm must turn counterclockwise to reach the $y$ axis;
+          from $135^\circ$ clockwise.
+      - do: |-
+          Check the first: $x = \cos 45^\circ + \cos 135^\circ = 0$,
+          $y = \sin 45^\circ + \sin 135^\circ = \sqrt{2}$.
+          Check the second: $x = \cos 135^\circ + \cos 45^\circ = 0$,
+          $y = \sin 135^\circ + \sin 45^\circ = \sqrt{2}$.
+        why: |-
+          Forward kinematics confirms an inverse-kinematics answer.
+      - do: |-
+          $\phi = q_1 + q_2$ gives $135^\circ$ for the first and $45^\circ$ for the second.
+    answer: |-
+      $(q_1, q_2) = (45^\circ, 90^\circ)$ with $\phi = 135^\circ$, and
+      $(135^\circ, -90^\circ)$ with $\phi = 45^\circ$. Same position, different postures
+      and different tool orientations.
+
+  - id: intro-p3
+    title: Which targets are reachable?
+    points: 4
+    q: |-
+      An ideal planar 2R arm has $l_1 = 0.40$ m and $l_2 = 0.25$ m, with unrestricted joints
+      and no collisions. Decide for each target whether it is reachable:
+      A $= (0.50, 0.30)$ m, B $= (0.10, 0.10)$ m, C $= (0.60, 0.30)$ m.
+    solution: |-
+      The TCP distance $r = \sqrt{x^2 + y^2}$ must satisfy
+      $\lvert l_1 - l_2 \rvert \le r \le l_1 + l_2$, that is $0.15 \le r \le 0.65$ m.
+
+      - A: $r = \sqrt{0.25 + 0.09} = 0.583$ m. Inside the annulus: **reachable**.
+      - B: $r = \sqrt{0.01 + 0.01} = 0.141$ m. Less than $0.15$: **not reachable**, the
+        arm cannot fold far enough.
+      - C: $r = \sqrt{0.36 + 0.09} = 0.671$ m. More than $0.65$: **not reachable**, the
+        arm is too short.
+    answer: |-
+      Only A is reachable.
+
+  - id: intro-p4
+    title: Tip velocity at full extension
+    points: 5
+    q: |-
+      The arm of the previous problem ($l_1 = 0.40$ m, $l_2 = 0.25$ m) is fully extended
+      along $+x$, so $q_1 = q_2 = 0$. The joint velocities are $\dot q_1 = 1$ rad/s and
+      $\dot q_2 = -2$ rad/s.
+    parts:
+      - q: |-
+          Find the TCP velocity $(\dot x, \dot y)$.
+        points: 3
+        solution: |-
+          At $q_1 = q_2 = 0$ the lecture's result is
+
+          $$\dot x = 0, \qquad \dot y = (l_1 + l_2)\, \dot q_1 + l_2\, \dot q_2 .$$
+
+          So $\dot y = 0.65 \cdot 1 + 0.25 \cdot (-2) = 0.65 - 0.50 = 0.15$ m/s and
+          $\dot x = 0$.
+      - q: |-
+          Which joint velocities would give the TCP a velocity of $0.1$ m/s along $-x$ at
+          this instant? What is this posture called?
+        points: 2
+        solution: |-
+          None. At this posture $\dot x = 0$ whatever $\dot q_1$ and $\dot q_2$ are. It is a
+          **kinematic singularity**: the positional Jacobian has one independent output
+          direction instead of two. The arm can still move its tip inward by bending
+          through a finite angle, but not instantaneously from this posture.
+    answer: |-
+      $(\dot x, \dot y) = (0, 0.15)$ m/s. No joint velocity produces motion along $x$: the
+      posture is singular.
+
+  - id: intro-p5
+    title: Accuracy and repeatability from measurements
+    points: 4
+    q: |-
+      A robot is commanded to a target of $250.00$ mm four times. The measured positions are
+      $249.71$, $249.69$, $249.70$ and $249.70$ mm. Compute the mean error and the range,
+      and say what each means. Would calibration help?
+    solution: |-
+      Mean: $(249.71 + 249.69 + 249.70 + 249.70)/4 = 249.70$ mm. Mean error:
+      $249.70 - 250.00 = -0.30$ mm. That is the **accuracy** deficit: on average the robot
+      stops $0.30$ mm short.
+
+      Range: $249.71 - 249.69 = 0.02$ mm. That is the **repeatability**: the attempts agree
+      with one another to within two hundredths of a millimetre.
+
+      The robot is repeatable but inaccurate. A consistent bias is exactly what calibration
+      can estimate and correct. It matters when targets come from CAD, vision or external
+      measurement, and matters less when the pose was taught directly on the installation.
+    answer: |-
+      Mean error $-0.30$ mm (inaccurate), range $0.02$ mm (repeatable). Calibration would
+      help.
+
+  - id: intro-p6
+    type: mcq
+    title: Box-shaped workspace
+    points: 1
+    q: |-
+      Which manipulator structure has an ideal workspace in the shape of a box?
+    choices:
+      - text: Cartesian (PPP)
+        correct: true
+        why: Three perpendicular prismatic joints with independent travel limits sweep a box.
+      - text: Cylindrical (RPP)
+        why: The base rotation turns the two slides around an axis, giving a cylindrical shell or sector.
+      - text: Spherical (RRP)
+        why: Two rotations and a radial slide give a spherical shell sector.
+      - text: Anthropomorphic (RRR)
+        why: Three rotary joints give roughly part of a sphere.
+
+  - id: intro-p7
+    type: multi
+    title: Exteroceptive sensors
+    points: 2
+    q: |-
+      Which of these are exteroceptive sensors? Select all that apply.
+    choices:
+      - text: A camera
+        correct: true
+      - text: A joint encoder
+        why: It measures the robot's own joint position, so it is proprioceptive.
+      - text: A force sensor at the wrist measuring contact with a surface
+        correct: true
+        why: It measures the interaction with the environment.
+      - text: A motor current measurement
+        why: Motor current is part of the robot's own state, so it is proprioceptive.
+      - text: A range sensor
+        correct: true
+
+  - id: intro-p8
+    type: tf
+    title: Helical joint
+    points: 1
+    q: |-
+      A helical joint has two degrees of freedom because it both rotates and translates.
+    correct: false
+    solution: |-
+      False. The translation is fixed by the rotation through the screw lead,
+      $d = h\theta/(2\pi)$, so only one coordinate is independent. A cylindrical joint,
+      where the two motions are independent, has two.
+
+  - id: intro-p9
+    type: tf
+    title: Six joints
+    points: 1
+    q: |-
+      A manipulator with six independent joints can reach every requested tool pose inside
+      its reach.
+    correct: false
+    solution: |-
+      False. Six suitably arranged joints commonly support a general spatial pose, but
+      joint limits, collisions and singular configurations restrict what is possible.
+
+  - id: intro-p10
+    type: mcq
+    title: Following a seam
+    points: 1
+    q: |-
+      A glue nozzle must follow a seam along a part. Which kind of motion specification
+      does the task need?
+    choices:
+      - text: Point-to-point motion
+        why: That fixes only the endpoints; the nozzle could leave the seam in between.
+      - text: Continuous-path motion
+        correct: true
+        why: The process constrains the route, not only where it ends.
+      - text: Joint mode
+        why: Commanding single joints moves the TCP along arcs and does not follow a seam.
+      - text: Physical setup with mechanical stops
+        why: Stops define end positions of a fixed sequence, not a route along a seam.

@@ -1,0 +1,216 @@
+# Ids are permanent: people's progress is keyed by them.
+title: 'The previous year''s Section B'
+topic: framing
+description: 'The seven code tasks of the one real paper there is, in paper order.'
+
+cards:
+  - id: lastb-1a
+    q: |-
+      **1a.** What does each of these tell you about a DataFrame?
+
+      `info() · head() · describe() · value_counts()`
+    a: |-
+      - **info()** — technical summary: number of rows and columns, the dtype of every column, and the count of non-null values, so it shows where the missing data is and how much memory it uses.
+      - **head(n)** — the first n rows, so you can see what an actual observation looks like and check the columns are what you expect.
+      - **describe()** — descriptive statistics for the numerical columns: count, mean, std, min, max and the 25/50/75% quartiles, which shows spread, skew and suspicious values.
+      - **value_counts()** — called on one column, how many times each distinct value occurs. This is how you check whether a categorical feature or the target is imbalanced.
+    note: |-
+      Four questions: what shape and type is it, what does a row look like, what is the spread, how imbalanced are the categories.
+
+      **In plain words.** These four are what you type **before any modelling at all**, to find out what you're dealing with: the structure, a real sample row, the numeric spread, and how balanced the categories are.
+
+      ```text
+      df.info()            what columns, what type, what's missing
+      df.head()            what does a row actually look like
+      df.describe()        how spread out are the numbers
+      df['col'].value_counts()   is this category imbalanced
+      ```
+
+  - id: lastb-1b
+    q: |-
+      **1b.** Write a function taking a DataFrame and a split ratio, returning train and test sets (ratio 0.2 → 80/20).
+    a: |-
+      ```python
+      import numpy as np
+
+      def split_train_test(df, test_ratio, random_state=42):
+          np.random.seed(random_state)
+          shuffled_indices = np.random.permutation(len(df))
+          test_set_size = int(len(df) * test_ratio)
+          test_indices  = shuffled_indices[:test_set_size]
+          train_indices = shuffled_indices[test_set_size:]
+          return df.iloc[train_indices], df.iloc[test_indices]
+
+      train_set, test_set = split_train_test(housing, 0.2)
+      ```
+    note: |-
+      Shuffle the positions, cut off the first ratio×n as test, select with .iloc[]. Seed it so the split is reproducible. If they let you use sklearn, it is train_test_split(df, test_size=0.2, random_state=42).
+
+      **In plain words.** You are being asked to **write train_test_split yourself**. Shuffle the row positions, take the first 20% of that shuffled list as the test rows and the rest as training rows, then pull them out with `.iloc[]`.
+
+      Seeding the shuffle matters: without it you'd get a different split every run, and rows that were in yesterday's test set would end up in today's training set — so the model would eventually have seen all your test data.
+
+      ```text
+      len(df) = 1000, test_ratio = 0.2
+      → shuffled positions: [739, 12, 480, ...]
+      → test  = first 200 of those
+      → train = the other 800
+      ```
+
+  - id: lastb-1c
+    topic: evaluation
+    q: |-
+      **1c.** Explain what this code represents.
+
+      `StratifiedKFold(n_splits=3, shuffle=True) · clone(sgd_clf) · fit · predict · n_correct / len(y_pred)`
+    a: |-
+      - It is a **manual implementation of stratified 3-fold cross-validation** — exactly what `cross_val_score(sgd_clf, X_train, y_train_5, cv=3, scoring="accuracy")` does internally.
+      - **StratifiedKFold(n_splits=3, shuffle=True, random_state=42)** splits the training set into 3 folds while keeping the class proportions of each fold equal to those of the whole set — important because y_train_5 is very imbalanced (only ~10% are 5s).
+      - **split()** yields index arrays; each iteration uses 2 folds for training and holds 1 out for testing, rotating so every fold is the test fold exactly once.
+      - **clone(sgd_clf)** makes a fresh, *untrained* copy with the same hyperparameters, so fold 2's model has not already learned from fold 1's data. Without it you would keep training one model and the scores would be meaningless.
+      - Each iteration prints **n_correct / len(y_pred)** — the accuracy on that fold. Averaging the three gives a more stable estimate of generalisation error than one train/test split.
+    note: |-
+      If asked to 'explain what it represents': name it (manual stratified k-fold CV), then say what each of stratified, clone and the printed ratio is for.
+
+      **In plain words.** The code is doing **cross-validation by hand** so you can see what `cross_val_score` does internally.
+
+      **Stratified** means each fold keeps the same mix of classes as the full dataset — necessary here because only about 10% of the digits are 5s, so a purely random fold could contain almost none. **clone** gives a brand-new untrained model each round; without it, fold 2's model would already have learned from fold 1's data and the scores would be worthless.
+
+      ```text
+      fold 1: train on 2+3, test on 1  → print accuracy
+      fold 2: train on 1+3, test on 2  → print accuracy
+      fold 3: train on 1+2, test on 3  → print accuracy
+
+      Three honest scores instead of one lucky one.
+      ```
+
+  - id: lastb-2a
+    topic: ensembles
+    q: |-
+      **2a.** Train 500 decision trees with a BaggingClassifier, each on 100 instances sampled with replacement.
+    a: |-
+      ```python
+      from sklearn.ensemble import BaggingClassifier
+      from sklearn.tree import DecisionTreeClassifier
+
+      bag_clf = BaggingClassifier(
+          DecisionTreeClassifier(), n_estimators=500,
+          max_samples=100, bootstrap=True, n_jobs=-1, random_state=42)
+
+      bag_clf.fit(X_train, y_train)
+      y_pred = bag_clf.predict(X_test)
+      ```
+    note: |-
+      500 → n_estimators. 100 instances → max_samples. With replacement → bootstrap=True (False would be pasting). Add oob_score=True if they ask for out-of-bag evaluation.
+
+      **In plain words.** Bagging = **train many copies of the same model on many random samples, then let them vote**. Each tree sees a different 100 rows, so each is wrong in a different way, and the errors largely cancel when you average them. "With replacement" means the same row can be drawn twice within one sample.
+
+      ```text
+      One deep tree: memorises the data, unstable.
+      500 trees on 500 different samples, averaged:
+      same flexibility, far less overfitting.
+      ```
+
+  - id: lastb-2b
+    topic: svm
+    q: |-
+      **2b.** California housing: 80/20 split, StandardScaler, a linear SVM regressor, print the test MSE.
+    a: |-
+      ```python
+      from sklearn.datasets import fetch_california_housing
+      from sklearn.model_selection import train_test_split
+      from sklearn.preprocessing import StandardScaler
+      from sklearn.svm import LinearSVR
+      from sklearn.metrics import mean_squared_error
+
+      housing = fetch_california_housing()
+      X = housing["data"]
+      y = housing["target"]
+
+      X_train, X_test, y_train, y_test = train_test_split(
+          X, y, test_size=0.2, random_state=42)
+
+      scaler = StandardScaler()
+      X_train_scaled = scaler.fit_transform(X_train)
+      X_test_scaled  = scaler.transform(X_test)
+
+      svm_reg = LinearSVR(random_state=42)
+      svm_reg.fit(X_train_scaled, y_train)
+
+      y_pred = svm_reg.predict(X_test_scaled)
+      print("Test MSE:", mean_squared_error(y_test, y_pred))
+      ```
+    note: |-
+      Regression + linear SVM = LinearSVR (SVC/LinearSVC are classifiers). Scale before an SVM — it is distance-based. fit_transform on train, transform on test.
+
+      **In plain words.** A plain end-to-end question with two traps. **"Linear SVM for regression" means LinearSVR** — LinearSVC would be the classifier. And an SVM works on distances, so without scaling a feature measured in tens of thousands would completely drown a feature measured in single digits.
+
+      ```text
+      Regression → LinearSVR / SVR
+      Classification → LinearSVC / SVC
+
+      epsilon only exists on the regression ones.
+      ```
+
+  - id: lastb-2c
+    topic: dimred
+    q: |-
+      **2c.** MNIST: apply PCA keeping 95% of the explained variance, train a Random Forest, evaluate on the test set.
+    a: |-
+      ```python
+      from sklearn.decomposition import PCA
+      from sklearn.ensemble import RandomForestClassifier
+      from sklearn.metrics import accuracy_score
+
+      pca = PCA(n_components=0.95)
+      X_train_reduced = pca.fit_transform(X_train)
+      X_test_reduced  = pca.transform(X_test)
+
+      rnd_clf = RandomForestClassifier(n_estimators=100, random_state=42)
+      rnd_clf.fit(X_train_reduced, y_train)
+
+      y_pred = rnd_clf.predict(X_test_reduced)
+      print("Test accuracy:", accuracy_score(y_test, y_pred))
+      ```
+    note: |-
+      n_components=0.95 as a FLOAT means 'keep 95% of the variance and work out the number of dimensions yourself'. An int would mean that many dimensions. Fit the PCA on train only, then transform the test set.
+
+      **In plain words.** PCA **squashes 784 pixel columns into far fewer columns carrying almost the same information**, so the forest trains much faster. `0.95` says "keep however many dimensions preserve 95% of the variation" and lets PCA count them for you (it lands around 150 for MNIST).
+
+      Fit the PCA on the training data only, then push the test set through that same fitted PCA — same rule as any transformer.
+
+      ```text
+      784 columns  →  PCA(n_components=0.95)  →  ~150 columns
+
+      Same digits, 5× less data, nearly the same accuracy.
+      ```
+
+  - id: lastb-2d
+    topic: sequences
+    q: |-
+      **2d.** Three SimpleRNN layers of 20 units, BatchNormalization between every pair, TimeDistributed Dense(10) output, sequence-to-sequence, MSE + Adam + accuracy, 20 epochs.
+    a: |-
+      ```python
+      model = keras.models.Sequential([
+          keras.layers.SimpleRNN(20, return_sequences=True, input_shape=[None, 1]),
+          keras.layers.BatchNormalization(),
+          keras.layers.SimpleRNN(20, return_sequences=True),
+          keras.layers.BatchNormalization(),
+          keras.layers.SimpleRNN(20, return_sequences=True),
+          keras.layers.TimeDistributed(keras.layers.Dense(10))
+      ])
+
+      model.compile(loss="mse", optimizer="adam", metrics=["accuracy"])
+      history = model.fit(X_train, Y_train, epochs=20)
+      ```
+    note: |-
+      Three RNN layers → two BatchNormalization layers between the pairs. 'Sequence-to-sequence' is the phrase that forces return_sequences=True on ALL three, and only the first takes input_shape.
+
+      **In plain words.** **Sequence-to-sequence** means the network reads a sequence and produces an output at **every** step, not just at the end — that is exactly what `return_sequences=True` on all three layers buys you. BatchNormalization sits between the recurrent layers to keep the numbers passing through them at a sane scale. TimeDistributed applies the same Dense layer at every time step.
+
+      ```text
+      "Three SimpleRNN layers, BatchNorm between every pair"
+      → RNN, BN, RNN, BN, RNN   (3 layers, 2 gaps)
+
+      Count the gaps, not the layers.
+      ```

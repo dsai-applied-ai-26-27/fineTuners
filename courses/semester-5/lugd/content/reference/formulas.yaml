@@ -1,0 +1,193 @@
+sections:
+  - title: Collaborative filtering
+    topic: cf
+    rows:
+      - id: f-item-cf
+        name: Item-to-item prediction
+        formula: |-
+          $$r^*_{u,i} = \frac{\sum_{j \in N(i)} w_{i,j}\, r_{u,j}}{\sum_{j \in N(i)} w_{i,j}}$$
+        note: |-
+          $N(i)$ is the set of items most similar to the target item $i$, $w_{i,j}$ their
+          similarity to $i$, and $r_{u,j}$ the target user's own ratings of them. The
+          slides give the computed example; this is its general form.
+      - id: f-user-cf
+        name: User-to-user prediction
+        formula: |-
+          $$r^*_{u,i} = \frac{\sum_{v \in N(u)} w_{u,v}\, r_{v,i}}{\sum_{v \in N(u)} w_{u,v}}$$
+        note: |-
+          $N(u)$ is the set of users most similar to the target user $u$, $w_{u,v}$ their
+          similarity to $u$, and $r_{v,i}$ their ratings of the target item. Again the
+          general form of the slide's example.
+      - id: f-mf-prediction
+        name: Rating predicted by matrix factorization
+        formula: |-
+          $$r_{u,i} \approx q_u \cdot p_i = \sum_{f=1}^{k} q_{u,f}\, p_{f,i}$$
+        note: |-
+          $q_u$ is the user's vector of $k$ latent factors (a row of $q$) and $p_i$ the
+          item's (a column of $p$). The slide writes it for one entry:
+          $r_{42} = (a,b,c) \cdot (x,y,z)$.
+      - id: f-mf-size
+        name: Numbers stored by a matrix factorization
+        formula: |-
+          $$(\text{users} + \text{items}) \times k \quad \text{instead of} \quad \text{users} \times \text{items}$$
+        note: |-
+          With $k$ factors. For $10^8$ users, $10^5$ items and $k = 10$: $10^9 + 10^6$
+          numbers instead of $10^{13}$.
+      - id: f-user-cf-centred
+        name: Mean-centred user-based prediction
+        formula: |-
+          $$r^*_{uj} = \bar r_u + K \sum_{v \in N_j(u)} w_{uv}\,(r_{vj} - \bar r_v), \qquad K = \frac{1}{\sum_{v \in N_j(u)} |w_{uv}|}$$
+        note: |-
+          The standard form of lecture 2 (Breese et al., 1998). Neighbours contribute their
+          deviation from their own mean; $K$ sums absolute values.
+      - id: f-pearson
+        name: Pearson correlation of two users
+        formula: |-
+          $$w_{uv} = \frac{\sum_{j \in I_{uv}} (r_{uj} - \bar r_u)(r_{vj} - \bar r_v)}{\sqrt{\sum_{j \in I_{uv}} (r_{uj} - \bar r_u)^2}\,\sqrt{\sum_{j \in I_{uv}} (r_{vj} - \bar r_v)^2}}$$
+        note: |-
+          Over the co-rated items $I_{uv}$. The lecture takes the means over all of $I_u$;
+          standard libraries over $I_{uv}$.
+      - id: f-cosine
+        name: Cosine similarity of two users
+        formula: |-
+          $$w_{uv} = \frac{\sum_{j \in I_{uv}} r_{uj}\, r_{vj}}{\sqrt{\sum_{j \in I_u} r_{uj}^2}\,\sqrt{\sum_{j \in I_v} r_{vj}^2}}$$
+        note: |-
+          On raw ratings, so a user whose ratings are another's plus 1 has cosine below 1
+          but Pearson 1.
+      - id: f-cf-vote
+        name: Neighbourhood vote (classification)
+        formula: |-
+          $$\mathrm{vote}(j, r, N_j(u)) = \sum_{v \in N_j(u)} \delta(r_{vj} = r)\, w_{uv}, \qquad r^*_{uj} = \arg\max_r \mathrm{vote}(j, r, N_j(u))$$
+        note: |-
+          $\delta = 1$ when neighbour $v$ gave rating $r$.
+      - id: f-significance-weighting
+        name: Significance weighting
+        formula: |-
+          $$w'_{uv} = \frac{\min\{|I_{uv}|, \gamma\}}{\gamma} \cdot w_{uv}$$
+        note: |-
+          Herlocker et al. (1999). Kept whole from $\gamma$ co-rated items on; $\gamma = 50$
+          was best on MovieLens.
+      - id: f-shrinkage
+        name: Shrinkage of a similarity
+        formula: |-
+          $$w'_{uv} = \frac{|I_{uv}|}{|I_{uv}| + \beta} \cdot w_{uv}$$
+        note: |-
+          Half kept at $|I_{uv}| = \beta$; never kept in full.
+      - id: f-iuf
+        name: Inverse user frequency
+        formula: |-
+          $$\lambda_i = \log\frac{|U|}{|U_i|}$$
+        note: |-
+          Weights item $i$ in the frequency-weighted Pearson correlation: items rated by few
+          users count more.
+      - id: f-model-based-cf
+        name: Model-based prediction
+        formula: |-
+          $$r^*_{uj} = E[r_{uj}] = \sum_{r=1}^{5} r \cdot P\big(r_{uj} = r \mid \{r_{uk},\, k \in I_u\}\big)$$
+        note: |-
+          The probabilities come from a classifier trained on the other users' profiles.
+      - id: f-sparsity
+        name: Sparsity
+        formula: |-
+          $$1 - \frac{\#\text{ratings}}{\#\text{users} \times \#\text{items}}$$
+        note: |-
+          MovieLens 100k: $1 - 100{,}000/(943 \cdot 1682) = 0.937$.
+      - id: f-support
+        name: Support of an association rule
+        formula: |-
+          $$S(X \to Y) = \frac{\#\text{transactions containing } X \text{ and } Y}{\#\text{transactions}}$$
+      - id: f-confidence
+        name: Confidence of an association rule
+        formula: |-
+          $$C(X \to Y) = \frac{\#\text{transactions containing } X \text{ and } Y}{\#\text{transactions containing } X} = \frac{S(X \to Y)}{S(X)}$$
+        note: |-
+          Never below the support, and in general $C(X \to Y) \neq C(Y \to X)$.
+  - title: Evaluation
+    topic: evaluation
+    rows:
+      - id: f-mae
+        name: Mean absolute error
+        formula: |-
+          $$\mathrm{MAE} = \frac{1}{|R_{test}|}\sum_{r_{ui} \in R_{test}} |\hat r_{ui} - r_{ui}|$$
+        note: |-
+          Every test rating counts equally, so heavy users dominate; average per user first
+          to avoid that.
+      - id: f-rmse
+        name: Root mean square error
+        formula: |-
+          $$\mathrm{RMSE} = \sqrt{\frac{1}{|R_{test}|}\sum_{r_{ui} \in R_{test}} (\hat r_{ui} - r_{ui})^2}$$
+        note: |-
+          Never below the MAE; grows with the spread of the error sizes.
+      - id: f-nmae
+        name: Normalised MAE
+        formula: |-
+          $$\mathrm{NMAE} = \frac{\mathrm{MAE}}{r_{max} - r_{min}}$$
+      - id: f-precision-recall
+        name: Precision and recall of a list
+        formula: |-
+          $$P = \frac{|L(u) \cap T(u)|}{|L(u)|}, \qquad R = \frac{|L(u) \cap T(u)|}{|T(u)|}$$
+        note: |-
+          $L(u)$ the recommendation list, $T(u)$ the relevant test items, their intersection
+          the hit set. Averaged over users.
+      - id: f-f1
+        name: F1
+        formula: |-
+          $$F_1 = \frac{2PR}{P + R}$$
+      - id: f-ndcg
+        name: NDCG at k
+        formula: |-
+          $$\mathrm{NDCG}@k = Z_k \sum_{m=1}^{k} \frac{2^{R(m)} - 1}{\log_2(1 + m)}$$
+        note: |-
+          $R(m)$ the relevance of the item at rank $m$; $Z_k$ makes a perfect ranking score 1.
+          Averaged over users.
+      - id: f-arhr
+        name: Average reciprocal hit-rank
+        formula: |-
+          $$\mathrm{ARHR} = \frac{1}{|U|}\sum_{u \in U} \frac{1}{\mathrm{rank}(i_u, L(u))}$$
+        note: |-
+          One held-out item $i_u$ per user; a miss counts 0.
+  - title: Classification and the Bayes error
+    topic: classification
+    rows:
+      - id: f-mse-decomposition
+        name: Expected test MSE at a point
+        formula: |-
+          $$E\big(y_0 - \hat f(x_0)\big)^2 = \mathrm{Var}\big(\hat f(x_0)\big) + \big[\mathrm{Bias}\big(\hat f(x_0)\big)\big]^2 + \mathrm{Var}(\varepsilon)$$
+        note: |-
+          Variance, squared bias and the irreducible error. All three are non-negative, so
+          $\mathrm{Var}(\varepsilon)$ is a floor no method goes below (ISL §2.2.2).
+      - id: f-error-rate
+        name: Training error rate
+        formula: |-
+          $$\frac{1}{n}\sum_{i=1}^{n} I(y_i \neq \hat y_i)$$
+        note: |-
+          The share of mistakes. The test error rate is the same average over test
+          observations, $\mathrm{Ave}\big(I(y_0 \neq \hat y_0)\big)$.
+      - id: f-bayes-classifier
+        name: Bayes classifier
+        formula: |-
+          $$\hat y_0 = \arg\max_j \Pr(Y = j \mid X = x_0)$$
+        note: |-
+          With two classes: class 1 when $\Pr(Y = 1 \mid X = x_0) > 0.5$. The Bayes decision
+          boundary is where that probability equals $0.5$.
+      - id: f-bayes-error
+        name: Bayes error rate
+        formula: |-
+          $$1 - E\Big[\max_j \Pr(Y = j \mid X)\Big], \qquad \text{at one point with two classes: } \min(p,\, 1-p)$$
+        note: |-
+          $p = \Pr(Y = 1 \mid X = x_0)$. The lowest test error any classifier can reach; zero
+          only when the classes never overlap.
+      - id: f-knn-probability
+        name: KNN estimate of a class probability
+        formula: |-
+          $$\widehat{\Pr}(Y = j \mid X = x_0) = \frac{1}{K}\sum_{i \in N_0} I(y_i = j)$$
+        note: |-
+          $N_0$ is the set of the $K$ training points nearest to $x_0$. KNN then picks the
+          class with the largest estimate.
+      - id: f-1nn-limit
+        name: 1-NN error with unlimited data (two classes)
+        formula: |-
+          $$2p(1-p) \quad \text{against Bayes} \quad \min(p,\, 1-p)$$
+        note: |-
+          The nearest neighbour's label is then a random draw with the true probabilities at
+          $x_0$. Never more than twice the Bayes error.

@@ -1,0 +1,403 @@
+title: Introduction to robotics
+topic: intro
+lecture: 01-introduction-to-robotics
+description: The vocabulary of lecture 1, plus the small computations on the planar two-link arm.
+
+cards:
+  - id: intro-robot-def
+    hy: true
+    cloze: |-
+      A robot is a {{programmable}} physical machine that uses {{actuators}} and a
+      {{control system}} to perform actions in its environment.
+
+  - id: intro-manipulator-def
+    q: |-
+      What is a robotic manipulator?
+    a: |-
+      A mechanism of connected bodies, called links, and joints, which allows a tool or
+      object to be positioned and oriented.
+
+  - id: intro-automation-vs-robot
+    q: |-
+      A thermostat, a teleoperated arm and an autonomous vacuum cleaner. Which of
+      automation, robotics and autonomy applies to each?
+    a: |-
+      - Thermostat: automation, but not a robot.
+      - Teleoperated arm: a robot, with little autonomy, since a human guides it.
+      - Autonomous vacuum cleaner: a robot with autonomy; it must sense and decide by
+        itself.
+    note: |-
+      Discussion question 1 of the notes. Automation is the broad use of machines with
+      reduced human intervention; autonomy is doing a task without continuous human
+      direction.
+
+  - id: intro-serial-parallel
+    q: |-
+      Distinguish a serial robot, a parallel robot and a mobile manipulator.
+    a: |-
+      Serial: an open chain of links from base to tool. Parallel: a moving platform
+      connected to the base through several chains, forming closed loops. Mobile
+      manipulator: an arm mounted on a base that moves through the environment.
+
+  - id: intro-components
+    hy: true
+    q: |-
+      Name the six main components of a robotic system and the role of each.
+    a: |-
+      1. Mechanical structure: links, joints and base.
+      2. End effector: the device that performs the task.
+      3. Actuators and drives: turn energy into motion or force.
+      4. Sensors: measure the robot's state and its environment.
+      5. Controller: computes actuator commands from feedback.
+      6. Processor and software: perception, planning, control, task logic.
+    note: |-
+      Plus power supply, communication and protective equipment. A robotic system is more
+      than its mechanical arm.
+
+  - id: intro-tcp
+    q: |-
+      What is the tool center point (TCP)?
+    a: |-
+      A selected point on the end effector, often the tool tip, whose motion is specified.
+
+  - id: intro-sensors-kinds
+    cloze: |-
+      {{Proprioceptive}} sensors measure the robot's own state, such as joint position or
+      motor current. {{Exteroceptive}} sensors measure the environment or the interaction,
+      such as cameras, range, touch and force sensors.
+
+  - id: intro-spherical-wrist
+    q: |-
+      In a conventional six-axis arm, what do the first three and the last three joints
+      mainly do? What is a spherical wrist?
+    a: |-
+      The first three mainly position the wrist; the last three mainly orient the tool. A
+      spherical wrist has three rotation axes that intersect at a common point.
+    note: |-
+      If the tool tip is offset from the wrist center, rotating the wrist also moves the
+      tip. Controlling the wrist center and controlling the TCP are different tasks.
+
+  - id: intro-actuators
+    q: |-
+      Compare electric, hydraulic and pneumatic drives: one strength and one concern each.
+    a: |-
+      - Electric: convenient electronic control; torque limits, heating, gearing and
+        backlash.
+      - Hydraulic: large forces and torques in compact actuators; pumps, hoses, leakage,
+        noise, maintenance.
+      - Pneumatic: simple rapid motions such as gripper opening; compressibility makes
+        precise positioning and stiffness hard.
+
+  - id: intro-servo-stepper
+    q: |-
+      What is the difference between a servo system and a stepper motor?
+    a: |-
+      A servo system uses feedback to regulate motion. A stepper motor advances through
+      commanded increments and can miss steps under excessive load unless that is detected
+      and corrected.
+
+  - id: intro-error-compute
+    q: |-
+      A joint has desired angle $q_d = 30^\circ$ and measured angle $q = 27^\circ$. Write
+      the position error and the proportional control law.
+    a: |-
+      $e = q_d - q = 3^\circ$, and $u(t) = K_p\, e(t)$.
+    note: |-
+      A larger $K_p$ reacts more strongly but can cause overshoot or oscillation.
+
+  - id: intro-dof-def
+    hy: true
+    q: |-
+      Define degree of freedom. How many does a rigid body have in a plane and in space?
+    a: |-
+      An independent freedom of motion; the DoF count is the number of independent
+      continuous variables needed to describe a configuration locally.
+
+      Plane: 3 (two translations, one rotation). Space: 6 (three translations, three
+      rotations).
+
+  - id: intro-configuration-pose
+    cloze: |-
+      The {{configuration}} specifies the arrangement of all the links, as the vector of
+      joint coordinates $\boldsymbol{q}$. The tool's {{position}} says where a selected
+      point is, its {{orientation}} how the tool is turned, and together they are its
+      {{pose}}.
+
+  - id: intro-redundancy
+    q: |-
+      When is a robot redundant? Give an example and a benefit.
+    a: |-
+      When it has more independent joint variables than the task requires. A seven-axis arm
+      can change its elbow posture while keeping its tool pose, which helps to avoid an
+      obstacle or a joint limit.
+    note: |-
+      Redundancy is relative to the task, not a property of the robot alone.
+
+  - id: intro-joints-table
+    hy: true
+    q: |-
+      Give the DoF of these joints: revolute, prismatic, cylindrical, universal, spherical,
+      helical.
+    a: |-
+      Revolute 1, prismatic 1, cylindrical 2, universal 2, spherical 3, helical 1.
+    hook: |-
+      One for a hinge or a drawer or a screw; two when an axis does double duty or two axes
+      cross; three for a ball.
+
+  - id: intro-helical
+    q: |-
+      A screw rotates and translates. Why does a helical joint have only one DoF? What
+      distance does a screw with lead $h = 4$ mm advance in half a turn?
+    a: |-
+      The translation is determined by the angle: $d = \dfrac{h\,\theta}{2\pi}$, so only one
+      coordinate is independent. For $\theta = \pi$: $d = 4 \cdot \tfrac12 = 2$ mm.
+    note: |-
+      A cylindrical joint differs: its translation and rotation are independent, giving 2
+      DoF.
+
+  - id: intro-joint-strings
+    hy: true
+    q: |-
+      Give the joint string and the workspace shape of the Cartesian, cylindrical,
+      spherical and anthropomorphic manipulators.
+    a: |-
+      - Cartesian: PPP, a box.
+      - Cylindrical: RPP, a cylindrical shell or sector.
+      - Spherical (polar): RRP, a spherical shell sector.
+      - Anthropomorphic: RRR, roughly part of a sphere.
+    note: |-
+      Strings are read from the base toward the tool. Some books write T for P.
+
+  - id: intro-scara
+    q: |-
+      What does SCARA stand for, what is its structure, and why does it suit assembly?
+    a: |-
+      Selective Compliance Assembly Robot Arm. Two revolute joints and a prismatic joint
+      with parallel axes (often RRPR with tool rotation). It is relatively compliant in the
+      horizontal plane and stiff vertically, which suits vertical insertion.
+    note: |-
+      A four-axis SCARA controls $(x, y, z, \phi)$ and cannot tilt its tool freely.
+
+  - id: intro-coordinates
+    q: |-
+      Write the Cartesian coordinates of a point given in cylindrical coordinates
+      $(r, \theta, z)$, and compute them for $r = 2$, $\theta = 60^\circ$, $z = 1$.
+    a: |-
+      $x = r \cos\theta$, $y = r \sin\theta$, $z$ unchanged.
+
+      $x = 2 \cdot 0.5 = 1$, $y = 2 \cdot 0.866 = 1.73$, $z = 1$.
+
+  - id: intro-frames
+    q: |-
+      Name four reference frames used around a robot. Why is "move 10 mm along tool $z$"
+      different from "move 10 mm along world $x$"?
+    a: |-
+      World $\{W\}$, base $\{B\}$, tool $\{T\}$, and workpiece $\{O\}$ or sensor $\{C\}$
+      frames. A world direction is fixed; the tool's $z$ direction turns with the tool, so
+      a tool-frame command follows the tool's current axis.
+    note: |-
+      A screwdriver approaching an inclined screw must advance along its own axis: use the
+      tool frame.
+
+  - id: intro-fk-ik
+    hy: true
+    q: |-
+      Define forward and inverse kinematics. How many solutions can inverse kinematics
+      have?
+    a: |-
+      Forward kinematics computes the tool pose from joint coordinates and geometry.
+      Inverse kinematics finds joint values that achieve a desired pose. It may have no
+      solution, several solutions, or a continuous family.
+
+  - id: intro-2r-equations
+    hy: true
+    q: |-
+      Write the forward kinematics of the planar 2R arm.
+    a: |-
+      $$\begin{aligned} x &= l_1 \cos q_1 + l_2 \cos(q_1 + q_2) \\ y &= l_1 \sin q_1 + l_2 \sin(q_1 + q_2) \\ \phi &= q_1 + q_2 \end{aligned}$$
+    note: |-
+      $q_1$ is measured from the base $x$ axis, $q_2$ relative to link 1, so link 2 points
+      at angle $q_1 + q_2$.
+    hook: |-
+      Link 1 uses its own angle, link 2 uses the sum.
+
+  - id: intro-2r-compute
+    q: |-
+      A planar 2R arm has $l_1 = l_2 = 1$ m, $q_1 = 30^\circ$, $q_2 = 60^\circ$. Find the
+      TCP position and orientation.
+    a: |-
+      $x = \cos 30^\circ + \cos 90^\circ = 0.866$ m
+
+      $y = \sin 30^\circ + \sin 90^\circ = 1.5$ m
+
+      $\phi = 90^\circ$
+
+  - id: intro-elbow
+    q: |-
+      With $l_1 = l_2 = 1$ m, give the two configurations of the planar 2R arm that put the
+      TCP at $(1, 1)$ m. Is the tool orientation the same?
+    a: |-
+      Elbow down: $q_1 = 0^\circ$, $q_2 = 90^\circ$, $\phi = 90^\circ$.
+
+      Elbow up: $q_1 = 90^\circ$, $q_2 = -90^\circ$, $\phi = 0^\circ$.
+
+      Same position, different orientation and different space occupied by the arm.
+
+  - id: intro-workspace-kinds
+    q: |-
+      Distinguish the reachable workspace from the dexterous workspace.
+    a: |-
+      Reachable: all tool positions attainable by at least one admissible configuration.
+      Dexterous: positions where every tool orientation in the required set (classically,
+      every orientation) is attainable.
+
+  - id: intro-annulus-compute
+    q: |-
+      An ideal planar 2R arm has $l_1 = 0.5$ m and $l_2 = 0.3$ m. Describe its positional
+      workspace. Is the point $(0.1, 0.1)$ m reachable?
+    a: |-
+      An annulus with $0.2 \le \sqrt{x^2 + y^2} \le 0.8$ m. The point is at distance
+      $\sqrt{0.02} = 0.141$ m, inside the inner hole, so it is not reachable.
+    note: |-
+      From $\lvert l_1 - l_2 \rvert \le \sqrt{x^2 + y^2} \le l_1 + l_2$. With equal links
+      the hole closes and the workspace is a disk.
+
+  - id: intro-path-trajectory
+    q: |-
+      What is the difference between a path and a trajectory?
+    a: |-
+      A path is a geometric route, $\boldsymbol{q}(s)$ with $s \in [0,1]$ measuring
+      progress. A trajectory adds timing: $\boldsymbol{q}(t)$ with velocities and
+      accelerations.
+    note: |-
+      Carrying a full cup slowly and quickly along the same route: one path, two
+      trajectories.
+
+  - id: intro-jacobian
+    q: |-
+      Write the differential kinematics equation and say what each symbol is.
+    a: |-
+      $$\begin{bmatrix} \boldsymbol{v} \\ \boldsymbol{\omega} \end{bmatrix} = \boldsymbol{J}(\boldsymbol{q})\, \dot{\boldsymbol{q}}$$
+
+      $\boldsymbol{v}$: linear velocity of the TCP. $\boldsymbol{\omega}$: angular velocity
+      of the tool. $\dot{\boldsymbol{q}}$: joint velocities. $\boldsymbol{J}$: the geometric
+      Jacobian.
+    note: |-
+      Each column of $\boldsymbol{J}$ is the contribution of one joint, so the relation
+      changes with posture.
+
+  - id: intro-singularity
+    hy: true
+    q: |-
+      What is a kinematic singularity? Show what happens to the planar 2R arm at
+      $q_1 = q_2 = 0$.
+    steps:
+      - do: |-
+          A singularity is a configuration where the Jacobian for the task loses rank
+          relative to its maximum, so fewer independent task-velocity directions are
+          available.
+      - do: |-
+          Differentiate $x = l_1 \cos q_1 + l_2 \cos(q_1 + q_2)$:
+          $\dot x = -l_1 \sin q_1\, \dot q_1 - l_2 \sin(q_1 + q_2)(\dot q_1 + \dot q_2)$.
+        why: |-
+          Chain rule; the angle of link 2 is $q_1 + q_2$.
+      - do: |-
+          At $q_1 = q_2 = 0$ both sines are zero, so $\dot x = 0$.
+        why: |-
+          The arm is stretched along $+x$.
+      - do: |-
+          Likewise $\dot y = (l_1 + l_2)\, \dot q_1 + l_2\, \dot q_2$.
+        why: |-
+          Both cosines equal $1$.
+    a: |-
+      Both joints still move (two joint DoF), but no joint velocity gives instantaneous TCP
+      motion along $x$: one output direction instead of two. A finite bend still moves the
+      tip inward.
+
+  - id: intro-statics-dynamics
+    q: |-
+      Distinguish kinematics, statics and dynamics.
+    a: |-
+      Kinematics: motion without the forces that cause it. Statics: force and torque
+      balance in equilibrium. Dynamics: how forces and torques relate to motion, including
+      acceleration, inertia, gravity and coupling between links.
+
+  - id: intro-force-impedance
+    q: |-
+      Why is position control alone insufficient once a polishing tool touches a surface?
+      What do force control and impedance control do instead?
+    a: |-
+      A position correction into a rigid surface produces a large contact force. Force
+      control regulates the interaction force. Impedance control shapes the relation
+      between motion and force, so the robot behaves like a chosen spring and damper.
+
+  - id: intro-programming-modes
+    q: |-
+      Name Niku's four ways of specifying robot behaviour.
+    a: |-
+      Physical setup, teach pendant, continuous lead-through, software programming.
+
+  - id: intro-ptp-cp
+    q: |-
+      Distinguish point-to-point from continuous-path motion, with an application of each.
+    a: |-
+      Point-to-point: the task fixes the endpoints and the controller interpolates (spot
+      welding, pick and place). Continuous path: the route itself is constrained (seam
+      welding, painting, adhesive dispensing).
+    note: |-
+      A straight line in joint coordinates is generally not a straight TCP path.
+
+  - id: intro-accuracy-repeatability
+    hy: true
+    q: |-
+      A robot aims at 100.00 mm and measures 100.38, 100.40 and 100.42 mm. Compute the mean
+      error and the range, and say what each tells you.
+    a: |-
+      Mean $100.40$ mm, so mean error $+0.40$ mm: poor **accuracy**.
+
+      Range $0.04$ mm: good **repeatability**.
+
+      The robot is consistent but biased; calibration addresses the bias.
+
+  - id: intro-payload
+    q: |-
+      What does a robot's rated payload include, and why is the object's mass alone not
+      enough?
+    a: |-
+      The tool plus the carried object, under stated conditions. Center of mass, inertia
+      and the motion also load the joints.
+
+  - id: intro-structured
+    q: |-
+      What is a structured environment, and what does "advanced robotics" refer to?
+    a: |-
+      A structured environment is arranged so that object locations and access routes are
+      known or controlled, such as a factory fixture. Advanced robotics means robots with
+      substantial autonomy in environments not fully known beforehand, such as field and
+      service robots.
+
+  - id: intro-training-inference
+    q: |-
+      Distinguish training from inference, and define a policy.
+    a: |-
+      Training adjusts a model's parameters. Inference uses a trained model to produce an
+      output. A policy maps available information to an action.
+    note: |-
+      A robot reacting to a new camera image with a trained network is doing inference, not
+      necessarily learning online.
+
+  - id: intro-sim-to-real
+    q: |-
+      What is the sim-to-real gap? Give an example.
+    a: |-
+      The difference between simulated and real conditions. A grasp can succeed in
+      simulation and fail on the real robot because the real object's friction is lower
+      and it slips.
+
+  - id: intro-cobot-safety
+    q: |-
+      Does using a robot marketed as collaborative make an application safe?
+    a: |-
+      No. Safety depends on the complete application: tool, carried object, surroundings
+      and motion. It follows from an application-specific risk assessment, and an emergency
+      stop alone is not a complete protective design.

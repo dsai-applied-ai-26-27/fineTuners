@@ -1,0 +1,146 @@
+title: Social and document graphs
+topic: social-graphs
+description: Small worlds, power laws and epidemic thresholds in social graphs, and document graphs, PageRank, semantic search and retrieval (lectures 10 and 11).
+
+cards:
+  - id: net-directed
+    q: |-
+      When is a social graph directed, and when undirected?
+    a: |-
+      Undirected for mutual ties (friendship, co-starring); directed for asymmetric ones
+      (following, citing).
+
+  - id: net-small-world
+    hy: true
+    q: |-
+      What is the small-world phenomenon, and the evidence for it?
+    a: |-
+      Short distances in huge networks. Six degrees of separation; Milgram's letters (about six
+      intermediaries); Bacon numbers mostly $\le 4$, Erdős numbers mostly $< 6$; Facebook studies.
+
+  - id: net-properties
+    hy: true
+    cloze: |-
+      Social graphs are large but {{sparse}}, {{decentralised}}, and highly {{clustered}}
+      (friends of friends know each other).
+
+  - id: net-rich-richer
+    q: |-
+      How do links form in social networks?
+    a: |-
+      By local rules: friends of friends, visibility, popularity. That gives rich-get-richer
+      dynamics and network inequality.
+
+  - id: net-power-law
+    hy: true
+    q: |-
+      Write the power law and how to spot it.
+    a: |-
+      $p(x) = c\,x^{-\alpha}$; $\log p(x) = \log c - \alpha\log x$, a straight line of slope
+      $-\alpha$ on a log-log plot.
+
+  - id: net-scale-free
+    hy: true
+    q: |-
+      What does scale-free mean, and what does it do to algorithm analysis?
+    a: |-
+      No characteristic degree; the distribution looks the same at every scale. Averages mislead,
+      workloads are unbalanced, average-case analysis can be wrong.
+
+  - id: net-epidemic
+    q: |-
+      How is epidemic spread a graph process?
+    a: |-
+      Nodes are susceptible, infected or recovered; infected nodes infect neighbours, like a BFS with
+      probabilities.
+
+  - id: net-threshold
+    hy: true
+    q: |-
+      Epidemic threshold on random against scale-free networks.
+    a: |-
+      Random: a clear positive threshold. Scale-free: hubs push it to effectively zero, so even weak
+      spreading persists and is hard to stop.
+
+  - id: net-superspreaders
+    q: |-
+      What did COVID-19 and fake news show about network spreading?
+    a: |-
+      Most infected people infected nobody while a few super-spreaders caused most transmissions;
+      misinformation spreads faster because networks amplify extreme nodes.
+
+  - id: net-doc-graph
+    topic: document-graphs
+    q: |-
+      What are the nodes and edges of a document graph?
+    a: |-
+      Documents; relationships such as content similarity, citations, hyperlinks, shared metadata.
+      Similarity graphs undirected, citation and link graphs directed.
+
+  - id: net-knn
+    topic: document-graphs
+    hy: true
+    q: |-
+      Why build kNN document graphs instead of all-pairs similarity?
+    a: |-
+      All pairs is $O(n^2)$. Keeping each document's $k$ nearest neighbours (or a threshold $\tau$)
+      guarantees sparsity, at some loss of global structure.
+
+  - id: net-bounded-traversal
+    topic: document-graphs
+    q: |-
+      How is traversal different on document graphs?
+    a: |-
+      Bounded and weight-guided: maximum depth, maximum visited nodes, edges of weight $\ge \tau$;
+      the goal is relevant documents, not everything reachable.
+
+  - id: net-importance
+    topic: document-graphs
+    hy: true
+    q: |-
+      What makes a document important, and why is degree not enough?
+    a: |-
+      Being linked from important documents: a recursive, global property. Many weak links need not
+      mean importance; a few from important nodes may matter more.
+
+  - id: net-pagerank
+    topic: document-graphs
+    hy: true
+    q: |-
+      The random-walk view of PageRank.
+    a: |-
+      A random user follows links; importance is the probability of being visited. Computed by
+      passing importance to neighbours repeatedly until it stabilises.
+
+  - id: net-pagerank-now
+    topic: document-graphs
+    q: |-
+      Why is modern Google more than PageRank?
+    a: |-
+      Link farms and artificial links gamed it; now links are one signal among content relevance,
+      intent, freshness, behaviour and machine learning.
+
+  - id: net-semantic
+    topic: document-graphs
+    q: |-
+      What does semantic search fix, and what does it miss?
+    a: |-
+      It maps queries and documents into one vector space, bridging vocabulary gaps. It scores only
+      closeness to the query, not importance.
+
+  - id: net-retrieval
+    topic: document-graphs
+    hy: true
+    q: |-
+      The three steps of retrieval as a graph problem.
+    a: |-
+      Candidate selection by similarity, graph expansion through neighbours (bounded), ranking the
+      subgraph by importance. The output is context, not an answer.
+
+  - id: net-rag
+    topic: document-graphs
+    q: |-
+      How does RAG work, and where do document graphs fit?
+    a: |-
+      Chunk documents into a vector store, retrieve chunks for the question, let the LLM answer from
+      them. Similarity gives candidates; graph structure improves expansion and ranking.

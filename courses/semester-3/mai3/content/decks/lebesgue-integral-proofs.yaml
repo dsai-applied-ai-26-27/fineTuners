@@ -1,0 +1,360 @@
+title: 'Proofs: the Lebesgue integral'
+topic: measure
+lecture: 02-the-lebesgue-integral
+description: The proofs of lecture 2, from measurable functions to the convergence theorems, including the standard proofs the notes leave out (marked so).
+
+cards:
+  - id: leb-continuous-borel-proof
+    q: |-
+      Prove 2.41: a continuous $f : B \to \mathbf{R}$ on a Borel set $B \subset \mathbf{R}$ is
+      Borel measurable.
+    steps:
+      - do: |-
+          Fix $a \in \mathbf{R}$. For each $x$ with $f(x) > a$ there is $\delta_x > 0$ with
+          $f(y) > a$ for every $y \in B \cap (x - \delta_x, x + \delta_x)$.
+        why: |-
+          Continuity of $f$ at $x$, with the margin $f(x) - a > 0$.
+      - do: |-
+          So $f^{-1}\big( (a,\infty) \big) = B \cap G$, where
+          $G = \bigcup_{x \in f^{-1}((a,\infty))} (x - \delta_x, x + \delta_x)$.
+        why: |-
+          Each point of the left side lies in its own interval, and every point of
+          $B \cap G$ has $f > a$ by the choice of $\delta_x$.
+      - do: |-
+          $G$ is open, hence Borel, and so is $B \cap G$. By 2.39, $f$ is Borel measurable.
+        why: |-
+          A union of open intervals is open; a σ-algebra is closed under intersections.
+    note: |-
+      Not proved in the notes; this is the standard argument (Axler's proof of 2.41). It
+      is why polynomials, $\sin$ and $\exp$ are measurable for free.
+
+  - id: leb-composition
+    hy: true
+    q: |-
+      Prove: if $f$ is $\mathcal{S}$-measurable and $g$ is Borel measurable on a set
+      containing the range of $f$, then $g \circ f$ is $\mathcal{S}$-measurable.
+    steps:
+      - do: |-
+          Let $B$ be Borel. Then $(g \circ f)^{-1}(B) = f^{-1}(g^{-1}(B))$.
+      - do: |-
+          $g^{-1}(B)$ is Borel.
+        why: |-
+          $g$ is Borel measurable.
+      - do: |-
+          $f^{-1}(g^{-1}(B)) \in \mathcal{S}$.
+        why: |-
+          $f$ is $\mathcal{S}$-measurable and $g^{-1}(B)$ is a Borel set.
+    a: |-
+      Hence $g \circ f$ is $\mathcal{S}$-measurable (2.44). So $-f$, $\frac12 f$,
+      $\lvert f \rvert$, $f^2$ are measurable whenever $f$ is (2.45).
+
+  - id: leb-sum-measurable-proof
+    q: |-
+      Prove that $f + g$ is $\mathcal{S}$-measurable when $f$ and $g$ are, and deduce the
+      same for $fg$.
+    steps:
+      - do: |-
+          Claim: $(f + g)^{-1}\big( (a, \infty) \big) = \bigcup_{r \in \mathbf{Q}} \Big( f^{-1}\big((r, \infty)\big) \cap g^{-1}\big((a - r, \infty)\big) \Big)$.
+      - do: |-
+          Left in right: if $f(x) + g(x) > a$, pick a rational $r$ with
+          $a - g(x) < r < f(x)$. Then $f(x) > r$ and $g(x) > a - r$.
+        why: |-
+          The rationals are dense, and $a - g(x) < f(x)$.
+      - do: |-
+          Right in left: $f(x) > r$ and $g(x) > a - r$ add up to $f(x) + g(x) > a$.
+      - do: |-
+          The right side is a countable union of sets in $\mathcal{S}$, so $f + g$ is
+          measurable by 2.39.
+        why: |-
+          $\mathbf{Q}$ is countable; that is why the rational is chosen.
+      - do: |-
+          $fg = \tfrac12 \big( (f + g)^2 - f^2 - g^2 \big)$ is then measurable too.
+        why: |-
+          Squares, $-h$ and $\frac12 h$ of measurable functions are measurable (2.45), and
+          sums are, by the first part.
+    note: |-
+      Result 2.46, stated without proof in the notes; this is the standard argument. For
+      $f/g$, write $f \cdot \frac1g$, where $\frac1g = h \circ g$ with the continuous
+      $h(t) = \frac1t$ on $\mathbf{R} \setminus \{0\}$ (2.44).
+
+  - id: leb-limit-proof
+    hy: true
+    q: |-
+      Prove 2.48: if $f_1, f_2, \dots$ are $\mathcal{S}$-measurable and
+      $f(x) = \lim_k f_k(x)$ exists for every $x$, then $f$ is $\mathcal{S}$-measurable.
+    steps:
+      - do: |-
+          By 2.39 it is enough to show, for each $a \in \mathbf{R}$,
+          $$f^{-1}\big((a,\infty)\big) = \bigcup_{j=1}^{\infty} \bigcup_{m=1}^{\infty} \bigcap_{k=m}^{\infty} f_k^{-1}\Big(\big(a + \tfrac1j, \infty\big)\Big).$$
+        why: |-
+          The right side is built from sets in $\mathcal{S}$ by countable unions and
+          intersections.
+      - do: |-
+          Left in right: if $f(x) > a$, choose $j$ with $f(x) > a + \frac1j$. As
+          $f_k(x) \to f(x)$, some $m$ has $f_k(x) > a + \frac1j$ for all $k \ge m$.
+      - do: |-
+          Right in left: if $f_k(x) > a + \frac1j$ for all $k \ge m$, letting
+          $k \to \infty$ gives $f(x) \ge a + \frac1j > a$.
+        why: |-
+          Limits keep only non-strict inequalities; the margin $\frac1j$ restores the strict
+          one.
+    note: |-
+      The notes' proof. The identity alone is [the identity card](card:leb-limit-identity).
+
+  - id: leb-chi-measurable-proof
+    q: |-
+      Prove that $\chi_E$ is $\mathcal{S}$-measurable if and only if $E \in \mathcal{S}$.
+    steps:
+      - do: |-
+          If $E \in \mathcal{S}$: for a Borel $B$, $\chi_E^{-1}(B)$ is $\varnothing$, $E$,
+          $X \setminus E$ or $X$.
+        why: |-
+          It depends only on which of $0$ and $1$ lie in $B$: neither, only $1$, only $0$,
+          both.
+      - do: |-
+          All four are in $\mathcal{S}$, so $\chi_E$ is measurable.
+      - do: |-
+          Conversely, if $\chi_E$ is measurable, then $E = \chi_E^{-1}(\{1\}) \in \mathcal{S}$.
+        why: |-
+          $\{1\}$ is a Borel set.
+    note: |-
+      Lecture 2, "Simple functions".
+
+  - id: leb-dyadic
+    hy: true
+    q: |-
+      Let $f : X \to [0, M]$ be measurable and $f_k = \lfloor 2^k f \rfloor / 2^k$. Prove
+      that the $f_k$ are measurable simple functions with $f_1 \le f_2 \le \dots \le f$ and
+      $f_k \to f$ uniformly.
+    steps:
+      - do: |-
+          $f_k$ takes only the values $j/2^k$ with $0 \le j \le 2^k M$: finitely many.
+        why: |-
+          $f$ is bounded, so $\lfloor 2^k f \rfloor$ is an integer between $0$ and $2^k M$.
+      - do: |-
+          $f_k^{-1}(\{j/2^k\}) = f^{-1}\big( [\, j/2^k,\ (j+1)/2^k \,) \big) \in \mathcal{S}$, so $f_k$
+          is measurable.
+        why: |-
+          An interval is Borel; a simple function is measurable when its level sets are.
+      - do: |-
+          $f_k \le f_{k+1}$: with $t = 2^k f$, $\lfloor 2t \rfloor \ge 2\lfloor t \rfloor$.
+        why: |-
+          $2\lfloor t \rfloor$ is an integer not above $2t$, and $\lfloor 2t \rfloor$ is the
+          largest such integer.
+      - do: |-
+          $0 \le f - f_k < 2^{-k}$ everywhere.
+        why: |-
+          $t - 1 < \lfloor t \rfloor \le t$, divided by $2^k$. The bound does not depend on
+          $x$: uniform convergence.
+    note: |-
+      The approximation theorem of lectures 1 and 2, for bounded $f$. For unbounded $f$,
+      Axler (2.89) also caps $f_k$ at $k$ so that it still takes finitely many values.
+    hook: |-
+      Round down to the grid; halve the grid; the error is under one step.
+
+  - id: leb-chi-integral
+    hy: true
+    q: |-
+      Prove $\int \chi_E \, d\mu = \mu(E)$.
+    steps:
+      - do: |-
+          $\ge$: the partition $E, X \setminus E$ gives $\mathcal{L} = \mu(E)$.
+      - do: |-
+          $\le$: for any partition, $\inf_{A_j} \chi_E = 1$ if $A_j \subset E$, else $0$.
+      - do: |-
+          So $\mathcal{L}(\chi_E, P) = \sum_{A_j \subset E} \mu(A_j) = \mu\big(\bigcup_{A_j \subset E} A_j\big) \le \mu(E)$.
+        why: |-
+          Additivity on disjoint sets, then monotonicity.
+    a: |-
+      Both inequalities hold, so the integral is $\mu(E)$ (3.4).
+
+  - id: leb-simple-integral-proof
+    hy: true
+    q: |-
+      Prove 3.7: for disjoint $E_1, \dots, E_n \in \mathcal{S}$ and $c_k \in [0, \infty]$,
+      $\int \sum_k c_k \chi_{E_k} \, d\mu = \sum_k c_k \mu(E_k)$.
+    steps:
+      - do: |-
+          Add $E_{n+1} = X \setminus (E_1 \cup \dots \cup E_n)$ with $c_{n+1} = 0$, so the
+          $E_k$ form a partition of $X$.
+        why: |-
+          It changes neither the function nor the sum.
+      - do: |-
+          $\ge$: the partition $E_1, \dots, E_{n+1}$ itself has lower sum
+          $\sum_k c_k \mu(E_k)$.
+      - do: |-
+          $\le$: for any partition $A_1, \dots, A_m$, split each $A_j$ along the $E_k$:
+          $$\mathcal{L} = \sum_{j} \sum_{k} \mu(A_j \cap E_k) \inf_{A_j} f \le \sum_{j} \sum_{k} \mu(A_j \cap E_k)\, c_k = \sum_k c_k \, \mu(E_k).$$
+        why: |-
+          Term by term: if $\mu(A_j \cap E_k) > 0$ then $A_j$ meets $E_k$, where $f = c_k$,
+          so $\inf_{A_j} f \le c_k$. The last equality is additivity of $\mu$ over the
+          $A_j$.
+    note: |-
+      The notes' proof. Use the disjoint form when computing.
+
+  - id: leb-order
+    q: |-
+      Why is the integral order preserving for $0 \le f \le g$?
+    a: |-
+      On every piece of every partition $\inf_{A_j} f \le \inf_{A_j} g$, so
+      $\mathcal{L}(f,P) \le \mathcal{L}(g,P)$; take suprema (3.8).
+
+  - id: leb-mct-proof
+    q: |-
+      Prove the Monotone Convergence Theorem: for measurable
+      $0 \le f_1 \le f_2 \le \dots$ with $f_k \to f$, $\lim_k \int f_k \, d\mu = \int f \, d\mu$.
+    steps:
+      - do: |-
+          $\le$: $f_k \le f_{k+1} \le f$, so $\int f_k$ increases, its limit exists in
+          $[0,\infty]$, and it is at most $\int f$.
+        why: |-
+          Order (3.8). $f$ is measurable as a pointwise limit (2.48).
+      - do: |-
+          $\ge$: fix a partition $A_1, \dots, A_m$ and numbers $0 < c_j < \inf_{A_j} f$
+          (for the $j$ with $\inf_{A_j} f > 0$; the others add nothing to
+          $\mathcal{L}(f, P)$). Put $E_{j,k} = \{x \in A_j : f_k(x) > c_j\}$.
+      - do: |-
+          For each $j$, $E_{j,1} \subset E_{j,2} \subset \cdots$ and
+          $\bigcup_k E_{j,k} = A_j$, so $\mu(E_{j,k}) \to \mu(A_j)$.
+        why: |-
+          $f_k$ increases, and $f_k(x) \to f(x) > c_j$ for $x \in A_j$. Then 2.59.
+      - do: |-
+          $f_k \ge \sum_j c_j \chi_{E_{j,k}}$, so
+          $\int f_k \, d\mu \ge \sum_j c_j \, \mu(E_{j,k})$.
+        why: |-
+          The $E_{j,k}$ are disjoint and $f_k > c_j$ on $E_{j,k}$; then 3.8 and 3.7.
+      - do: |-
+          Let $k \to \infty$, then each $c_j \uparrow \inf_{A_j} f$:
+          $\lim_k \int f_k \ge \sum_j \mu(A_j) \inf_{A_j} f = \mathcal{L}(f, P)$. Take the
+          supremum over $P$.
+    note: |-
+      Not in the notes: the notes state 3.11 without proof. This is the argument of Axler's
+      proof. The only limit theorem it uses is 2.59 for sets.
+
+  - id: leb-additivity-proof
+    q: |-
+      Prove 3.16: $\int (f + g) \, d\mu = \int f \, d\mu + \int g \, d\mu$ for measurable
+      $f, g \ge 0$.
+    steps:
+      - do: |-
+          Simple case: $f = \sum_i a_i \chi_{E_i}$, $g = \sum_j b_j \chi_{F_j}$ over
+          partitions of $X$. Then $f + g = \sum_{i,j} (a_i + b_j)\chi_{E_i \cap F_j}$.
+        why: |-
+          The sets $E_i \cap F_j$ form a common refinement, again a partition.
+      - do: |-
+          By 3.7,
+          $\int (f+g) = \sum_{i,j} (a_i + b_j) \mu(E_i \cap F_j) = \sum_i a_i \mu(E_i) + \sum_j b_j \mu(F_j)$.
+        why: |-
+          $\sum_j \mu(E_i \cap F_j) = \mu(E_i)$ and $\sum_i \mu(E_i \cap F_j) = \mu(F_j)$ by
+          finite additivity.
+      - do: |-
+          General case: take simple measurable $f_k \uparrow f$ and $g_k \uparrow g$. Then
+          $f_k + g_k$ is simple and increases to $f + g$.
+        why: |-
+          The approximation by simple functions.
+      - do: |-
+          $\int (f+g) = \lim_k \int (f_k + g_k) = \lim_k \Big( \int f_k + \int g_k \Big) = \int f + \int g$.
+        why: |-
+          Monotone convergence three times, and the simple case in the middle.
+    note: |-
+      Not in the notes: the notes state 3.16 without proof, and Axler proves it this way.
+      "Prove it for simple functions, then pass to monotone limits" is the standard machine
+      of integration theory.
+
+  - id: leb-null-set-proof
+    q: |-
+      Let $\mu(N) = 0$ and $f \ge 0$ be measurable. Prove $\int f \chi_N \, d\mu = 0$, and
+      deduce that $f = g$ almost everywhere implies $\int f = \int g$ for $f, g \ge 0$.
+    steps:
+      - do: |-
+          Take any partition $A_1, \dots, A_m$. If $A_j \subset N$, then $\mu(A_j) = 0$ and
+          its term in $\mathcal{L}$ is $0$.
+        why: |-
+          Monotonicity, and $0 \cdot \infty = 0$.
+      - do: |-
+          If $A_j \not\subset N$, it contains a point where $f\chi_N = 0$, so
+          $\inf_{A_j} f\chi_N = 0$ and its term is $0$.
+      - do: |-
+          Every lower sum is $0$, so $\int f\chi_N \, d\mu = 0$.
+      - do: |-
+          If $f = g$ outside a null set $N$:
+          $\int f = \int f\chi_{X \setminus N} + \int f\chi_N = \int g\chi_{X \setminus N} + 0 = \int g$.
+        why: |-
+          Additivity (3.16), and the same for $g$.
+    note: |-
+      Not proved in the notes, which say only that a set of measure zero cannot change an
+      integral. It is why the Dominated Convergence Theorem asks for "almost every".
+
+  - id: leb-subset-bound-proof
+    q: |-
+      Prove 3.25: $\big\lvert \int_E f \, d\mu \big\rvert \le \mu(E) \sup_E \lvert f \rvert$
+      whenever $\int_E f \, d\mu$ is defined.
+    steps:
+      - do: |-
+          $\big\lvert \int \chi_E f \, d\mu \big\rvert \le \int \chi_E \lvert f \rvert \, d\mu$.
+        why: |-
+          3.23, the absolute value of an integral.
+      - do: |-
+          $\chi_E \lvert f \rvert \le \big( \sup_E \lvert f \rvert \big) \chi_E$ everywhere.
+      - do: |-
+          $\int \big( \sup_E \lvert f \rvert \big) \chi_E \, d\mu = \mu(E) \sup_E \lvert f \rvert$.
+        why: |-
+          3.7 with one set, or 3.4 and homogeneity. Then order (3.8) joins the steps.
+    note: |-
+      Not proved in the notes (the tutorial lists 3.25 among results "not in the lecture").
+
+  - id: leb-fatou-proof
+    q: |-
+      State and prove Fatou's lemma: for measurable $g_k \ge 0$,
+      $\int \liminf_k g_k \, d\mu \le \liminf_k \int g_k \, d\mu$.
+    steps:
+      - do: |-
+          Put $h_k = \inf_{j \ge k} g_j$. It is measurable, $0 \le h_1 \le h_2 \le \dots$,
+          and $h_k \to \liminf_k g_k$.
+        why: |-
+          $h_k^{-1}([a,\infty)) = \bigcap_{j \ge k} g_j^{-1}([a,\infty))$, and closed rays also
+          generate the Borel sets. Taking the infimum over fewer terms can only raise it.
+      - do: |-
+          By monotone convergence, $\int \liminf_k g_k = \lim_k \int h_k$.
+      - do: |-
+          $h_k \le g_j$ for every $j \ge k$, so $\int h_k \le \inf_{j \ge k} \int g_j$.
+        why: |-
+          Order (3.8).
+      - do: |-
+          Let $k \to \infty$: $\lim_k \int h_k \le \liminf_k \int g_k$.
+    note: |-
+      Not in the notes: Fatou's lemma is not part of this course, but it is the shortest way
+      from monotone to dominated convergence ([the proof of dominated convergence](card:leb-dct-proof)). The inequality can be
+      strict: $g_k = k\chi_{(0,1/k)}$ gives $0 < 1$.
+
+  - id: leb-dct-proof
+    q: |-
+      Prove the Dominated Convergence Theorem from Fatou's lemma.
+    steps:
+      - do: |-
+          Changing all functions to $0$ on a null set changes no integral, so assume
+          $f_k \to f$ and $\lvert f_k \rvert \le g$ everywhere.
+        why: |-
+          The exceptional sets are countably many null sets, and their union is null
+          (2.58); then [null sets do not change integrals](card:leb-null-set-proof) on positive and negative parts.
+      - do: |-
+          $\lvert f \rvert \le g$, so $f$ and every $f_k$ are integrable, and
+          $g + f_k \ge 0$, $g - f_k \ge 0$.
+        why: |-
+          Let $k \to \infty$ in $\lvert f_k \rvert \le g$, and $\int g < \infty$.
+      - do: |-
+          Fatou on $g + f_k$: $\int g + \int f \le \int g + \liminf_k \int f_k$.
+        why: |-
+          $\liminf_k (g + f_k) = g + f$, and additivity of integrals of integrable
+          functions (3.21).
+      - do: |-
+          Fatou on $g - f_k$: $\int g - \int f \le \int g - \limsup_k \int f_k$.
+      - do: |-
+          Cancel the finite $\int g$:
+          $\limsup_k \int f_k \le \int f \le \liminf_k \int f_k$, so
+          $\lim_k \int f_k = \int f$.
+        why: |-
+          This is where $\int g < \infty$ is essential.
+    note: |-
+      Not in the notes: the notes state 3.31 without proof. This is the standard textbook
+      proof (Axler's own proof takes a different route).

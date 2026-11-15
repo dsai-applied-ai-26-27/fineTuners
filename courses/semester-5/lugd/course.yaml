@@ -1,0 +1,40 @@
+# One file per course. Field reference: docs/content-types/course.md
+title: "Learning from User-Generated Data"
+code: "LUGD"
+year: "2026-27"
+semester: 5
+status: active          # active | archived
+has_educator: true      # someone writes it: its page does not ask for an educator
+hue: 335                # course colour, 0-359 on the hue wheel
+order: 3
+description: Recommender systems from a human-centred perspective. How user preferences are elicited and modelled, how collaborative filtering, content-based, group, context-aware and conversational systems work, how they are evaluated, and how people decide.
+
+# The introduction of lecture 1 plus the syllabus of the course introduction (slide 5), in
+# the order it is listed there, with classification added for the Bayes classifier sheet.
+# Ids are permanent.
+topics:
+  - id: intro
+    title: 'Recommender systems: a human-centred perspective'
+    short: Introduction
+  - id: cf
+    title: Collaborative filtering
+  - id: classification
+    title: Classification and the Bayes error
+    short: Bayes error
+  - id: content
+    title: Content-based methods
+    short: Content-based
+  - id: group
+    title: Group recommender systems
+    short: Group RSs
+  - id: evaluation
+    title: Evaluation of recommender systems
+    short: Evaluation
+  - id: context
+    title: Context-aware systems
+    short: Context-aware
+  - id: conversational
+    title: Conversational systems
+    short: Conversational
+  - id: decision
+    title: Decision making

@@ -1,0 +1,261 @@
+# Ids are permanent: people's progress is keyed by them.
+title: 'Clustering'
+topic: 'clustering'
+cards:
+  - id: 'cl01'
+    hy: true
+    q: |-
+      What does BFR assume about the clusters, and what does that assumption buy?
+    a: |-
+      Clusters are **normally distributed around a centroid** in Euclidean space, with standard deviations that may differ per dimension — so clusters are **axis-aligned ellipses**.
+    note: |-
+      What it buys: a cluster of any size can be summarised by **2d + 1 numbers** — N, SUM, SUMSQ. Drop the axis-aligned assumption and you would need a full **d × d covariance matrix** per cluster, which the lecture calls simply *too big*.
+
+      **The cheap summary is the assumption.** That one sentence links every BFR sub-question together.
+
+  - id: 'cl02'
+    hy: true
+    q: |-
+      A cluster's discard set is summarised as (N, SUM, SUMSQ). Recover its centroid and its standard deviation in dimension i.
+    steps:
+      - do: |-
+          N = number of points; SUMᵢ = Σ of the i-th coordinate; SUMSQᵢ = Σ of the *squares* of the i-th coordinate.
+        why: |-
+          These are the only three things stored. Write down what you have before reaching for what you want.
+
+      - do: |-
+          centroidᵢ = SUMᵢ / N
+        why: |-
+          The mean is the sum over the count — and SUM is exactly that sum, so the mean needs no points, only the summary.
+
+      - do: |-
+          varianceᵢ = SUMSQᵢ/N − (SUMᵢ/N)²
+        why: |-
+          The computational formula Var(X) = E\[X²] − (E\[X])². SUMSQ/N is E\[X²] and SUM/N is E\[X], so both terms are available from the summary alone.
+
+      - do: |-
+          σᵢ = √( SUMSQᵢ/N − (SUMᵢ/N)² )
+        why: |-
+          Standard deviation is the square root of variance. This σ is what the Mahalanobis distance divides by.
+
+    note: |-
+      The **additivity** of these three is the reason the algorithm works in one pass: to merge two sets you just add their N, SUM and SUMSQ. That is also how BFR decides whether two CS sets should be combined — compute the combined variance instantly and compare to a threshold.
+
+  - id: 'cl03'
+    hy: true
+    q: |-
+      Name BFR's three sets of points and say what is physically kept for each.
+    a: |-
+      **DS — Discard set:** points close enough to a centroid to be summarised. Statistics kept; *the points are discarded*.\
+      **CS — Compression set:** groups of points close to each other but not to any centroid. Summarised, but **not assigned to a cluster**.\
+      **RS — Retained set:** isolated points waiting to join a compression set. The **actual points** are held in memory.
+    note: |-
+      The names mislead: the **Discard** set is the one whose points belong to a cluster (they're discarded because they're safely summarised), and the **Retained** set is the homeless one. Getting this backwards is the classic slip.
+
+  - id: 'cl04'
+    hy: true
+    q: |-
+      Write the Mahalanobis distance BFR uses, define every symbol, and state the acceptance rule.
+    a: |-
+      d(x, c) = √( Σ\_(i=1..d) ( (xᵢ − cᵢ) / σᵢ )² )\
+      \
+      xᵢ = the point's i-th coordinate · cᵢ = the centroid's i-th coordinate · σᵢ = the cluster's standard deviation in dimension i · d = number of dimensions.\
+      \
+      Accept the point into the cluster if d is below a threshold — **the lecture's example is 2 standard deviations**.
+    note: |-
+      The three steps as the slide states them: normalise in each dimension yᵢ = (xᵢ − cᵢ)/σᵢ; sum the squares of the yᵢ; take the square root.
+
+      Also worth a line: if clusters are normal in d dimensions then after the transformation **1 standard deviation corresponds to a Mahalanobis distance of √d**, so about 68% of a cluster's points have distance below √d.
+
+  - id: 'cl05'
+    hy: true
+    q: |-
+      Why Mahalanobis rather than plain Euclidean distance?
+    a: |-
+      Because the cluster may be much wider in one dimension than another. Dividing each dimension by that cluster's own σ makes the acceptance region an **axis-aligned ellipse matching the cluster's actual spread**, instead of a sphere that would over-accept along the narrow axis and under-accept along the wide one.
+    note: |-
+      Mahalanobis is a **normalised Euclidean distance from the centroid** — that is the lecture's own phrase. And the connection worth stating: when the covariance matrix is the identity, Mahalanobis *is* Euclidean.
+
+  - id: 'cl06'
+    hy: true
+    q: |-
+      BFR's main drawback?
+    a: |-
+      **The shape assumption.** Clusters must be normally distributed and **axis-aligned**. An ellipse at an angle is not allowed, and neither is anything non-convex — crescents, rings, spirals. On such data BFR's centroid-plus-σ summary cannot describe the cluster, so points are accepted from empty space and true clusters get split or merged.
+    note: |-
+      Secondary drawbacks, one line each: k must be fixed in advance; it makes a single pass, so a discarded point can never be reassigned; and it needs feature scaling, like all of k-means.
+
+  - id: 'cl07'
+    hy: true
+    q: |-
+      You are shown a scatter plot of two interleaving crescents and asked whether BFR is suitable. Answer it.
+    a: |-
+      **No.** The clusters are non-convex crescents. BFR models each cluster as an axis-aligned normal distribution, so the fitted ellipse for a crescent has its **centroid in the hollow where there is no data**, and the ellipse covers large regions belonging to the other crescent. The recovered clusters would cut across both crescents rather than separate them.\
+      \
+      **Use instead:** CURE (representatives, any shape), or a density-based method such as DBSCAN.
+    note: |-
+      The strongest version of this answer names the mechanism rather than just the verdict: BFR can only draw an axis-aligned ellipse, and there is no axis-aligned ellipse that contains one crescent and excludes the other.
+
+      Mirror-image case for the marks: two round, well-separated blobs → **yes, suitable**, for exactly the same reason run backwards.
+
+  - id: 'cl08'
+    hy: true
+    q: |-
+      Give the CURE algorithm, all steps, and state how many passes it takes.
+    steps:
+      - do: |-
+          **It takes 2 passes.** Say this first — the exam asks for the number explicitly.
+        why: |-
+          One pass to build the model from a sample, one pass to assign the full dataset. Nothing else is needed because the model is fixed after pass 1.
+
+      - do: |-
+          **Pass 1, step 0:** take a random sample of points that fits in main memory.
+        why: |-
+          The dataset doesn't fit in memory — that's the premise. Hierarchical clustering is O(N²) or worse, so it can only be run on a sample.
+
+      - do: |-
+          **Pass 1, step 1:** cluster the sample **hierarchically** — repeatedly group nearest points/clusters.
+        why: |-
+          Hierarchical clustering makes no shape assumption, which is the whole point: it can follow a curved or elongated cluster that k-means would cut in half.
+
+      - do: |-
+          **Pass 1, step 2:** for each cluster, pick a set of representative points, **as dispersed as possible**.
+        why: |-
+          Several points spread across the cluster can describe a shape that one centroid cannot. Dispersion is what captures the extent.
+
+      - do: |-
+          **Pass 1, step 3:** move each representative **20% toward the centroid** of its cluster.
+        why: |-
+          The compromise: far enough out to trace the shape, pulled in enough that a stray outlier chosen as a representative can't drag the cluster after it.
+
+      - do: |-
+          **Pass 2:** rescan the whole dataset; for each point p, find the **closest representative** and assign p to that representative's cluster.
+        why: |-
+          Nearest-representative rather than nearest-centroid is what lets a point at the far tip of a crescent join the right cluster.
+
+  - id: 'cl09'
+    hy: true
+    q: |-
+      State the main difference between CURE, k-means and BFR.
+    a: |-
+      **k-means:** a cluster is **one centroid**; assigns by Euclidean distance; the data must fit in memory; iterates to convergence.\
+      **BFR:** extends k-means to **data too large for memory** — one memory-load at a time, clusters summarised as (N, SUM, SUMSQ), assignment by Mahalanobis distance. Still assumes **axis-aligned normal** clusters.\
+      **CURE:** extends k-means to **clusters of arbitrary shape** — a cluster is a set of **representative points**, not a centroid. 2 passes.\
+      \
+      **In one line:** BFR fixes the *size* problem, CURE fixes the *shape* problem.
+    note: |-
+      That last line is the sentence to write. Both are described in the lecture as "extension of k-means" — to large data, and to clusters of arbitrary shapes respectively.
+
+  - id: 'cl10'
+    hy: false
+    q: |-
+      Centroid vs clustroid — what's the difference and when do you need the second?
+    a: |-
+      **Centroid:** the average of all data points in the cluster — an **artificial** point that need not exist in the data.\
+      **Clustroid:** an **existing data point** chosen as closest to all the others in its cluster.\
+      \
+      You need the clustroid in a **non-Euclidean** space, where there is no notion of an average of two points, so the only locations available are the points themselves.
+    note: |-
+      Three definitions of "closest" the lecture offers: smallest **maximum** distance to other points; smallest **average** distance; smallest **sum of squares** of distances. Then treat the clustroid as if it were a centroid when computing inter-cluster distances.
+
+  - id: 'cl11'
+    hy: false
+    q: |-
+      In hierarchical clustering, what are the three questions you have to answer, and what is the key operation?
+    a: |-
+      **Key operation:** repeatedly combine the two nearest clusters.\
+      \
+      **(1)** How do you represent a cluster of many points? **(2)** How do you determine the nearness of clusters? **(3)** When do you stop combining?
+    note: |-
+      Euclidean answers: represent by the **centroid**, measure nearness by **distance between centroids**. Non-Euclidean: clustroid, plus either minimum inter-point distance between the clusters, or a **cohesion** notion — cluster diameter (max distance between points), average distance, or a density-based measure that divides one of those by the number of points.
+
+  - id: 'cl12'
+    hy: false
+    q: |-
+      Why doesn't hierarchical clustering scale?
+    a: |-
+      Naïvely it recomputes pairwise distances between all pairs of clusters at every step: **O(N³)**. With a priority queue this drops to **O(N² log N)** — still too expensive for datasets that don't fit in memory.
+    note: |-
+      This is exactly why CURE runs hierarchical clustering on a **sample** and not the whole dataset.
+
+  - id: 'cl13'
+    hy: true
+    q: |-
+      Describe one full k-means iteration, and say what convergence means.
+    a: |-
+      **1.** Pick k. **2.** Initialise k centroids, one point per cluster. **3.** Place each point in the cluster whose current centroid it is nearest. **4.** After all points are assigned, recompute each of the k centroids. **5.** Reassign all points to their closest centroid. Repeat 4–5.\
+      \
+      **Convergence:** points stop moving between clusters and the centroids stabilise.
+    note: |-
+      The lecture's initialisation trick, worth naming: pick one point at random, then k−1 more, **each as far away as possible from the previously selected points**.
+
+  - id: 'cl14'
+    hy: true
+    q: |-
+      A student says: "k = 7 is best because it has the lowest inertia." Respond.
+    a: |-
+      **Not a valid argument.** Inertia **always** decreases as k increases, because more centroids let every point sit closer to its own — at k = n inertia is zero. So "lowest inertia" taken literally selects as many clusters as data points.\
+      \
+      The elbow method looks for the k at which the **decrease starts becoming smaller**. The choice should also be checked with silhouette score, cluster profiles and interpretability. **A clustering solution should not be evaluated by one metric.**
+    note: |-
+      Show the deltas on the paper — for the exam-prep numbers 5400/3900/3100/2700/2450/2300 the drops are **1500, 800, 400, 250, 150**, so the elbow is around k = 3–4. Writing the differences *is* the answer in a form the marker can see at a glance.
+
+  - id: 'cl15'
+    hy: false
+    q: |-
+      Write the k-means objective and define every symbol.
+    a: |-
+      inertia = Σ\_(i=1..k) Σ\_(x ∈ Cᵢ) ‖x − μᵢ‖²\
+      \
+      k = number of clusters · Cᵢ = the set of points in cluster i · μᵢ = the centroid of cluster i · ‖x − μᵢ‖² = squared Euclidean distance from the point to its centroid.
+    note: |-
+      Also called the within-cluster sum of squares (WCSS). It measures **compactness only** — it says nothing about whether clusters are separated, which is why silhouette exists.
+
+  - id: 'cl16'
+    hy: false
+    q: |-
+      Write the silhouette score, define a and b, and give its range.
+    a: |-
+      s = (b − a) / max(a, b)\
+      \
+      **a** = the average distance from the observation to the *other points in its own cluster*.\
+      **b** = the average distance from the observation to points in the *nearest different cluster*.\
+      \
+      Range **\[−1, 1]**: near 1 = well separated; near 0 = overlapping clusters; **negative = probably assigned to the wrong cluster**.
+    note: |-
+      Silhouette measures **cohesion and separation together**, which is what inertia cannot do. That's why the standard recipe for choosing k is elbow *plus* silhouette.
+
+  - id: 'cl17'
+    hy: false
+    q: |-
+      Why is clustering hard in high dimensions?
+    a: |-
+      **Almost all pairs of points are at about the same distance** in a high-dimensional space. Clustering in two dimensions looks easy and generally is; many real applications have 10 or 10,000 dimensions, where the distances that clustering relies on stop discriminating.
+    note: |-
+      The lecture's examples: 2 billion sky objects in 7 frequency bands; music albums as vectors over tens of millions of Amazon customers; documents as vectors over the whole vocabulary.
+
+  - id: 'cl18'
+    hy: false
+    q: |-
+      How does BFR decide whether two compression sets should be combined?
+    a: |-
+      Compute the **variance of the combined subcluster** — which N, SUM and SUMSQ let you do instantly, since summaries simply add — and combine if that variance is below a threshold.
+    note: |-
+      Alternatives the lecture mentions: treat dimensions differently, or consider density.
+
+  - id: 'cl19'
+    hy: false
+    q: |-
+      What happens to the CS and RS sets at the end of a BFR run?
+    a: |-
+      On the last round, **merge all compressed sets in the CS and all RS points into their nearest cluster**.
+    note: |-
+      The alternative treatment — declaring leftover CS and RS points to be **outliers** — is also defensible, and worth a clause if the question is about anomaly detection.
+
+  - id: 'cl20'
+    hy: false
+    q: |-
+      Name the two overall families of clustering method and give an example of each.
+    a: |-
+      **Hierarchical** — *agglomerative* (bottom-up: each point starts as a cluster, repeatedly combine the two nearest) or *divisive* (top-down: start with one cluster and recursively split).\
+      **Point assignment** — maintain a set of clusters; points belong to the nearest cluster. k-means, BFR, CURE.

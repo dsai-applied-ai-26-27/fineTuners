@@ -1,0 +1,179 @@
+title: Metaheuristics and swarm intelligence
+topic: metaheuristics
+description: Optimisation without guarantees, local search and simulated annealing, design of metaheuristics, No Free Lunch, benchmarks, genetic algorithms, and the swarm and nature-inspired algorithms (lectures 8 and 9).
+
+cards:
+  - id: mh-why
+    q: |-
+      Why are metaheuristics needed?
+    a: |-
+      Exhaustive search explodes combinatorially (TSP, vehicle routing), exact methods are too slow
+      and gradient methods need smooth objectives; a good solution found quickly is what practice
+      needs.
+
+  - id: mh-local-global
+    q: |-
+      Local against global optimum, and why randomness?
+    a: |-
+      A local optimum beats its neighbours but not the global best. Methods that only improve get
+      stuck there; randomness lets them make worsening moves or jump elsewhere.
+
+  - id: mh-hill
+    hy: true
+    q: |-
+      Hill climbing and its failure.
+    a: |-
+      Greedy local search: always move to a strictly better neighbour. Fast, but stops at the first
+      local optimum; plateaus and shoulders make it worse.
+
+  - id: mh-sa
+    hy: true
+    q: |-
+      How does simulated annealing escape local optima?
+    a: |-
+      It sometimes accepts worse moves with a probability set by a temperature: high temperature
+      explores widely, falling temperature makes it greedy. The cooling schedule matters.
+
+  - id: mh-explore-exploit
+    hy: true
+    cloze: |-
+      {{Exploitation}} refines promising regions; {{exploration}} visits new ones. Too much of the
+      first gives {{local optima}}, too much of the second {{wasted evaluations}}.
+
+  - id: mh-single-population
+    q: |-
+      Single-solution against population-based metaheuristics, with examples.
+    a: |-
+      Single: one candidate improved by stochastic moves (simulated annealing, tabu search,
+      iterated local search). Population: many at once (genetic algorithms, PSO, ACO).
+
+  - id: mh-structure
+    q: |-
+      The general structure of a metaheuristic.
+    a: |-
+      Initialise; evaluate with the objective; modify with operators; accept or reject; repeat until
+      a stopping criterion.
+
+  - id: mh-nfl
+    hy: true
+    q: |-
+      State the No Free Lunch theorem and its consequence.
+    a: |-
+      No optimisation algorithm is best on all problems: doing better on some means doing worse on
+      others. So choose per problem, benchmark widely, and consider hybrids.
+
+  - id: mh-benchmarks
+    q: |-
+      What do Sphere, Rosenbrock, Rastrigin and Schwefel test?
+    a: |-
+      Sphere: pure exploitation and convergence speed. Rosenbrock: following a narrow curved
+      valley. Rastrigin: escaping a grid of many local minima. Schwefel: global exploration, the
+      minimum is far from the origin.
+
+  - id: mh-benchmark-method
+    q: |-
+      How are benchmarks run properly?
+    a: |-
+      Several functions and dimensions (10, 30, 50, 100), many runs, best, worst, mean and standard
+      deviation, convergence curves and statistical tests.
+
+  - id: mh-ga
+    hy: true
+    q: |-
+      The genetic algorithm loop.
+    a: |-
+      Initialise a population → fitness → select parents → crossover and mutation → replace part of
+      the population → repeat.
+
+  - id: mh-selection
+    q: |-
+      Tournament, roulette wheel and rank selection?
+    a: |-
+      Tournament: best of a random few, robust. Roulette: proportional to fitness, biased by
+      absolute values. Rank: by rank, stable when fitness gaps are large.
+
+  - id: mh-crossover
+    q: |-
+      Name four crossover types.
+    a: |-
+      One-point, two-point, uniform (each gene from either parent), arithmetic or blend (weighted
+      averages for real values).
+
+  - id: mh-mutation
+    q: |-
+      What is mutation for in a GA?
+    a: |-
+      Keeping diversity, preventing premature convergence, and introducing material crossover cannot
+      produce.
+
+  - id: mh-swarm
+    topic: swarm
+    q: |-
+      What is swarm intelligence?
+    a: |-
+      Complex global behaviour from agents with simple local rules and no global knowledge, sharing
+      information (positions, pheromones, fitness).
+
+  - id: mh-when-family
+    topic: swarm
+    q: |-
+      When swarm, when evolutionary?
+    a: |-
+      Swarm: continuous spaces, fast convergence, position information useful. Evolutionary:
+      discrete or combinatorial problems, complex encodings, diversity across generations.
+
+  - id: mh-pso
+    topic: swarm
+    hy: true
+    q: |-
+      Write the PSO update.
+    a: |-
+      $$v_i \leftarrow Wv_i + c_1r_1(P_{best,i} - x_i) + c_2r_2(g_{best} - x_i), \qquad x_i \leftarrow x_i + v_i$$
+      Inertia, cognitive pull to the particle's best, social pull to the swarm's best.
+
+  - id: mh-aco
+    topic: swarm
+    hy: true
+    q: |-
+      ACO pheromone update and the role of evaporation.
+    a: |-
+      $\tau_{xy} \leftarrow (1-\rho)\tau_{xy} + \sum_k \Delta\tau^k_{xy}$. Evaporation $\rho$ prevents
+      stagnation (small $\rho$: slow adaptation, large: fast).
+
+  - id: mh-firefly
+    topic: swarm
+    q: |-
+      How do fireflies move?
+    a: |-
+      Towards brighter (better) fireflies, with attraction fading with distance (light absorption
+      coefficient), plus randomness.
+
+  - id: mh-bat
+    topic: swarm
+    q: |-
+      How does the bat algorithm shift from exploration to exploitation?
+    a: |-
+      As bats approach good solutions, loudness decreases and pulse rate increases.
+
+  - id: mh-eho
+    topic: swarm
+    q: |-
+      Elephant herding optimisation in one sentence?
+    a: |-
+      Clans follow their best member (the matriarch) while the worst males are dispersed randomly,
+      keeping diversity.
+
+  - id: mh-fireworks
+    topic: swarm
+    q: |-
+      How does the fireworks algorithm balance search?
+    a: |-
+      Good solutions explode small and dense (exploitation), poor ones large and wide (exploration);
+      local and global sparks.
+
+  - id: mh-hybrids
+    topic: swarm
+    q: |-
+      Give three hybrid metaheuristics.
+    a: |-
+      PSO + local search, GA + simulated annealing, ACO + neighbourhood refinement.

@@ -1,0 +1,70 @@
+# Ids are permanent: people's progress is keyed by them.
+title: 'Similarity & LSH'
+topic: 'lsh'
+cards:
+  - id: 'ls01'
+    hy: false
+    q: |-
+      Write Jaccard similarity and say when to use it rather than SMC.
+    a: |-
+      **J(A, B) = |A ∩ B| / |A ∪ B|**, range \[0, 1].\
+      \
+      **Jaccard ignores 0–0 matches**, focusing only on matching 1s (presence), so it suits **asymmetric, sparse** binary data. **SMC** treats 0–0 and 1–1 matches equally, so it suits **symmetric** binary data where absence is as informative as presence.
+
+  - id: 'ls02'
+    hy: false
+    q: |-
+      Name the three steps for finding similar documents and what each produces.
+    a: |-
+      **Shingling** — convert documents into **sets**. For D1 = "abcab", the set of 2-shingles is \{ab, bc, ca}. Documents with many shingles in common have similar text.\
+      **Min-Hashing** — convert large sets into short **signatures** that preserve Jaccard similarity.\
+      **Locality-Sensitive Hashing** — hash signatures so that only similar pairs are likely to collide.\
+      \
+      The output is **candidate pairs**.
+
+  - id: 'ls03'
+    hy: false
+    q: |-
+      State MinHash's defining property and how you estimate similarity from signatures.
+    a: |-
+      **Pr\[ hₘᵢₙ(A) = hₘᵢₙ(B) ] = J(A, B)**\
+      \
+      So with n hash functions, estimate **Ĵ = (number of matching signature positions) / n**.\
+      \
+      More hash functions improve accuracy but cost more memory and computation.
+    note: |-
+      In practice random permutations are approximated by hash functions h(x) = (a·x + b) mod p, with p a prime larger than the maximum item id.
+
+  - id: 'ls04'
+    hy: false
+    q: |-
+      Write the LSH candidate probability and explain the effect of b and r.
+    a: |-
+      Split a signature of length n into **b bands of r rows**, so n = b·r. Two items are a **candidate pair** if their signatures match in **all r rows of at least one band**.\
+      \
+      **P(candidate) = 1 − (1 − s^r)^b**, where s is the true Jaccard similarity.\
+      \
+      **Increase b** → more chances to match → more candidates → **higher recall**.\
+      **Increase r** → exact band matches harder → fewer false positives → **higher precision**.\
+      \
+      Threshold ≈ **(1/b)^(1/r)**.
+    note: |-
+      With b = 20 and r = 5: s = 0.4 gives P = 0.186, s = 0.6 gives 0.802, s = 0.8 gives 0.9996, and the threshold is 0.549.
+
+  - id: 'ls05'
+    hy: false
+    q: |-
+      Why does exact pairwise similarity not scale?
+    a: |-
+      With N items there are **C(N,2) = N(N−1)/2** pairs — quadratic growth. 1,000 users is 499,500 pairs; **10,000 is 49,995,000**; 1,000,000 is about 5 × 10¹¹.
+
+  - id: 'ls06'
+    hy: false
+    q: |-
+      Which similarity metric for: plagiarism by shingles · houses by square footage · semantic search on embeddings?
+    a: |-
+      **Plagiarism by shingles** → **Jaccard** — you want the proportion of shared chunks between two sets.\
+      **Houses by square footage, bedrooms, lot size** → **Euclidean** — continuous numerical features, absolute physical difference.\
+      **Semantic search on dense embeddings** → **cosine** — you want directional alignment between query and document vectors, and magnitude shouldn't matter.
+    note: |-
+      Fourth from the same exercise: users as vectors of movie ratings, caring about the *pattern* rather than the volume watched → **cosine**.

@@ -1,0 +1,101 @@
+# Ids are permanent: people's progress is keyed by them.
+title: 'Room 10 · Storage Closet: Dimensionality reduction'
+topic: dimred
+encodes: |-
+  The cupboard that is far too full. Flatten what is in it without losing what it is. 5 stops, one exam-ready code pattern or idea at each.
+intro: |-
+  Room 10 of 12 on the walk from the front door to the roof: your own storage closet, or whatever you substituted for it. Put each scene on the object itself, in this order: the overstuffed shelf, the closet lamp, the tape measure, the delivery hatch, the rolled rug. The method is in [](guide:memory-palace).
+
+loci:
+  - id: s10-1
+    place: 'The overstuffed shelf'
+    image: |-
+      **A closet so big that everything is far from everything.** You open the closet and it is somehow **a kilometre deep**. Two coats that ought to be neighbours are half a kilometre apart. Every item is equally, uselessly far from every other, and 'nearest neighbour' stops meaning anything.
+    means: |-
+      **The curse of dimensionality.** **Curse of dimensionality**: as dimensions grow, points become sparse and all pairwise distances converge, which breaks distance-based methods (k-NN, RBF kernels) and demands exponentially more data. High-dimensional data usually lies near a much lower-dimensional **manifold**, which is what makes reduction possible.
+    refs: ["guide:10-dimred"]
+
+  - id: s10-2
+    place: 'The closet lamp'
+    image: |-
+      **The lamp angled to cast the most informative shadow.** A lamp in the closet is rotated until the **shadow on the back wall is as spread out as possible** — the angle that loses the least information. Then a second lamp, at right angles to the first, does the same with what remains.
+    means: |-
+      **PCA.** **PCA** projects onto the orthogonal axes of **maximum variance**. Each successive component is orthogonal to the previous ones and captures as much of the remaining variance as it can. It is a linear projection, and it requires centred (usually scaled) data.
+
+      ```python
+      from sklearn.decomposition import PCA
+      pca = PCA(n_components=2)
+      X2D = pca.fit_transform(X)
+
+      pca.components_               # the principal axes
+      pca.explained_variance_ratio_ # fraction of variance kept per axis
+      ```
+    refs: ["guide:10-dimred"]
+
+  - id: s10-3
+    place: 'The tape measure'
+    image: |-
+      **Ask for 95% of the wardrobe, not for 154 hangers.** Instead of counting hangers, you tell the closet: **"keep 95% of what I own"**. It works out for itself how many rails that takes. Give it a whole number and it takes that many rails; give it a fraction and it takes as many as needed.
+    means: |-
+      **Choosing the number of components.** Plot cumulative explained variance against the number of components and look for the elbow. `np.argmax(cumsum >= 0.95) + 1` is the index of the first component that crosses the threshold, converted to a count.
+
+      ```python
+      pca = PCA()
+      pca.fit(X_train)
+      cumsum = np.cumsum(pca.explained_variance_ratio_)
+      d = np.argmax(cumsum >= 0.95) + 1
+
+      # or in one line — let PCA choose d for you
+      pca = PCA(n_components=0.95)
+      X_reduced = pca.fit_transform(X_train)
+      ```
+
+      - `n_components=154` (structural): An INT means: give me exactly this many dimensions.
+      - `n_components=0.95` (structural): A FLOAT below 1 means: give me however many dimensions preserve this share of the variance. Same argument, completely different meaning — a favourite exam trap.
+    refs: ["guide:10-dimred"]
+
+  - id: s10-4
+    place: 'The delivery hatch'
+    image: |-
+      **Boxes that arrive a hundred at a time.** The closet is too big to fill in one go, so boxes come through a hatch a hundred at a time, and the closet **partially learns** from each batch as it arrives.
+    means: |-
+      **Incremental and randomized PCA.**
+
+      ```python
+      from sklearn.decomposition import IncrementalPCA
+      inc_pca = IncrementalPCA(n_components=154)
+      for X_batch in np.array_split(X_train, n_batches):
+          inc_pca.partial_fit(X_batch)
+      X_reduced = inc_pca.transform(X_train)
+
+      rnd_pca = PCA(n_components=154, svd_solver="randomized", random_state=42)
+      ```
+
+      - `partial_fit` (structural): Incremental learning — note it is NOT fit; you call it once per batch.
+      - `svd_solver="randomized"` (dial): Approximate but much faster SVD when d is far smaller than the number of features.
+    refs: ["guide:10-dimred"]
+
+  - id: s10-5
+    place: 'The rolled rug'
+    image: |-
+      **The rug that must be unrolled, not flattened.** A Swiss-roll rug is jammed in the closet. Standing on it flattens it into a useless mess with the outside touching the middle. The right move is to **unroll** it — following the surface, keeping each patch's neighbours together.
+    means: |-
+      **Kernel PCA and LLE.** **Kernel PCA** applies the kernel trick to PCA, allowing non-linear projections. **LLE** is **manifold learning**: it preserves local linear relationships between neighbours rather than global distances, which is what actually unrolls a Swiss roll.
+
+      ```python
+      from sklearn.decomposition import KernelPCA
+      from sklearn.manifold import LocallyLinearEmbedding
+
+      rbf_pca = KernelPCA(n_components=2, kernel="rbf", gamma=0.04,
+                          fit_inverse_transform=True)
+      X_reduced = rbf_pca.fit_transform(X)
+
+      lle = LocallyLinearEmbedding(n_components=2, n_neighbors=10, random_state=42)
+      X_reduced = lle.fit_transform(X)
+      ```
+
+      - `kernel="rbf"` (dial): Also "linear" (identical to plain PCA), "poly", "sigmoid" (with coef0).
+      - `gamma` (dial): Same meaning as in an RBF SVM — the reach of each point's influence.
+      - `fit_inverse_transform=True` (structural): Needed to map reduced points back to the original space (for reconstruction error).
+      - `n_neighbors=10` (dial): How large a local neighbourhood LLE treats as linear.
+    refs: ["guide:10-dimred"]

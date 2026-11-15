@@ -1,0 +1,162 @@
+title: Graphs, search and graph algorithms
+topic: graph-search
+description: Graph vocabulary, the seven search algorithms with their guarantees and complexities, shortest paths with Dijkstra and Bellman-Ford, and spanning trees with Prim and Kruskal (lectures 3 and 4).
+
+cards:
+  - id: gr-representation
+    hy: true
+    q: |-
+      Space of an adjacency matrix against an adjacency list, and which suits sparse graphs?
+    a: |-
+      Matrix $O(V^2)$ whatever $E$ is; list $O(V + E)$. The list suits sparse graphs, which most
+      real graphs are.
+
+  - id: gr-tree-edges
+    hy: true
+    cloze: |-
+      A tree is a {{connected}} undirected graph with {{no cycles}}; a tree on $n$ vertices has
+      {{$n - 1$}} edges. A {{forest}} is acyclic but not necessarily connected.
+
+  - id: gr-spanning-tree
+    q: |-
+      What is a spanning tree?
+    a: |-
+      A subgraph of a connected graph that contains all its vertices and is a tree, so it has
+      $n - 1$ edges.
+
+  - id: gr-terms
+    q: |-
+      Incident, adjacent, degree, parallel edge, self-loop?
+    a: |-
+      An edge is incident on its endpoints; two vertices are adjacent if an edge joins them;
+      degree is the number of incident edges; parallel edges join the same pair; a self-loop
+      joins a vertex to itself.
+
+  - id: gr-bfs
+    hy: true
+    q: |-
+      BFS: data structure, guarantees, complexity.
+    a: |-
+      A queue. Complete; optimal (fewest edges) in unweighted graphs. Time $O(V + E)$, space
+      $O(V)$.
+
+  - id: gr-dfs
+    q: |-
+      DFS: data structure, guarantees, uses.
+    a: |-
+      A stack or recursion. Complete on finite graphs, not optimal. $O(V + E)$ time, $O(V)$
+      space. Cycle detection, components, topological sort, mazes.
+
+  - id: gr-ids
+    hy: true
+    q: |-
+      Iterative deepening: how does it work, and its time and space?
+    a: |-
+      Depth-limited DFS with limit 0, 1, 2, … until the goal is found. Complete and optimal (in
+      edges) like BFS; time $O(b^d)$, space $O(bd)$ like DFS.
+
+  - id: gr-bds
+    q: |-
+      Bidirectional search: idea and complexity.
+    a: |-
+      Search from start and goal at once until the frontiers meet. With BFS on both sides,
+      complete and optimal; $O(b^{d/2})$ time and space instead of $O(b^d)$.
+
+  - id: gr-ucs
+    hy: true
+    q: |-
+      Uniform cost search: what does it expand, when is it optimal, and how is it related to Dijkstra?
+    a: |-
+      The vertex with the lowest path cost so far $g(n)$, from a priority queue. Complete and
+      optimal with non-negative costs; $O(E\log V)$. Dijkstra is a variant of UCS.
+
+  - id: gr-greedy
+    q: |-
+      Greedy best-first search: what does it use, and what does it give up?
+    a: |-
+      Only the heuristic $h(n)$, the estimated distance to the goal. Fast, but neither complete
+      nor optimal.
+
+  - id: gr-astar
+    hy: true
+    q: |-
+      A*: evaluation function and condition for optimality.
+    a: |-
+      $f(n) = g(n) + h(n)$. Optimal if $h$ is admissible (never overestimates the cost to the
+      goal); complete with finite branching and non-negative costs. Weak point: memory.
+
+  - id: gr-choose-search
+    q: |-
+      Which search for: unweighted shortest path; low memory with completeness; different edge costs; a good heuristic?
+    a: |-
+      BFS; iterative deepening; uniform cost search; A*.
+
+  - id: gr-sp-rule
+    topic: graph-algorithms
+    hy: true
+    q: |-
+      Which shortest-path algorithm for unweighted, non-negative, negative weights, all pairs?
+    a: |-
+      BFS; Dijkstra; Bellman-Ford; Floyd-Warshall.
+
+  - id: gr-dijkstra
+    topic: graph-algorithms
+    hy: true
+    q: |-
+      Dijkstra: idea, invariant, complexity.
+    a: |-
+      Repeatedly finalise the unfinished vertex with the smallest tentative distance and relax
+      its edges. Once finalised, a distance is final (needs non-negative weights).
+      $O((V+E)\log V)$ with a priority queue, $O(V^2)$ with a matrix.
+
+  - id: gr-bellman-ford
+    topic: graph-algorithms
+    hy: true
+    q: |-
+      Bellman-Ford: why $V - 1$ rounds, how it finds negative cycles, complexity.
+    a: |-
+      A shortest path has at most $V - 1$ edges, so $V - 1$ rounds of relaxing every edge
+      suffice. If a further round still improves a distance, there is a negative cycle.
+      $O(VE)$.
+
+  - id: gr-negative-cycle
+    topic: graph-algorithms
+    q: |-
+      Why does a negative cycle mean there is no shortest path?
+    a: |-
+      Going round it again always lowers the cost, without bound.
+
+  - id: gr-mst
+    topic: graph-algorithms
+    q: |-
+      What is a minimum spanning tree?
+    a: |-
+      A spanning tree of a connected weighted graph with minimum total edge weight: all vertices,
+      no cycles, $V - 1$ edges.
+
+  - id: gr-prim
+    topic: graph-algorithms
+    hy: true
+    q: |-
+      Prim's algorithm: strategy, complexity, best for.
+    a: |-
+      Grow one tree from a start vertex by repeatedly adding the lightest edge leaving it.
+      $O((V+E)\log V)$ with a priority queue, $O(V^2)$ with a matrix. Dense graphs.
+
+  - id: gr-kruskal
+    topic: graph-algorithms
+    hy: true
+    q: |-
+      Kruskal's algorithm: strategy, data structure, complexity, best for.
+    a: |-
+      Sort the edges and add each one that joins two different components (no cycle), until
+      $V - 1$ edges. Union-Find. $O(E\log E)$. Sparse graphs.
+    hook: |-
+      Prim grows a tree; Kruskal merges a forest.
+
+  - id: gr-np-hard
+    topic: graph-algorithms
+    q: |-
+      Name four NP-hard graph problems.
+    a: |-
+      Clique detection, graph colouring, Hamiltonian cycle, travelling salesman.

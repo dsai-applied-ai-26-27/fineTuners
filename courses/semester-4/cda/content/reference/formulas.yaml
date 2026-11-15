@@ -1,0 +1,390 @@
+# Ids are permanent: people's progress is keyed by them.
+sections:
+  - title: 'Clustering'
+    topic: 'clustering'
+    rows:
+      - id: 'f-1-1'
+        name: 'k-means objective (inertia)'
+        formula: |-
+          ```text
+          Σᵢ Σ_(x∈Cᵢ) ‖x − μᵢ‖²
+          ```
+
+      - id: 'f-1-2'
+        name: 'BFR summary'
+        formula: |-
+          ```text
+          (N, SUM, SUMSQ) — 2d + 1 numbers
+          ```
+
+      - id: 'f-1-3'
+        name: 'BFR centroid'
+        formula: |-
+          ```text
+          cᵢ = SUMᵢ / N
+          ```
+
+      - id: 'f-1-4'
+        name: 'BFR variance'
+        formula: |-
+          ```text
+          σ²ᵢ = SUMSQᵢ/N − (SUMᵢ/N)²
+          ```
+
+      - id: 'f-1-5'
+        name: 'Mahalanobis distance'
+        formula: |-
+          ```text
+          d(x,c) = √( Σᵢ ((xᵢ−cᵢ)/σᵢ)² )
+          ```
+
+      - id: 'f-1-6'
+        name: 'BFR acceptance'
+        formula: |-
+          ```text
+          d < threshold, e.g. 2 std devs · 1 std = √d
+          ```
+
+      - id: 'f-1-7'
+        name: 'CURE shrink'
+        formula: |-
+          ```text
+          representative + 0.20 × (centroid − representative)
+          ```
+
+      - id: 'f-1-8'
+        name: 'Silhouette'
+        formula: |-
+          ```text
+          s = (b − a) / max(a, b)
+          ```
+
+  - title: 'Association rules'
+    rows:
+      - id: 'f-2-1'
+        name: 'Support'
+        formula: |-
+          ```text
+          support(I) = # baskets containing all of I
+          ```
+
+      - id: 'f-2-2'
+        name: 'Confidence'
+        formula: |-
+          ```text
+          conf(I→j) = support(I ∪ {j}) / support(I)
+          ```
+
+      - id: 'f-2-3'
+        name: 'Interest'
+        formula: |-
+          ```text
+          Interest(I→j) = conf(I→j) − Pr[j]
+          ```
+
+      - id: 'f-2-4'
+        name: 'Monotonicity'
+        formula: |-
+          ```text
+          I frequent ⇒ every subset of I frequent
+          ```
+
+      - id: 'f-2-5'
+        name: 'Pairs in a basket of n'
+        formula: |-
+          ```text
+          n(n−1)/2
+          ```
+
+      - id: 'f-2-6'
+        name: 'Triangular matrix position'
+        formula: |-
+          ```text
+          (i−1)(n − i/2) + j − 1
+          ```
+
+      - id: 'f-2-7'
+        name: 'Memory: matrix vs triples'
+        formula: |-
+          ```text
+          4 bytes/possible pair vs 12 bytes/occurring pair
+          ```
+
+  - title: 'Recommenders'
+    topic: 'rec'
+    rows:
+      - id: 'f-3-1'
+        name: 'Cosine similarity'
+        formula: |-
+          ```text
+          cos(x,i) = (x · i) / (‖x‖·‖i‖)
+          ```
+
+      - id: 'f-3-2'
+        name: 'Boolean profile weight'
+        formula: |-
+          ```text
+          count(feature) / total items watched
+          ```
+
+      - id: 'f-3-3'
+        name: 'Normalised profile'
+        formula: |-
+          ```text
+          subtract the user's mean rating first
+          ```
+
+      - id: 'f-3-4'
+        name: 'Pearson / centred cosine'
+        formula: |-
+          ```text
+          Σ(rₓₛ−r̄ₓ)(r_(ys)−r̄_y) / √[Σ(rₓₛ−r̄ₓ)²·Σ(r_(ys)−r̄_y)²]
+          ```
+
+      - id: 'f-3-5'
+        name: 'CF prediction (weighted)'
+        formula: |-
+          ```text
+          rₓᵢ = Σ_(y∈N) s_(xy)r_(yi) / Σ_(y∈N) s_(xy)
+          ```
+
+      - id: 'f-3-6'
+        name: 'Item-item'
+        formula: |-
+          ```text
+          rₓᵢ = Σ_(j∈N(i;x)) sᵢⱼrₓⱼ / Σ sᵢⱼ
+          ```
+
+      - id: 'f-3-7'
+        name: 'RMSE'
+        formula: |-
+          ```text
+          √( Σ(rₓᵢ − r*ₓᵢ)² / n )
+          ```
+
+  - title: 'Ensembles'
+    topic: 'ens'
+    rows:
+      - id: 'f-4-1'
+        name: 'Error decomposition'
+        formula: |-
+          ```text
+          Error = bias² + variance + noise
+          ```
+
+      - id: 'f-4-2'
+        name: 'bias²'
+        formula: |-
+          ```text
+          Eₓ[(h*(x) − E_D[y(x;D)])²]
+          ```
+
+      - id: 'f-4-3'
+        name: 'variance'
+        formula: |-
+          ```text
+          E_(D,x)[(y(x;D) − E_D[y(x;D)])²]
+          ```
+
+      - id: 'f-4-4'
+        name: 'noise'
+        formula: |-
+          ```text
+          E_(D,x,t)[(t − h*(x))²]
+          ```
+
+      - id: 'f-4-5'
+        name: 'Variance of average (indep.)'
+        formula: |-
+          ```text
+          σ²/m
+          ```
+
+      - id: 'f-4-6'
+        name: 'Variance of average (corr. ρ)'
+        formula: |-
+          ```text
+          (1−ρ)σ²/m + ρσ²
+          ```
+
+      - id: 'f-4-7'
+        name: 'AdaBoost coefficient'
+        formula: |-
+          ```text
+          αₘ = ½ ln((1 − εₘ)/εₘ)
+          ```
+
+      - id: 'f-4-8'
+        name: 'AdaBoost weights'
+        formula: |-
+          ```text
+          Dₘ₊₁ = Dₘ·exp(−t·αₘhₘ(x))
+          ```
+
+      - id: 'f-4-9'
+        name: 'OOB fraction'
+        formula: |-
+          ```text
+          each example out of ≈ 1/e ≈ 37% of bags
+          ```
+
+  - title: 'Statistics'
+    rows:
+      - id: 'f-5-1'
+        name: 'χ²'
+        formula: |-
+          ```text
+          ΣᵢΣⱼ (Oᵢⱼ − Eᵢⱼ)² / Eᵢⱼ
+          ```
+
+      - id: 'f-5-2'
+        name: 'Expected count'
+        formula: |-
+          ```text
+          Eᵢⱼ = rowᵢ × colⱼ / n
+          ```
+
+      - id: 'f-5-3'
+        name: 'Degrees of freedom'
+        formula: |-
+          ```text
+          df = (r−1)(c−1) · 2×2 → crit 3.841
+          ```
+
+      - id: 'f-5-4'
+        name: 'Pearson r'
+        formula: |-
+          ```text
+          Σ(aᵢ−Ā)(bᵢ−B̄) / [(n−1)σ_Aσ_B]
+          ```
+
+      - id: 'f-5-5'
+        name: 'Covariance'
+        formula: |-
+          ```text
+          Cov(A,B) = E[A·B] − Ā·B̄
+          ```
+
+      - id: 'f-5-6'
+        name: 'Correlation from covariance'
+        formula: |-
+          ```text
+          r = Cov(A,B)/(σ_Aσ_B)
+          ```
+
+      - id: 'f-5-7'
+        name: 'IQR fences'
+        formula: |-
+          ```text
+          Q1 − 1.5·IQR , Q3 + 1.5·IQR
+          ```
+
+  - title: 'Evaluation'
+    topic: 'eval'
+    rows:
+      - id: 'f-6-1'
+        name: 'Accuracy'
+        formula: |-
+          ```text
+          (TP + TN)/(TP + TN + FP + FN)
+          ```
+
+      - id: 'f-6-2'
+        name: 'Precision'
+        formula: |-
+          ```text
+          TP/(TP + FP) — predicted-positive column
+          ```
+
+      - id: 'f-6-3'
+        name: 'Recall / sensitivity'
+        formula: |-
+          ```text
+          TP/(TP + FN) — actual-positive row
+          ```
+
+      - id: 'f-6-4'
+        name: 'Specificity'
+        formula: |-
+          ```text
+          TN/(TN + FP)
+          ```
+
+      - id: 'f-6-5'
+        name: 'F1'
+        formula: |-
+          ```text
+          2·P·R/(P + R) — harmonic mean
+          ```
+
+      - id: 'f-6-6'
+        name: 'MAE / MSE / RMSE'
+        formula: |-
+          ```text
+          (1/n)Σ|y−ŷ| · (1/n)Σ(y−ŷ)² · √MSE
+          ```
+
+      - id: 'f-6-7'
+        name: 'R²'
+        formula: |-
+          ```text
+          1 − SSᵣₑₛ/SSₜₒₜ
+          ```
+
+  - title: 'Similarity & streams'
+    rows:
+      - id: 'f-7-1'
+        name: 'Jaccard'
+        formula: |-
+          ```text
+          J(A,B) = |A ∩ B| / |A ∪ B|
+          ```
+
+      - id: 'f-7-2'
+        name: 'MinHash property'
+        formula: |-
+          ```text
+          Pr[hₘᵢₙ(A) = hₘᵢₙ(B)] = J(A,B)
+          ```
+
+      - id: 'f-7-3'
+        name: 'LSH candidate probability'
+        formula: |-
+          ```text
+          P = 1 − (1 − s^r)^b · n = b·r
+          ```
+
+      - id: 'f-7-4'
+        name: 'LSH threshold'
+        formula: |-
+          ```text
+          t ≈ (1/b)^(1/r)
+          ```
+
+      - id: 'f-7-5'
+        name: 'Number of pairs'
+        formula: |-
+          ```text
+          N(N−1)/2
+          ```
+
+      - id: 'f-7-6'
+        name: 'Reservoir sampling'
+        formula: |-
+          ```text
+          keep the n-th with probability s/n
+          ```
+
+      - id: 'f-7-7'
+        name: 'Bloom false positive'
+        formula: |-
+          ```text
+          (1 − e^(−km/n))ᵏ · optimal k = (n/m)·ln 2
+          ```
+
+      - id: 'f-7-8'
+        name: 'Flajolet-Martin'
+        formula: |-
+          ```text
+          estimate = 2^R, R = max trailing zeros
+          ```

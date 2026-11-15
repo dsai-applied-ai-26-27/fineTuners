@@ -1,0 +1,272 @@
+# Ids are permanent: people's progress is keyed by them.
+title: 'Association mining'
+topic: 'assoc'
+cards:
+  - id: 'as01'
+    hy: true
+    q: |-
+      Define support, confidence and interest. Define every symbol.
+    a: |-
+      **support(I)** = the number of baskets containing every item in I. (Often quoted as a fraction of all baskets.) An itemset with support ≥ s is **frequent**.\
+      \
+      **conf(I → j) = support(I ∪ \{j}) / support(I)** — the probability of j given that the basket contains all of I.\
+      \
+      **Interest(I → j) = conf(I → j) − Pr\[j]**, where Pr\[j] is the fraction of *all* baskets containing j.
+    note: |-
+      Interesting rules are those with high positive **or negative** interest — the lecture's threshold of thumb is above 0.5.
+
+      Why interest exists: *X → milk* has high confidence for almost any X, because milk is bought constantly. Subtracting the base rate strips that out.
+
+  - id: 'as02'
+    hy: true
+    q: |-
+      State the monotonicity property, and give the form you actually use.
+    a: |-
+      **If a set of items I appears at least s times, so does every subset J of I.**\
+      \
+      **Contrapositive (the usable form):** if item i does not appear in s baskets, then no pair — or larger itemset — containing i can appear in s baskets, so it never needs counting.
+    note: |-
+      This is what makes A-Priori tractable, and it's the sentence that earns the mark on "how does A-Priori find candidate pairs". Without it you would have to count all n(n−1)/2 pairs.
+
+  - id: 'as03'
+    hy: true
+    q: |-
+      Baskets: \{m,c,b} \{m,p,j} \{m,b} \{c,j} \{m,p,b} \{m,c,b,j} \{c,b,j} \{b,c}, support threshold s = 3. Find all frequent itemsets.
+    steps:
+      - do: |-
+          **Pass 1 — count every item.** b:6, c:5, j:4, m:5, p:2
+        why: |-
+          A-Priori's first pass needs only one counter per item, which is memory proportional to the number of items — cheap.
+
+      - do: |-
+          **L₁ = \{b}, \{c}, \{j}, \{m}.** Drop p (count 2 \< 3).
+        why: |-
+          Support below the threshold. By monotonicity, every pair and triple containing p is now eliminated without ever being counted — that is the saving.
+
+      - do: |-
+          **Build C₂ from L₁ only** — 6 pairs, not the 10 you'd get from all 5 items: \{b,c} \{b,j} \{b,m} \{c,j} \{c,m} \{j,m}.
+        why: |-
+          A pair can only be frequent if both its items are frequent. Generating candidates from L₁ rather than from all items is exactly the monotonicity property applied.
+
+      - do: |-
+          **Pass 2 — count them.** \{b,c}:4, \{b,j}:2, \{b,m}:4, \{c,j}:3, \{c,m}:2, \{j,m}:2
+        why: |-
+          Only these six need counters in memory, which is the whole reason pass 2 is affordable.
+
+      - do: |-
+          **L₂ = \{b,c}, \{b,m}, \{c,j}.** Drop \{b,j}, \{c,m}, \{j,m}.
+        why: |-
+          Support \< 3.
+
+      - do: |-
+          **C₃:** a triple is a candidate only if **all three of its pairs** are in L₂. \{b,c,m} needs \{c,m} ✗ · \{b,c,j} needs \{b,j} ✗ · \{b,j,m} needs \{b,j} ✗ · \{c,j,m} needs \{c,m} ✗. **C₃ is empty — stop.**
+        why: |-
+          Monotonicity again, at the next level. Checking the subsets before counting is what the lecture means by being 'more careful with candidate generation'.
+
+      - do: |-
+          **Answer:** frequent itemsets are \{m}, \{c}, \{b}, \{j}, \{m,b}, \{b,c}, \{c,j}. **No set of 3 or more items is frequent.**
+        why: |-
+          This matches the lecture slide exactly — it is the same eight baskets.
+
+  - id: 'as04'
+    hy: true
+    q: |-
+      For the same 8 baskets: compute the confidence and interest of the rule \{m, b} → c.
+    a: |-
+      support(\{m,b,c}) = 2 (baskets B1 and B6). support(\{m,b}) = 4.\
+      **Confidence = 2/4 = 0.5.**\
+      \
+      Item c appears in 5 of the 8 baskets, so Pr\[c] = 5/8 = 0.625.\
+      **Interest = |0.5 − 5/8| = 1/8 = 0.125.**\
+      \
+      **The rule is not very interesting** — its confidence is barely different from how often c shows up anyway.
+    note: |-
+      This is the lecture's own worked example. The pattern to carry into any variant: **always compare the confidence against the consequent's base rate**. A confidence of 0.8 on an item present in 75% of baskets is telling you almost nothing.
+
+  - id: 'as05'
+    hy: true
+    q: |-
+      How many passes does A-Priori take, and why is that the thing we count?
+    a: |-
+      **One pass per itemset size k.** Pass 1 counts items, pass 2 counts candidate pairs, pass 3 counts candidate triples, and so on — so finding frequent itemsets up to size k takes k passes.\
+      \
+      We count passes because the data is **disk-resident**, and the true cost of mining disk-resident data is the **number of disk I/Os**.
+    note: |-
+      The companion constraint is **main memory**: within a pass, the number of different things you can count is limited by memory, and swapping counts in and out is a disaster. Passes and memory are the two axes every algorithm in this topic trades against.
+
+  - id: 'as06'
+    hy: true
+    q: |-
+      Why is finding frequent PAIRS the hard part, rather than triples?
+    a: |-
+      **Frequent pairs are common; frequent triples are rare.** The probability of an itemset being frequent drops exponentially with its size, while the number of such sets grows more slowly. So for typical market-basket data at a reasonable support threshold, **k = 2 requires the most memory**.
+    note: |-
+      The arithmetic that makes it concrete: 10⁵ items gives 10⁵(10⁵−1)/2 = 5 × 10⁹ pairs; at 4-byte counters that is **2 × 10¹⁰ bytes = 20 GB**. And #items can be 100K for Wal-Mart or 10B for web pages.
+
+  - id: 'as07'
+    hy: false
+    q: |-
+      Two ways to store pair counts in memory — and when does each win?
+    a: |-
+      **Triangular matrix:** count the pair \{i, j} only for i \< j, in lexicographic order; pair \{i,j} sits at position (i−1)(n − i/2) + j − 1. Costs **4 bytes per possible pair**.\
+      **Table of triples \[i, j, c]:** costs about **12 bytes per occurring pair**, but only stores pairs with count > 0.\
+      \
+      **Triples beat the matrix if fewer than 1/3 of possible pairs actually occur.**
+    note: |-
+      The 1/3 comes straight from 4 vs 12 bytes. It matters for PCY: on PCY's second pass the surviving candidates are scattered, so you're forced onto triples, which is why PCY's hash table must eliminate about **2/3** of candidate pairs just to break even.
+
+  - id: 'as08'
+    hy: true
+    q: |-
+      Explain the PCY algorithm: what it observes, what it does in each pass, and why it is valid.
+    steps:
+      - do: |-
+          **The observation:** in pass 1 of A-Priori, most of main memory is **idle** — you only store one counter per item. Yet pass 2, which needs a counter per candidate pair, is the step that runs out of memory.
+        why: |-
+          This is the whole motivation. Lead with it: the examiner is asking what problem PCY solves, and the answer is a memory bottleneck, not a speed one.
+
+      - do: |-
+          **Pass 1:** count each item as usual, **and** for each pair of items in each basket, hash the pair to a bucket and add 1 to that bucket's count. Keep only the bucket **counts** — never the pairs themselves.
+        why: |-
+          Storing the pairs would defeat the point. A count per bucket is a fixed, small cost that fits in the memory A-Priori was wasting.
+
+      - do: |-
+          **Between the passes:** replace each bucket's count with a single **bit** — 1 if the count ≥ s, 0 otherwise. This is the **bitmap**.
+        why: |-
+          A bit is 1/32 the size of a 4-byte counter, so the bitmap fits alongside pass 2's data structures with room to spare.
+
+      - do: |-
+          **Pass 2:** count the pair \{i, j} only if **(1)** i and j are both frequent items, **and (2)** \{i, j} hashes to a bucket whose bit is 1.
+        why: |-
+          Both conditions are necessary for the pair to have any chance of being frequent — condition (1) is A-Priori's, condition (2) is PCY's addition.
+
+      - do: |-
+          **Why it is valid:** a bucket whose total count is below s cannot contain any frequent pair, so every pair hashing into it is safely eliminated — **even if both its items are frequent**.
+        why: |-
+          The bucket count is the sum of the counts of all pairs hashing there, so any individual pair's count is at most the bucket count. Below s the bucket total caps every pair inside it.
+
+      - do: |-
+          **The direction that fails:** a bucket can be frequent without containing any frequent pair (many infrequent pairs can share it). So PCY yields **false positives but never false negatives** — the answer is still exact.
+        why: |-
+          You cannot use a frequent bucket to eliminate anything; you can only use an infrequent one. Saying this shows you understand the asymmetry rather than reciting the steps.
+
+  - id: 'as09'
+    hy: true
+    q: |-
+      What is A-Priori's main limitation, which algorithm addresses it, and how?
+    a: |-
+      **Limitation:** main memory. Pass 2 must hold a counter for every candidate pair, and the number of candidate pairs is roughly quadratic in the number of frequent items — this is the step that exhausts memory. Meanwhile pass 1 leaves most of memory idle.\
+      \
+      **Addressed by PCY (Park–Chen–Yu).** It uses the idle pass-1 memory to hash every pair into buckets and keep bucket counts, then collapses those to a bitmap. In pass 2 a pair is counted only if both items are frequent **and** its bucket's bit is 1. Same number of passes, same exact answer, far less pass-2 memory.
+    note: |-
+      If the question wants a different pair: **A-Priori vs FP-Growth** — FP-Growth compresses the data into an FP-tree and mines it recursively with **no candidate generation** and fewer passes. Given this course follows *Mining of Massive Datasets*, lead with PCY.
+
+  - id: 'as10'
+    hy: false
+    q: |-
+      Multistage vs Multihash — what does each do, and how many passes?
+    a: |-
+      **Multistage (3 passes):** after PCY's pass 1, **rehash** — on a middle pass, hash into a *second, independent* hash table only those pairs that already qualify (both items frequent and first bucket frequent). Fewer pairs contribute, so fewer false positives. On the final pass, check **both** bitmaps.\
+      \
+      **Multihash (2 passes):** use **several independent hash tables in the single first pass**. Gets a multistage-like benefit in only 2 passes. Risk: halving the number of buckets doubles the average count, so you must be sure most buckets still won't reach s.
+    note: |-
+      The reason you must check **both** bitmaps in multistage: otherwise you'd count pairs of frequent items that hashed to an *infrequent* bucket first but happened to hash to a *frequent* one second. And the two hash functions have to be independent.
+
+      Limits: in multistage the bit-vectors eventually eat all of memory; in multihash too many hash functions make all counts exceed s.
+
+  - id: 'as11'
+    hy: false
+    q: |-
+      Describe SON, and why it suits distributed computation.
+    a: |-
+      **Pass 1:** repeatedly read small **subsets** of the baskets into memory and run an in-memory algorithm to find all frequent itemsets in each chunk. (Not sampling — the *entire* file is processed in memory-sized chunks.) An itemset becomes a **candidate** if it is frequent in **any one or more** subsets.\
+      **Pass 2:** count all candidates over the whole dataset and keep those truly frequent.\
+      \
+      **Key monotonicity idea:** an itemset cannot be frequent in the entire set unless it is frequent in **at least one** subset.\
+      \
+      **Distributed:** baskets sit on many nodes; each node computes its local frequent itemsets; candidates are broadcast to all nodes; counts are accumulated globally.
+    note: |-
+      SON takes **2 passes for all sizes** and — unlike random sampling — has **no false negatives**, because of that monotonicity argument.
+
+  - id: 'as12'
+    hy: false
+    q: |-
+      Random sampling for frequent itemsets — the method and its weakness.
+    a: |-
+      Take a random sample of the baskets, run A-Priori in **main memory** on it — so you don't pay disk I/O each time the itemset size grows — with the support threshold **reduced proportionally** to the sample size.\
+      \
+      **Weakness:** you miss itemsets that are frequent in the whole dataset but not in the sample (**false negatives**). Lowering the threshold further, e.g. to s/125, catches more of them but requires more space because you count more sets.
+    note: |-
+      Optionally verify candidates against the full dataset on a second pass to remove **false positives** — but that second pass cannot recover the false negatives.
+
+  - id: 'as13'
+    hy: false
+    q: |-
+      Give the two-step structure of mining association rules, and how rules are generated from a frequent itemset.
+    a: |-
+      **Step 1:** find all frequent itemsets I (support ≥ s). This is the hard part.\
+      **Step 2 — rule generation:** for every subset A of I, generate the rule **A → I \\ A**. Since I is frequent, A is frequent too, so both support counts are already known and the confidence needs **no extra pass**. Output the rules above the confidence threshold.
+    note: |-
+      The lecture's Variant 2 is a nice extra line: if A,B,C → D is below the confidence threshold, then so is A,B → C,D — so you can generate bigger rules from smaller ones and prune early.
+
+      Also note: the **support of a rule is the support of the itemset on the left-hand side**.
+
+  - id: 'as14'
+    hy: false
+    q: |-
+      Give three applications of the market-basket model, including one where the 'baskets' aren't shopping baskets.
+    a: |-
+      **1.** Items = products, baskets = what one customer buys in one trip — real chain-store basket analysis, used to position tempting items and construct tie-in offers.\
+      **2.** **Baskets = sentences, items = documents containing those sentences** — items appearing together too often indicates **plagiarism**. Note items do not have to be *in* baskets.\
+      **3.** **Baskets = patients, items = drugs and side-effects** — detecting drug combinations that cause particular side-effects. Requires an extension: the **absence** of an item must be observed as well as its presence.
+    note: |-
+      The general statement: any **many-to-many mapping between two kinds of things**, where you ask about connections among the *items* and not the baskets. Finding communities in graphs is another instance.
+
+  - id: 'as15'
+    hy: false
+    q: |-
+      Why does the naïve 'count every pair' approach fail?
+    a: |-
+      From each basket of n items you generate n(n−1)/2 pairs by two nested loops and count them all in main memory. It fails as soon as **(#items)² exceeds main memory**. With 10⁵ items and 4-byte counters that is 5 × 10⁹ pairs, needing **20 GB**.
+    note: |-
+      The framing the lecture uses and that you should reproduce: **we always have to generate all the itemsets, but we only want to count the ones that turn out to be frequent.** Every algorithm in the topic is an attempt to make that true.
+
+  - id: 'as16'
+    hy: false
+    q: |-
+      Write the A-Priori C/L structure and say what each symbol means.
+    a: |-
+      For each size k, two sets:\
+      **Cₖ** = candidate k-tuples — those that *might* be frequent, based on information from the pass for k−1.\
+      **Lₖ** = the k-tuples that are **truly** frequent.\
+      \
+      The cycle: **C₁ →(filter, pass 1)→ L₁ →(construct)→ C₂ →(filter, pass 2)→ L₂ →(construct)→ C₃ → …**
+    note: |-
+      Filter = count over the data and keep support ≥ s, which costs a pass. Construct = build candidates from the previous level, which costs no pass at all. Only the filter steps touch the disk.
+
+  - id: 'as17'
+    hy: false
+    q: |-
+      Write PCY's first pass as pseudocode, and mark what is new relative to A-Priori.
+    a: |-
+      ```python
+      FOR (each basket):
+          FOR (each item in the basket):
+              add 1 to item's count;
+          FOR (each pair of items):          ← NEW IN PCY
+              hash the pair to a bucket;     ← NEW IN PCY
+              add 1 to that bucket's count;  ← NEW IN PCY
+      ```
+    note: |-
+      Two details the lecture flags: the **pairs must be generated from the basket** — they are not present in the input file; and we're not interested in mere presence of a pair but in whether it occurs at least s times.
+
+  - id: 'as18'
+    hy: false
+    q: |-
+      How is the market-basket data physically stored, and why does that shape the algorithms?
+    a: |-
+      Typically in **flat files rather than a database**, stored on disk, **basket by basket**. Items are positive integers and the boundaries between baskets are −1.\
+      \
+      Baskets are small but there are many of them and many items, so you **expand baskets into pairs, triples etc. as you read them**, using k nested loops to generate all sets of size k.
+    note: |-
+      This is why cost is measured in passes: you stream the file, and anything you want to know about pairs has to be derived on the fly.

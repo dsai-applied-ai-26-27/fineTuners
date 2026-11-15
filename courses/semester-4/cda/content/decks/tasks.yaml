@@ -1,0 +1,84 @@
+# Ids are permanent: people's progress is keyed by them.
+title: 'ML task types'
+topic: 'tasks'
+cards:
+  - id: 'tk01'
+    hy: true
+    q: |-
+      Name the six major data-mining tasks with a one-line discriminator each.
+    a: |-
+      **Classification** — predict a category. **Regression** — predict a numeric value. **Clustering** — group similar objects with no labels. **Association rules** — discover items or events that co-occur frequently. **Anomaly detection** — find rare, suspicious or unusual cases. **Summarization** — compress data into understandable descriptions.
+    note: |-
+      The decision procedure: is there a label? If yes, is the target a category or a number? If no, is the output groups, co-occurrences, rare records, or a description?
+
+  - id: 'tk02'
+    hy: false
+    q: |-
+      Match: spam or not spam · estimate selling price · discover similar buying profiles · bread and milk bought together · unusual transactions · concise trends dashboard.
+    a: |-
+      spam or not spam → **classification**\
+      estimate selling price → **regression**\
+      discover similar buying profiles → **clustering**\
+      bread and milk bought together → **association rules**\
+      unusual transactions → **anomaly detection**\
+      concise trends and profiles → **summarization**
+    note: |-
+      This is the lecture-1 slide verbatim, and the same six shapes recur with different scenarios (telecoms, e-commerce, healthcare, streaming).
+
+  - id: 'tk03'
+    hy: false
+    q: |-
+      Classification vs clustering — what's the discriminator?
+    a: |-
+      If the **groups are given in advance** as labels, it is **classification**. If the algorithm forms groups and the **analyst has to interpret what they mean afterwards**, it is **clustering**.\
+      \
+      "Diagnose whether a tumour is malignant or benign" = classification. "Group patients with similar genetic profiles" = clustering.
+
+  - id: 'tk04'
+    hy: false
+    q: |-
+      Give the KDD stages and the CRISP-DM phases.
+    a: |-
+      **KDD:** Selection → Pre-processing → Transformation → Data mining → Interpretation and evaluation.\
+      \
+      **CRISP-DM:** Business understanding → Data understanding → Data preparation → Modeling → Evaluation → Deployment.
+
+  - id: 'tk05'
+    hy: false
+    q: |-
+      How do KDD and CRISP-DM differ?
+    a: |-
+      **KDD** is a **research-oriented** view of knowledge discovery; it emphasises selection, transformation and pattern extraction, and treats data mining as **one phase** in a broader discovery pipeline.\
+      \
+      **CRISP-DM** is a **project-oriented** framework for real deployments; it **starts with business understanding and ends with deployment**, which is why it is popular in industry — it connects analytics to operations.
+
+  - id: 'tk06'
+    hy: false
+    q: |-
+      Name the big data 5 V's and give the challenge each poses.
+    a: |-
+      **Volume** — cannot load all data into memory; algorithms must be near-linear, O(n) or O(n log n).\
+      **Velocity** — systems must minimise latency; batch vs stream processing; concept drift.\
+      **Variety** — integrating multiple data types into a unified model; explainability of multimodal systems.\
+      **Veracity** — trustworthiness and reliability; garbage in, garbage out; requires cleaning, normalization, outlier detection.\
+      **Value** — not all data is valuable; some is redundant or irrelevant.
+    note: |-
+      Solutions the skripta pairs with them: Volume → stochastic optimization, subsampling, distributed optimization. Velocity → models that adapt continuously under non-stationarity. Variety → feature embedding into a shared space, multi-view learning, tensor models. Veracity → Bayesian modelling and uncertainty estimation.
+
+  - id: 'tk07'
+    hy: false
+    q: |-
+      How does data mining differ from simple querying and from machine learning?
+    a: |-
+      **Data mining combines ideas from machine learning and simple querying to discover patterns that are valid, useful and scalable.**
+    note: |-
+      And the two method families: **descriptive** methods find human-interpretable patterns that describe the data (e.g. clustering); **predictive** methods use some variables to predict unknown or future values of others (e.g. recommender systems).
+
+  - id: 'tk08'
+    hy: false
+    q: |-
+      Why do data preparation, evaluation and deployment matter?
+    a: |-
+      Data-mining projects often fail when analysts **jump straight into applying algorithms** without understanding the business task, the quality of the data and the deployment context. Process models such as CRISP-DM act as a **roadmap** that reduces confusion, improves reproducibility and keeps technical work aligned with business goals.\
+      \
+      These steps matter because the process is **highly iterative**: poor results at evaluation frequently send analysts back to refine features, clean further, or redefine the objective.

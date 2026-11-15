@@ -1,0 +1,60 @@
+# Ids are permanent: people's progress is keyed by them.
+title: 'Final exam'
+kind: 'final'
+format: |-
+  Eight questions, the same eight slots on both past papers. Questions 1 and 8 are negatively marked.
+weights:
+  - topic: 'clustering'
+    weight: 5
+    note: |-
+      Q4 on both papers. BFR + CURE + judge a plot.
+
+  - topic: 'assoc'
+    weight: 5
+    note: |-
+      Q7 on both. A-Priori passes, k=3 itemsets, PCY.
+
+  - topic: 'rec'
+    weight: 5
+    note: |-
+      Q5 on both. Content-based one sitting, CF the other.
+
+  - topic: 'ens'
+    weight: 5
+    note: |-
+      Q6 on both. Error decomposition every time.
+
+  - topic: 'debug'
+    weight: 5
+    note: |-
+      Q8 on both, negatively marked. Highest marks-per-minute.
+
+  - topic: 'stats'
+    weight: 3
+    note: |-
+      Q2 on both. Cheap marks if you know the data-type rule.
+
+  - topic: 'clean'
+    weight: 3
+    note: |-
+      Q3 on both. Covariance vs correlation, redundancy.
+
+  - topic: 'tasks'
+    weight: 2
+    note: |-
+      Q1 on both, negatively marked. Six categories, one rule.
+
+  - topic: 'eval'
+    weight: 2
+    note: |-
+      Never its own question — arrives inside Q8 and Q2.
+
+  - topic: 'lsh'
+    weight: 1
+    note: |-
+      On neither final paper. Looks like midterm material.
+
+  - topic: 'streams'
+    weight: 1
+    note: |-
+      On neither final paper. Lecture 9, taught last.

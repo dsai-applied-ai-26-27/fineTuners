@@ -1,0 +1,353 @@
+# Ids are permanent: people's progress is keyed by them.
+title: 'Practice problems'
+instructions: |-
+  Work each one on paper before opening the solution.
+questions:
+  - id: 'p1'
+    title: 'Frequent itemsets from buckets'
+    topic: 'assoc'
+    q: |-
+      Baskets: B1=\{a,b,d} B2=\{a,c} B3=\{a,b,c,d} B4=\{b,d} B5=\{a,b,c} B6=\{b,c,d} B7=\{a,b,c,d} B8=\{c,d}. Support threshold **s = 4**.\
+      (a) Find all frequent itemsets. (b) Compute confidence and interest for \{a,b} → c.
+    solution: |-
+      **(a) Pass 1 — item counts over 8 baskets.** a: B1,B2,B3,B5,B7 = **5** · b: B1,B3,B4,B5,B6,B7 = **6** · c: B2,B3,B5,B6,B7,B8 = **6** · d: B1,B3,B4,B6,B7,B8 = **6**.
+
+      All four reach s = 4, so **L₁ = \{a}, \{b}, \{c}, \{d}**. Nothing is pruned this time — which means pass 2 has to consider all 6 pairs.
+
+      **Pass 2 — the 6 candidate pairs.** \{a,b}: B1,B3,B5,B7 = **4** ✓ · \{a,c}: B2,B3,B5,B7 = **4** ✓ · \{a,d}: B1,B3,B7 = 3 ✗ · \{b,c}: B3,B5,B6,B7 = **4** ✓ · \{b,d}: B1,B3,B4,B6,B7 = **5** ✓ · \{c,d}: B3,B6,B7,B8 = **4** ✓.
+
+      **L₂ = \{a,b}, \{a,c}, \{b,c}, \{b,d}, \{c,d}** — only \{a,d} is dropped.
+
+      **Pass 3 — candidate triples need all three pairs in L₂.** \{a,b,c}: needs \{a,b} ✓ \{a,c} ✓ \{b,c} ✓ → **candidate**. \{a,b,d}: needs \{a,d} ✗ → pruned. \{a,c,d}: needs \{a,d} ✗ → pruned. \{b,c,d}: needs \{b,c} ✓ \{b,d} ✓ \{c,d} ✓ → **candidate**.
+
+      Count the two survivors: \{a,b,c} appears in B3, B5, B7 = **3** ✗. \{b,c,d} appears in B3, B6, B7 = **3** ✗.
+
+      **L₃ = ∅**, so the algorithm stops after pass 3.
+
+      **Answer:** frequent itemsets are \{a}, \{b}, \{c}, \{d}, \{a,b}, \{a,c}, \{b,c}, \{b,d}, \{c,d}.
+
+      **(b)** support(\{a,b,c}) = 3 (B3, B5, B7); support(\{a,b}) = 4.\
+      **conf(\{a,b} → c) = 3/4 = 0.75.**\
+      Pr\[c] = 6/8 = 0.75.\
+      **Interest = |0.75 − 0.75| = 0.**
+
+      **Read that result.** Confidence 0.75 looks strong, but c appears in 75% of baskets regardless — the interest is exactly **zero**, so knowing \{a,b} tells you nothing about c. This is the trap the interest measure exists to catch, and saying so is worth more than the arithmetic.
+
+  - id: 'p2'
+    title: 'BFR summary arithmetic'
+    topic: 'clustering'
+    q: |-
+      A cluster's discard set holds the points (1,2), (3,4), (5,4), (3,2).\
+      (a) Write down N, SUM and SUMSQ. (b) Recover the centroid and the per-dimension standard deviation. (c) Would the point (6,3) be accepted at a 2-standard-deviation threshold?
+    solution: |-
+      **(a)** N = **4**.\
+      SUM = (1+3+5+3, 2+4+4+2) = **(12, 12)**.\
+      SUMSQ = (1+9+25+9, 4+16+16+4) = **(44, 40)**.
+
+      That is **2d + 1 = 5** numbers for the whole cluster, regardless of how many points it holds.
+
+      **(b)** centroid = SUM/N = (12/4, 12/4) = **(3, 3)**.
+
+      varianceₓ = SUMSQₓ/N − (SUMₓ/N)² = 44/4 − 3² = 11 − 9 = **2** → σₓ = √2 ≈ **1.414**\
+      variance\_y = 40/4 − 3² = 10 − 9 = **1** → σ\_y = **1**
+
+      **(c)** Mahalanobis distance from (6,3) to the centroid (3,3):
+
+      yₓ = (6 − 3)/1.414 = 2.121 · y\_y = (3 − 3)/1 = 0
+
+      d = √(2.121² + 0²) = **2.121**
+
+      **2.121 > 2, so the point is NOT accepted** into the cluster. It goes to the compression or retained set instead.
+
+      **Worth noticing:** its plain *Euclidean* distance is 3.0, which tells you nothing on its own. The verdict comes from it being 2.12 standard deviations out along the x-axis — and x is the cluster's *wide* direction, which is why 3 units is not as far as it looks.
+
+  - id: 'p3'
+    title: 'Content-based profile with star ratings'
+    topic: 'rec'
+    q: |-
+      A user rated 4 films. Two star Actor P: rated 5 and 3. Two star Actor Q: rated 2 and 2.\
+      (a) Build a boolean-count profile. (b) Build a normalised (mean-subtracted) profile. (c) Which is the better description of this user, and why?
+    solution: |-
+      **(a) Boolean count profile.** P appears in 2 of 4 films, Q in 2 of 4.\
+      weight(P) = 2/4 = **0.5** · weight(Q) = 2/4 = **0.5**
+
+      The two actors look **identical** to this profile.
+
+      **(b) Normalised profile.** User mean rating = (5 + 3 + 2 + 2)/4 = **3**.
+
+      Normalise each rating by subtracting 3: P's films → 5−3 = +2 and 3−3 = 0. Q's films → 2−3 = −1 and 2−3 = −1.
+
+      weight(P) = (2 + 0)/2 = **+1.0**\
+      weight(Q) = (−1 + −1)/2 = **−1.0**
+
+      **(c) The normalised profile is far better**, and this problem is built to show exactly why. The user watched equal numbers of films with each actor, so the count profile says they like both equally. But they *rated* P's films above their own average and Q's films below it — so the honest description is "likes P, dislikes Q", which only the normalised profile expresses, via a **negative weight**.
+
+      The lecture's phrasing to reuse: **normalisation helps capture negative ratings.** Without it, "watched a lot of" is silently treated as "liked".
+
+  - id: 'p4'
+    title: 'Ensemble variance'
+    topic: 'ens'
+    q: |-
+      Base learners each have variance σ² = 0.8 and pairwise correlation ρ = 0.3.\
+      (a) Variance of the average of 10? (b) Of 200? (c) The limit as m → ∞? (d) What does this tell you to change?
+    solution: |-
+      Use **Var = (1 − ρ)σ²/m + ρσ²**, with σ² = 0.8 and ρ = 0.3, so (1 − ρ)σ² = 0.7 × 0.8 = 0.56 and ρσ² = 0.3 × 0.8 = 0.24.
+
+      **(a) m = 10:** 0.56/10 + 0.24 = 0.056 + 0.24 = **0.296**
+
+      **(b) m = 200:** 0.56/200 + 0.24 = 0.0028 + 0.24 = **0.2428**
+
+      **(c) m → ∞:** the first term vanishes, leaving the floor **ρσ² = 0.24**.
+
+      **(d)** Going from 10 learners to 200 — twenty times the training cost — bought a variance reduction of just 0.053, and no amount of further trees can get below 0.24. **The ensemble is limited by how alike its members are, not by how many there are.**
+
+      So the change to make is not "add more trees" but **reduce ρ**: sample a random subset of features at each split, as Random Forest does. Halving ρ to 0.15 would move the floor from 0.24 to 0.12 — twice the gain that going from 10 to 200 trees delivered, for no extra training cost.
+
+      And note what none of this touches: the **bias**. If the model is underfitting, this whole calculation is irrelevant and you need boosting instead.
+
+  - id: 'p5'
+    title: 'χ² from a contingency table'
+    topic: 'stats'
+    q: |-
+      300 patients. Smokers: 60 with lung disease, 40 without. Non-smokers: 40 with, 160 without.\
+      (a) State the data types and the right method. (b) Compute χ². (c) State the conclusion carefully.
+    solution: |-
+      **(a)** Both variables are **nominal categorical** — smoker yes/no, lung disease yes/no. Neither is numeric and neither can be ranked, so Pearson (needs two continuous numeric variables, measures linear association) and Spearman (needs at least ordinal) are both inapplicable. The correct method is the **χ² test of independence**.
+
+      **(b)** Margins: smoker row = 100, non-smoker row = 200. Disease column = 100, no-disease column = 200. n = 300.
+
+      Expected: E₁₁ = 100·100/300 = **33.33** · E₁₂ = 100·200/300 = **66.67** · E₂₁ = 200·100/300 = **66.67** · E₂₂ = 200·200/300 = **133.33**
+
+      Each |O − E| = 26.67. Contributions:
+
+      (60−33.33)²/33.33 = 711.1/33.33 = **21.33**\
+      (40−66.67)²/66.67 = 711.1/66.67 = **10.67**\
+      (40−66.67)²/66.67 = **10.67**\
+      (160−133.33)²/133.33 = 711.1/133.33 = **5.33**
+
+      **χ² = 21.33 + 10.67 + 10.67 + 5.33 = 48.0**
+
+      **(c)** df = (2−1)(2−1) = 1; the critical value at α = 0.05 is 3.841. Since **48.0 ≫ 3.841 we reject the null hypothesis of independence**: smoking and lung disease are associated in this sample.
+
+      **The careful part:** this establishes **association, not causation** — χ² cannot rule out a confounder. And note the largest contribution (21.33) comes from the cell with the **smallest expected count**, which is the general pattern and is what the question "which cells contribute most" is after.
+
+  - id: 'p6'
+    title: 'Find the planted flaws'
+    topic: 'debug'
+    q: |-
+      Two or three things are wrong here. Name only what you are sure of.
+
+      ```python
+      df = pd.read_csv("sensors.csv")            # many sensors, hourly readings
+      df = df.ffill()
+
+      X = df.drop(columns=["failure"])
+      y = df["failure"]                          # 3% positive
+
+      sel = SelectKBest(f_classif, k=8).fit(X, y)
+      X = sel.transform(X)
+
+      X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.2, random_state=0)
+      model = RandomForestClassifier().fit(X_tr, y_tr)
+      print("accuracy:", accuracy_score(y_te, model.predict(X_te)))
+      ```
+    solution: |-
+      **Three errors, all assertable.**
+
+      **1. Global forward fill across sensors.** `df.ffill()` on a frame containing many sensors carries the last reading of one sensor into the opening rows of the next, inventing readings from unrelated hardware.\
+      *Fix:* `df = df.sort_values(["sensor_id","timestamp"])` then `df.groupby("sensor_id").ffill()`.
+
+      **2. Feature selection before the split.** `SelectKBest(...).fit(X, y)` runs on the full dataset, so the selector has seen the **test labels** when choosing the 8 features. The reported score is partly a measurement of the test set.\
+      *Fix:* split first, then fit the selector on the training set only — best done inside a `Pipeline` so that cross-validation re-fits it per fold.
+
+      **3. Accuracy on a 3%-positive problem.** Predicting "no failure" for everything scores 97%. Accuracy cannot distinguish that model from a useful one.\
+      *Fix:* report the confusion matrix with **recall** and **F1**, plus PR-AUC. Which to optimise depends on the cost of a missed failure versus a false alarm — a domain question.
+
+      **What to phrase conditionally, not assert.** This is hourly sensor data, so a **temporal** split is very likely required rather than a random one — but the snippet doesn't show a timestamp column being used as an index or a target horizon, so write it as: "*if* the task is to predict future failures from past readings, the random split is also wrong and should be temporal." That earns credit as reasoning without risking −0.2 on an asserted claim.
+
+      **Do not write:** "no scaling" (Random Forest is not distance-based, so it needs none), or "no `random_state` on the classifier" (a reproducibility nit, not a methodological error). Both are the kind of padding the mark scheme penalises.
+
+  - id: 'p7'
+    title: 'Judge the plot'
+    topic: 'clustering'
+    q: |-
+      You are shown a scatter plot of three roughly circular, well-separated groups of points of similar density, plus a handful of scattered points far from all three. Is BFR suitable? What happens to the scattered points?
+    solution: |-
+      **Yes, BFR is suitable** — and the reason must be about shape.
+
+      Each group is **convex and roughly circular**, so it is well described by a normal distribution around a centroid, and a circle is a degenerate axis-aligned ellipse (σₓ ≈ σ\_y). The (N, SUM, SUMSQ) summary therefore loses almost nothing: the centroid lands *inside* its own cluster and the 2σ acceptance region covers the cluster's own points and few others. The groups being well separated means the Mahalanobis test rarely has a close call.
+
+      **The scattered points** are exactly what the third set is for. On the memory-load in which they arrive they will not be close enough to any centroid for the Mahalanobis test, so they will not enter the **discard set**. They are then clustered against each other and the existing RS: any that group together become a **compression set (CS)** mini-cluster, summarised but not assigned to a cluster; the genuinely isolated ones sit in the **retained set (RS)** as actual points.
+
+      On the final round, all remaining CS and RS are **merged into their nearest cluster** — or, if the application is anomaly detection, they can be reported as **outliers** instead, which is the more useful reading here.
+
+      **One caveat worth a sentence:** BFR needs k fixed in advance. If you told it k = 3 this works; if you told it k = 2 or k = 5 the summaries would be forced onto the wrong structure no matter how well-shaped the data is.
+
+  - id: 'p8'
+    title: 'User-user CF by hand'
+    topic: 'rec'
+    q: |-
+      Ratings out of 5 (— = unrated). Predict user A's rating for film 4 using the single most similar user, with mean-centred similarity.\
+      \
+      A: f1=5, f2=3, f3=4, f4=? · B: f1=4, f2=2, f3=3, f4=4 · C: f1=1, f2=5, f3=2, f4=1
+    solution: |-
+      **Step 1 — mean-centre each user over their rated films.**
+
+      r̄\_A = (5+3+4)/3 = **4** → A = (+1, −1, 0)\
+      r̄\_B = (4+2+3+4)/4 = **3.25** → B = (+0.75, −1.25, −0.25, +0.75)\
+      r̄\_C = (1+5+2+1)/4 = **2.25** → C = (−1.25, +2.75, −0.25, −1.25)
+
+      **Step 2 — similarity over S\_(xy), the films rated by both.** A and B share f1, f2, f3; A and C share f1, f2, f3.
+
+      **sim(A, B):**\
+      numerator = (1)(0.75) + (−1)(−1.25) + (0)(−0.25) = 0.75 + 1.25 + 0 = **2.0**\
+      ‖A‖ over those films = √(1 + 1 + 0) = √2 = 1.414\
+      ‖B‖ over those films = √(0.5625 + 1.5625 + 0.0625) = √2.1875 = 1.479\
+      sim(A,B) = 2.0 / (1.414 × 1.479) = 2.0 / 2.092 = **+0.956**
+
+      **sim(A, C):**\
+      numerator = (1)(−1.25) + (−1)(2.75) + (0)(−0.25) = −1.25 − 2.75 = **−4.0**\
+      ‖C‖ over those films = √(1.5625 + 7.5625 + 0.0625) = √9.1875 = 3.031\
+      sim(A,C) = −4.0 / (1.414 × 3.031) = −4.0 / 4.286 = **−0.933**
+
+      **Step 3 — pick the neighbourhood.** With k = 1, the most similar user who has rated f4 is **B**, at +0.956. C is strongly *negatively* correlated — an anti-neighbour.
+
+      **Step 4 — predict.** With a single neighbour the weighted average collapses to B's own rating:
+
+      r\_(A,f4) = (0.956 × 4) / 0.956 = **4**
+
+      **Sanity check it.** A and B agree closely on everything they've both rated, B liked f4 (4, above their 3.25 mean), so predicting 4 for A is consistent. Meanwhile C rated f4 a 1 — and had we naïvely used "the nearest user by raw cosine without centring", C's overlap pattern might have pulled the prediction down. Centring is what makes C's opposition visible as a **negative** number.
+
+  - id: 'p9'
+    title: 'Pick the metric and justify it'
+    topic: 'eval'
+    q: |-
+      A hospital screens for sepsis. 2% of admissions develop it. Missing a case risks death; a false alarm costs a nurse 20 minutes. A model reports 98.1% accuracy.\
+      (a) Is the accuracy figure informative? (b) Which metric, and why? (c) Which curve?
+    solution: |-
+      **(a) No — it is very close to worthless here.** With 2% positives, a model that predicts "no sepsis" for every admission scores **98% accuracy** while catching zero cases. The reported 98.1% is only 0.1 points above that null model, so on its own it is consistent with a model that is almost useless.
+
+      **(b) Recall (sensitivity).** The justification has to be about the **cost asymmetry**, not about imbalance alone: a false negative risks a death, a false positive costs 20 nurse-minutes. Those are not remotely comparable, so the metric must be the one that counts missed positives — recall = TP/(TP+FN).
+
+      Report precision alongside it so the false-alarm burden stays visible, but **optimise recall**. F1 would be the wrong choice here: it weights precision and recall equally, which implicitly prices a death at 20 minutes of nursing time.
+
+      Also report the **confusion matrix** itself — with 2% prevalence, the absolute number of missed cases is the number a clinician actually wants.
+
+      **(c) The precision–recall curve**, which is the appropriate curve for **imbalanced** data. ROC would look flattering here: with 98% negatives, the false positive rate has a huge denominator, so even a large number of false alarms barely moves FPR and the ROC curve hugs the corner. PR-AUC does not hide that.
+
+      **The sentence that ties it together:** one metric does not fit all — the choice follows from what each type of error costs in the application, and that is a domain judgement, not a default.
+
+  - id: 'p10'
+    title: 'PCY bucket reasoning'
+    topic: 'assoc'
+    q: |-
+      In PCY's pass 1, bucket 17 ends with a count of 9 and the support threshold is s = 12. Pair \{i,j} hashes to bucket 17, and both i and j are frequent items.\
+      (a) Is \{i,j} counted in pass 2? (b) Bucket 40 has count 200. Pair \{k,l} hashes there, both frequent. Is \{k,l} frequent? (c) What does this asymmetry mean?
+    solution: |-
+      **(a) No — it is eliminated.** Bucket 17's total count is 9, and that total is the **sum of the counts of every pair hashing into it**. So no individual pair in that bucket can have a count above 9, which is below s = 12. \{i,j} therefore cannot possibly be frequent and gets no counter in pass 2 — **even though both its items are frequent**, which is precisely the extra pruning PCY buys over A-Priori.
+
+      **(b) Unknown — you cannot tell.** Bucket 40's count of 200 could come from one frequent pair, or from 100 different pairs each occurring twice, none of them frequent. A frequent bucket is **not** evidence that any pair inside it is frequent.
+
+      So \{k,l} passes both PCY conditions and **becomes a candidate** — it gets a counter in pass 2, and only the actual count decides.
+
+      **(c) The asymmetry is the whole algorithm.** An **infrequent** bucket is conclusive: it proves every pair inside is infrequent. A **frequent** bucket is inconclusive: it proves nothing.
+
+      So PCY can only ever use buckets to **eliminate**, never to confirm. That produces **false positives but never false negatives** — extra candidates get counted unnecessarily, but no frequent pair is ever missed, so the final answer is still exact.
+
+      **The practical consequence worth adding:** because pass 2 must now use a table of (item, item, count) triples at 12 bytes rather than a triangular matrix at 4, the bitmap has to eliminate roughly **2/3** of the candidate pairs before PCY is even breaking even with A-Priori.
+
+  - id: 'p11'
+    title: 'One k-means iteration'
+    topic: 'clustering'
+    q: |-
+      Points A1(2,10) A2(2,5) A3(8,4) A4(5,8) A5(7,5) A6(6,4) A7(1,2) A8(4,9). Initial centroids C1=(2,10), C2=(5,8), C3=(1,2). Do one full iteration.
+    solution: |-
+      **Step 1 — assign each point to its nearest centroid.** Compare *squared* distances to avoid square roots; take roots only for display.
+
+      | Point | d(C1) | d(C2) | d(C3) | → |
+      |---|---|---|---|---|
+      | A1 (2,10) | **0.00** | 3\.61 | 8\.06 | **C1** |
+      | A2 (2,5) | 5\.00 | 4\.24 | **3.16** | **C3** |
+      | A3 (8,4) | 8\.49 | **5.00** | 7\.28 | **C2** |
+      | A4 (5,8) | 3\.61 | **0.00** | 7\.21 | **C2** |
+      | A5 (7,5) | 7\.07 | **3.61** | 6\.71 | **C2** |
+      | A6 (6,4) | 7\.21 | **4.12** | 5\.39 | **C2** |
+      | A7 (1,2) | 8\.06 | 7\.21 | **0.00** | **C3** |
+      | A8 (4,9) | 2\.24 | **1.41** | 7\.62 | **C2** |
+
+      **Clusters:** C1 = \{A1} · C2 = \{A3, A4, A5, A6, A8} · C3 = \{A2, A7}
+
+      **Step 2 — recompute each centroid as the mean of its members.**
+
+      **C1** = (2, 10) — unchanged, since only A1 belongs to it.\
+      **C2** = ( (8+5+7+6+4)/5 , (4+8+5+4+9)/5 ) = (30/5, 30/5) = **(6, 6)**\
+      **C3** = ( (2+1)/2 , (5+2)/2 ) = **(1.5, 3.5)**
+
+      **Exam technique.** Write √ values before decimals — d(A3,C1) = √(36+36) = √72 = 8.49 — so an arithmetic slip still leaves the method visible for partial credit. And note A8 is the interesting one: it is nearly equidistant (2.24 vs 1.41), so it is the point most likely to switch clusters on the next iteration.
+
+      **Not converged:** two of the three centroids moved, so another round is required.
+
+  - id: 'p12'
+    title: 'Diagnose bias or variance'
+    topic: 'ens'
+    q: |-
+      A decision tree scores 99.8% on training data and 71% on test. A logistic regression scores 74% on training and 73% on test, on the same split.\
+      (a) Diagnose each. (b) Which ensemble strategy fixes each? (c) What would happen if you swapped the fixes?
+    solution: |-
+      **(a) Diagnosis.**
+
+      The **decision tree** has a 28.8-point gap between train and test. It fits its particular training set almost perfectly and generalises poorly — the prediction would change a great deal if you redrew the training set. That is **high variance**, i.e. overfitting. Its bias is low.
+
+      The **logistic regression** scores badly on both, and the two scores agree. It is not chasing the sample; it simply cannot represent the target function — the *average* model is far from the truth. That is **high bias**, i.e. underfitting. Its variance is low.
+
+      **(b) The fixes.**
+
+      Tree → **bagging** (Random Forest). Averaging m predictors reduces variance by (1−ρ)σ²/m + ρσ², and leaves bias untouched — which is fine, because the tree's bias was already low. Random Forest's feature subsampling additionally drives ρ down so the averaging works harder.
+
+      Logistic regression → **boosting**. Each round fits the previous ensemble's mistakes, so the combined model becomes progressively more expressive, which is what reduces bias.
+
+      **(c) If you swapped them.**
+
+      **Bagging the logistic regression** would achieve almost nothing. Bagging reduces variance, and this model's variance is already near zero — the train and test scores agree. You would average 100 nearly identical weak models and get back a nearly identical weak model, at 100× the cost. This is exactly what the lecture means by "**bagging does not reduce bias**".
+
+      **Boosting the tree** would likely make things worse. Boosting reduces bias at the cost of **increasing variance**, and variance is already the failure mode. Boosting a deep tree is the textbook route to severe overfitting — which is why gradient boosting uses deliberately shallow trees (stumps) as its base learner.
+
+      **The rule to carry out of this:** read the train-test gap first. A large gap is variance → bag. A uniformly poor score is bias → boost.
+
+  - id: 'p13'
+    title: 'CURE vs BFR on the same data'
+    topic: 'clustering'
+    q: |-
+      A dataset has two clusters shaped like long diagonal cigars, running parallel at 45° and close together. Both are dense and roughly equal in size. Which of k-means, BFR and CURE would work, and why?
+    solution: |-
+      **k-means: poor.** Its implicit model is a sphere around each centroid — the assignment rule is plain Euclidean distance, so the decision boundary is the perpendicular bisector of the two centroids, a straight line. Two long parallel cigars at 45° have centroids that are close together relative to the cigars' *length*, so that straight boundary will slice both cigars across their middles rather than separating them. You'd get two clusters each containing half of each true cluster.
+
+      **BFR: also poor, and for a specific reason worth naming.** BFR improves on k-means by using Mahalanobis distance, which lets the acceptance region be an **ellipse** rather than a sphere — so it can handle elongation. But the ellipse is **axis-aligned**, because the summary stores one σ per dimension and no covariance between dimensions. A cigar at **45° is elongated along a diagonal**, which is exactly the orientation an axis-aligned ellipse cannot represent: BFR would fit a large near-circular region covering the diagonal extent, swallowing much of the neighbouring cluster.
+
+      The lecture is explicit on this: "*the axes are fixed — ellipses at an angle are not OK*". This case is the cleanest illustration of that clause, because the problem is **not** non-convexity — a cigar *is* convex. It is orientation alone.
+
+      **CURE: works.** A cluster is represented by several **dispersed representative points** shrunk 20% toward the centroid, so a long diagonal cigar is described by representatives spread along its length. In pass 2 each point joins the cluster of its **nearest representative** — and a point at one end of a cigar is near a representative of its own cluster, even though it is far from that cluster's centroid. Orientation is irrelevant because no ellipse is ever fitted.
+
+      **The one-line answer:** BFR fixes the *size* problem, CURE fixes the *shape* problem — and "shape" includes orientation, not just convexity.
+
+  - id: 'p14'
+    title: 'Classify the task'
+    topic: 'tasks'
+    q: |-
+      (a) Flag transactions whose pattern deviates sharply from a customer's history. (b) Predict how many days a package will take. (c) Group readers by reading habits. (d) Customers who activate roaming often buy data add-ons. (e) Decide if a review is positive or negative. (f) A weekly management dashboard of best-sellers.
+    solution: |-
+      **(a) Anomaly detection** — "deviates sharply" with no label given; you are looking for rare, unusual cases.
+
+      **(b) Regression** — the target is a **number** (days). The giveaway is "how many" / "predict the exact".
+
+      **(c) Clustering** — "group … by habits" with no predefined groups; the analyst has to interpret the resulting segments afterwards.
+
+      **(d) Association rules** — a statement about **items co-occurring**, with no individual user to recommend to. "X often buy Y" is the signature phrasing.
+
+      **(e) Classification** — the target is a **category** from a known set (positive / negative), and the classes are given in advance.
+
+      **(f) Summarization** — "dashboard", "weekly", "best-sellers": compressing data into an understandable description, not predicting anything.
+
+      **The two that trip people.** (c) vs (e): if the groups are *given* it's classification, if you have to interpret them afterwards it's clustering. (d) vs a recommender: association rules are about items with no user in the picture; "viewers who watched this also watched…" addressed to a specific user is a recommender.
+
+      **Remember the scoring:** this question is marked **−0.2 per wrong answer**. If you cannot eliminate to one, leave it blank.

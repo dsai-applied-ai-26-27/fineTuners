@@ -1,0 +1,267 @@
+# Definitions from lecture 1. Where the slides only name a term, the definition is from
+# general knowledge and says so.
+terms:
+  - id: g-responsible-ai
+    term: Responsible AI
+    topic: foundations
+    definition: |-
+      Designing, building, deploying and governing AI so that its benefits are shared and
+      its harms are anticipated, measured and mitigated. It is about practices and
+      accountability across the whole lifecycle, not only the model.
+    see: [g-trustworthy-ai, g-ethical-ai]
+
+  - id: g-trustworthy-ai
+    term: Trustworthy AI
+    topic: foundations
+    definition: |-
+      AI that has the properties a system needs to deserve trust: it is lawful (complies
+      with regulation), ethical (respects rights, fairness and human autonomy) and robust
+      (technically reliable and socially aware).
+    see: [g-responsible-ai]
+
+  - id: g-ethical-ai
+    term: Ethical AI
+    topic: foundations
+    definition: |-
+      The moral values and principles that should guide AI. Its question is what is right,
+      where Responsible AI asks how that is put into practice.
+    see: [g-responsible-ai]
+
+  - id: g-human-centred-ai
+    term: Human-centred AI
+    topic: foundations
+    definition: |-
+      A design approach that keeps human needs, control and wellbeing central.
+
+  - id: g-xai
+    term: Explainable AI (XAI)
+    topic: pillars
+    definition: |-
+      Techniques that make the behaviour of a model understandable to people.
+    see: [g-intrinsic, g-post-hoc]
+
+  - id: g-socio-technical
+    term: Socio-technical failure
+    topic: foundations
+    definition: |-
+      A failure whose cause lies in the combination of the technology and its human
+      setting. In the lecture's cases, data, objectives, deployment and oversight each
+      contributed.
+
+  - id: g-protected-attribute
+    term: Protected attribute
+    topic: pillars
+    definition: |-
+      A personal characteristic by which groups must not be systematically disadvantaged.
+      The lecture's examples are gender, ethnicity, age and disability.
+    see: [g-proxy]
+
+  - id: g-proxy
+    term: Proxy
+    topic: pillars
+    definition: |-
+      A feature that correlates with a protected attribute and so carries its information
+      into the model even when the attribute itself has been removed. Postcode is the
+      lecture's example.
+    see: [g-protected-attribute]
+
+  - id: g-demographic-parity
+    term: Demographic parity
+    topic: pillars
+    definition: |-
+      A group-fairness criterion requiring the same rate of positive predictions in every
+      group: $P(\hat Y = 1 \mid A = a) = P(\hat Y = 1 \mid A = b)$.
+    see: [g-equal-opportunity, g-predictive-parity]
+
+  - id: g-equal-opportunity
+    term: Equal opportunity
+    topic: pillars
+    definition: |-
+      A group-fairness criterion requiring the same true-positive rate in every group:
+      among people who truly qualify, each group is predicted positive equally often.
+    see: [g-equalized-odds, g-demographic-parity]
+
+  - id: g-equalized-odds
+    term: Equalized odds
+    topic: pillars
+    definition: |-
+      A group-fairness criterion requiring both the true-positive rate and the
+      false-positive rate to be equal across groups, so that every group has the same
+      error profile.
+    see: [g-equal-opportunity]
+
+  - id: g-predictive-parity
+    term: Predictive parity
+    topic: pillars
+    definition: |-
+      A group-fairness criterion requiring a positive prediction to mean the same in every
+      group: $P(Y = 1 \mid \hat Y = 1, A = a) = P(Y = 1 \mid \hat Y = 1, A = b)$.
+    see: [g-demographic-parity]
+
+  - id: g-intrinsic
+    term: Intrinsic interpretability
+    topic: pillars
+    definition: |-
+      Explainability obtained by using a model that is interpretable in itself, such as a
+      linear model, a decision tree or a rule list.
+    see: [g-post-hoc]
+
+  - id: g-post-hoc
+    term: Post-hoc explanation
+    topic: pillars
+    definition: |-
+      An explanation produced for a complex model after it has been trained, for example
+      with SHAP, LIME, Grad-CAM or counterfactual examples.
+    see: [g-intrinsic]
+
+  - id: g-datasheet
+    term: Datasheet for a dataset
+    topic: pillars
+    definition: |-
+      A document recording a dataset's origin, how it was collected, its intended use and
+      its known gaps.
+    see: [g-model-card]
+
+  - id: g-model-card
+    term: Model card
+    topic: pillars
+    definition: |-
+      A document recording a model's intended use, its metrics per subgroup and its
+      limitations.
+    see: [g-datasheet, g-impact-assessment]
+
+  - id: g-impact-assessment
+    term: Impact assessment
+    topic: practice
+    definition: |-
+      A structured review, before deployment, of the risks a system poses to people, the
+      mitigations, and who signs off. The lecture's checklist has eight headings: purpose,
+      alternatives, data, fairness, explainability, oversight, safety and security,
+      redress.
+    see: [g-model-card]
+
+  - id: g-redress
+    term: Redress
+    topic: pillars
+    definition: |-
+      The ability of a person affected by a decision to contest and appeal the outcome.
+
+  - id: g-differential-privacy
+    term: Differential privacy
+    topic: pillars
+    definition: |-
+      A privacy technique in which calibrated noise is added so that individuals in the
+      data are protected.
+    see: [g-federated-learning]
+
+  - id: g-federated-learning
+    term: Federated learning
+    topic: pillars
+    definition: |-
+      Training a model without centralising the data.
+    see: [g-differential-privacy]
+
+  - id: g-membership-inference
+    term: Membership inference
+    topic: pillars
+    definition: |-
+      A privacy attack that tries to determine whether a particular person's record was
+      part of a model's training data. (Named on slide 19; the definition is from general
+      knowledge.)
+
+  - id: g-adversarial-example
+    term: Adversarial example
+    topic: pillars
+    definition: |-
+      An input changed by a tiny, targeted amount so that the model's prediction flips.
+    see: [g-data-poisoning]
+
+  - id: g-data-poisoning
+    term: Data poisoning
+    topic: pillars
+    definition: |-
+      An attack that corrupts the training set in order to change what the model learns.
+    see: [g-adversarial-example]
+
+  - id: g-prompt-injection
+    term: Prompt injection
+    topic: pillars
+    definition: |-
+      An attack on LLM-based applications in which text supplied to the model is crafted to
+      override the instructions it was given. (Named on slide 19; the definition is from
+      general knowledge.)
+
+  - id: g-distribution-shift
+    term: Distribution shift
+    topic: pillars
+    definition: |-
+      The situation in which deployment data differs from training data, for instance
+      because of a new population, season or sensor.
+
+  - id: g-red-teaming
+    term: Red-teaming
+    topic: pillars
+    definition: |-
+      Deliberately attacking or stress-testing a system to find where it fails before
+      others do. (Named on slides 20 and 27; the definition is from general knowledge.)
+
+  - id: g-human-in-the-loop
+    term: Human-in-the-loop
+    topic: pillars
+    definition: |-
+      An oversight arrangement in which a person approves or reviews each decision.
+    see: [g-human-on-the-loop, g-human-in-command, g-automation-bias]
+
+  - id: g-human-on-the-loop
+    term: Human-on-the-loop
+    topic: pillars
+    definition: |-
+      An oversight arrangement in which a person monitors the system and can intervene.
+    see: [g-human-in-the-loop, g-human-in-command]
+
+  - id: g-human-in-command
+    term: Human-in-command
+    topic: pillars
+    definition: |-
+      An oversight arrangement in which people decide whether and how the system is used at
+      all.
+    see: [g-human-in-the-loop, g-human-on-the-loop]
+
+  - id: g-automation-bias
+    term: Automation bias
+    topic: pillars
+    definition: |-
+      The tendency of people to over-trust confident output from an automated system.
+    see: [g-human-in-the-loop]
+
+  - id: g-eu-ai-act
+    term: EU AI Act
+    topic: regulation
+    definition: |-
+      Regulation (EU) 2024/1689, the first comprehensive AI law, in force since August
+      2024. It takes a risk-based approach with four tiers: unacceptable risk (prohibited),
+      high risk (strict obligations), limited risk (transparency duties) and minimal risk
+      (no new obligations).
+
+  - id: g-nist-ai-rmf
+    term: NIST AI RMF
+    topic: regulation
+    definition: |-
+      The AI Risk Management Framework of the US National Institute of Standards and
+      Technology (2023). It has four functions: Govern, which spans the organisation, and
+      Map, Measure and Manage.
+    see: [g-iso-42001]
+
+  - id: g-iso-42001
+    term: ISO/IEC 42001
+    topic: regulation
+    definition: |-
+      A certifiable management-system standard for AI (2023) covering policies, roles, risk
+      assessment and improvement.
+    see: [g-nist-ai-rmf]
+
+  - id: g-ethics-washing
+    term: Ethics washing
+    topic: practice
+    definition: |-
+      Having principles on paper without practice in the product.
