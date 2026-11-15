@@ -1,5 +1,9 @@
 # Instructions for AI agents
 
+**This is a development copy, not the live site:** read the section "This copy" at the
+top of [CLAUDE.md](CLAUDE.md) before anything else. Nothing here deploys, and the
+course content in `courses/` is committed in this repository.
+
 The instructions for this repository are in [CLAUDE.md](CLAUDE.md) and apply to every agent,
 whatever tool it runs in. Read that file first.
 

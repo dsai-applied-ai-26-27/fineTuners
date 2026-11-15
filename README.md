@@ -6,6 +6,36 @@ aids. The content is plain Markdown and YAML written from your course material, 
 an AI agent following [docs/AUTHORING.md](docs/AUTHORING.md). Django validates and renders
 it. You sign in with Google, and your progress follows you between devices.
 
+## This copy: read this first
+
+This repository is a **development copy** of DSAI Vault for a project, not the site that
+runs live. What that changes, ahead of everything else in this file:
+
+- **Nothing here deploys.** There is no server, no `publish`, no `take_in`, no
+  `deploy status`. Ignore whatever the rest of this file or the docs say about the live
+  site, the server, `deploy/`, `edge/`, the educator kit and the owner's bot (BMO):
+  those belong to the original repository. Links to `docs/DEPLOYMENT.md` and
+  `docs/DUTIES.md` lead nowhere here; those pages were left out.
+- **The content is part of this repository.** `courses/semester-N/<course>/` holds each
+  course's `course.yaml` and `content/`, and is committed here like the code. (In the
+  original it is a separate repository.) `source/`, `private/` and `duties.yaml` do not
+  exist here, and `.gitignore` keeps them out.
+- **No database comes with it.** It is built from the files:
+  `uv sync`, `uv run python manage.py migrate`, `uv run python manage.py sync_content`,
+  then `uv run python manage.py runserver` and "Development sign-in" on the landing page.
+  `db.sqlite3` is yours, local, and never committed.
+- **How work goes back to the original:** on a branch here, described in its commits. The
+  owner of the original pulls it, reviews it and merges it there. Do not rename files or
+  ids to "tidy up": ids of cards, questions, formulas, terms and hooks, and the file names
+  of documents, are permanent, because people's progress is keyed to them.
+- **Never in `content/`:** graded work, i.e. real quiz or test questions with their
+  answers, solutions or expected results of graded lab tasks, homework or project
+  answers, or anything made from someone's own hand-ins. The lab policies give 0 points
+  for shared work.
+- What still applies as written: the app's architecture ([docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)),
+  how content is written ([docs/AUTHORING.md](docs/AUTHORING.md), `docs/content-types/`),
+  the tests (`uv run python manage.py test --parallel 4`) and `uv run ruff check .`.
+
 ## Run it
 
 You need [uv](https://docs.astral.sh/uv/). Node.js is optional (with it, every formula is
