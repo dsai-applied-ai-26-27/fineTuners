@@ -1,0 +1,374 @@
+# Questions the Vault cannot answer, or answers the other way.
+# Each question is asked against one course index, not against the whole Vault.
+# expected: abstain
+#   The notes do not contain the answer. The assistant should say so.
+# expected: reject-premise
+#   The notes do discuss the topic, and they say the opposite of what the
+#   question assumes. Agreeing with the assumption is a wrong answer.
+# Absences were checked by searching the course's content files for the terms named in why.
+#
+# Counts: 10 empty-course, 15 topic-absent, 5 other-course, 2 detail-absent, 9 reject-premise. 41 in total.
+
+questions:
+  - id: u01
+    course: rl
+    category: empty-course
+    expected: abstain
+    q: State the Bellman optimality equation for the state-value function.
+    why: >
+      Reinforcement Learning has a course.yaml and no content directory.
+      The index for this course is empty.
+
+  - id: u02
+    course: nlp
+    category: empty-course
+    expected: abstain
+    q: Write the scaled dot-product attention formula used in the NLP course.
+    why: >
+      Introduction to Natural Language Processing has no content directory.
+
+  - id: u03
+    course: nopt
+    category: empty-course
+    expected: abstain
+    q: State the Wolfe conditions for accepting a step length in a line search.
+    why: >
+      Numerical Optimization has no content directory.
+
+  - id: u04
+    course: ads1
+    category: empty-course
+    expected: abstain
+    q: Give the worst-case time complexity of quicksort and say which pivot produces it.
+    why: >
+      Algorithms and Data Structures I has no content directory.
+      Later ADS2 notes are a different index and are not in play for this question.
+
+  - id: u05
+    course: mai1
+    category: empty-course
+    expected: abstain
+    q: State the epsilon-delta definition of the limit of a sequence from Mathematics for AI I.
+    why: >
+      Mathematics for AI I has no content directory.
+      The measure-theory notes in MAI3 are a different course.
+
+  - id: u06
+    course: dppr
+    category: empty-course
+    expected: abstain
+    q: Which GDPR legal basis do the Data Protection notes give for storing a student's study progress?
+    why: >
+      Data Protection and Privacy Regulation has no content directory.
+
+  - id: u07
+    course: mlut
+    category: topic-absent
+    expected: abstain
+    q: State the k-means objective and say what the algorithm assigns and what it updates.
+    why: >
+      Searched the MLUT notes, labs, glossary, and formulas for k-means.
+      Lecture 1 covers error models and Gaussian mixtures. k-means is not there.
+
+  - id: u08
+    course: mlut
+    category: topic-absent
+    expected: abstain
+    q: What quantity does the first principal component maximise?
+    why: >
+      Searched the MLUT content for PCA. No matches.
+      PCA is taught in other courses, which are not this index.
+
+  - id: u09
+    course: mlut
+    category: topic-absent
+    expected: abstain
+    q: What does DBSCAN use to decide the number of clusters, since the number is not chosen in advance?
+    why: >
+      Searched the MLUT content for DBSCAN. No matches.
+
+  - id: u10
+    course: mlut
+    category: topic-absent
+    expected: abstain
+    q: Which linkage criterion do the MLUT notes recommend for hierarchical clustering, and why?
+    why: >
+      Searched the MLUT content for hierarchical clustering. No matches.
+      The question asks for a recommendation the notes never make.
+
+  - id: u11
+    course: cda
+    category: other-course
+    expected: abstain
+    q: State the normal equations for linear least squares and say when the solution is unique.
+    why: >
+      Searched the CDA notes for "least squares" and "normal equations". No matches.
+      The derivation is in the supervised-learning notes, which are a different index.
+
+  - id: u12
+    course: mlst
+    category: other-course
+    expected: abstain
+    q: Write the forward kinematics of a planar two-link arm.
+    why: >
+      Searched the MLST content for kinematics. No matches.
+      Forward kinematics is written up under Robotics (RF).
+
+  - id: u13
+    course: mlst
+    category: detail-absent
+    expected: abstain
+    q: In which academic year was the empirical-risk-minimisation question asked on the MLST exam for the first time?
+    why: >
+      section-a.yaml says the first five cards were on the previous year's paper,
+      and past-2024-25.yaml identifies that paper as 2024-25.
+      Nothing says whether the question was new that year.
+      Answering "2024-25" would be a guess.
+
+  - id: u14
+    course: mlst
+    category: reject-premise
+    expected: reject-premise
+    q: Why does a decision tree require one column to be dropped from a one-hot encoding?
+    why: >
+      Card seca-01 in decks/section-a.yaml says dummy encoding (k - 1 columns)
+      is for linear regression, because the one-hot columns sum to the intercept.
+      The same card says decision trees cope with a full one-hot encoding.
+      The assistant should reject the premise, not invent a reason.
+
+  - id: u15
+    course: mlst
+    category: reject-premise
+    expected: reject-premise
+    q: Why do the evaluation notes build a confusion matrix from cross_val_score rather than cross_val_predict?
+    why: >
+      guides/05-evaluation.md says cross_val_predict returns predictions and
+      cross_val_score returns one score per fold, and that the matrix needs predictions.
+      The panic sheet says the same thing.
+      The assistant should reject the premise.
+
+  - id: u16
+    course: psai
+    category: empty-course
+    expected: abstain
+    q: State the central limit theorem as it was given in Probability and Statistics for AI.
+    why: >
+      Probability and Statistics for AI has no content directory.
+
+  - id: u17
+    course: pp
+    category: empty-course
+    expected: abstain
+    q: What does the Programming in Python course say is the difference between a list and a tuple?
+    why: >
+      Programming in Python has no content directory.
+
+  - id: u18
+    course: mlog
+    category: empty-course
+    expected: abstain
+    q: Which proof system for propositional logic do the Mathematical Logic notes use for resolution?
+    why: >
+      Mathematical Logic has no content directory.
+
+  - id: u19
+    course: cg
+    category: empty-course
+    expected: abstain
+    q: What is the running time of Graham's scan for the convex hull of n points?
+    why: >
+      Computational Geometry has no content directory.
+
+  - id: u20
+    course: ads2
+    category: topic-absent
+    expected: abstain
+    q: State the max-flow min-cut theorem and say how Ford-Fulkerson uses augmenting paths.
+    why: >
+      Searched the ADS2 content for max flow, Ford-Fulkerson, augmenting and flow network.
+      The only hits are "min-cut" in the randomized-algorithms deck and guide, which is
+      Karger's randomized min cut, not network flow. A near miss on purpose.
+
+  - id: u21
+    course: ads2
+    category: topic-absent
+    expected: abstain
+    q: What is the expected search time in a skip list, and why?
+    why: >
+      Searched the ADS2 content for skip list. No matches.
+
+  - id: u22
+    course: cda
+    category: topic-absent
+    expected: abstain
+    q: Why does PageRank need a teleport probability, and what value do the notes use?
+    why: >
+      Searched the CDA content for PageRank, random surfer and teleport. No matches.
+
+  - id: u23
+    course: cda
+    category: topic-absent
+    expected: abstain
+    q: How does the DGIM algorithm count the ones in a sliding window of a bit stream?
+    why: >
+      Searched the CDA content for DGIM and sliding window. No matches.
+      The streams notes cover Bloom filters and Flajolet-Martin, not DGIM.
+
+  - id: u24
+    course: lugd
+    category: topic-absent
+    expected: abstain
+    q: What loss does Bayesian Personalized Ranking optimise for implicit feedback?
+    why: >
+      Searched the LUGD content for BPR, pairwise ranking and Bayesian personalized. No matches.
+      The notes mention implicit feedback, so retrieval will find related text. A near miss.
+
+  - id: u25
+    course: rf
+    category: topic-absent
+    expected: abstain
+    q: How is a rotation represented by a unit quaternion, and how do two rotations compose?
+    why: >
+      Searched the RF content for quaternion. No matches.
+      The rigid-body notes use rotation matrices and angle descriptions.
+
+  - id: u26
+    course: mai3
+    category: topic-absent
+    expected: abstain
+    q: State the Eckart-Young theorem for the best rank-k approximation of a matrix.
+    why: >
+      Searched the MAI3 content for singular value, SVD and Eckart. No matches.
+      guides/course-map.md lists low-rank methods as a later course topic, without content.
+
+  - id: u27
+    course: mai3
+    category: topic-absent
+    expected: abstain
+    q: State Fubini's theorem and the condition under which the order of integration can be swapped.
+    why: >
+      Searched the MAI3 content for Fubini, Tonelli and product measure. No matches.
+
+  - id: u28
+    course: mlpr
+    category: topic-absent
+    expected: abstain
+    q: How does a support vector machine choose its separating hyperplane?
+    why: >
+      Searched the MLPR content for SVM, support vector and hinge. No matches.
+
+  - id: u29
+    course: mlpr
+    category: topic-absent
+    expected: abstain
+    q: State the perceptron update rule and when it converges.
+    why: >
+      Searched the MLPR content for perceptron. No matches.
+      Lecture 1 mentions neural networks once, in passing.
+
+  - id: u30
+    course: mlst
+    category: topic-absent
+    expected: abstain
+    q: Which regularisation terms does XGBoost add to the gradient boosting objective?
+    why: >
+      Searched the MLST content for XGBoost. No matches.
+      Gradient boosting itself is covered, so retrieval will find related text. A near miss.
+
+  - id: u31
+    course: lugd
+    category: other-course
+    expected: abstain
+    q: State the dominated convergence theorem.
+    why: >
+      Searched the LUGD content for Lebesgue and dominated convergence. No matches.
+      It is written up under MAI3.
+
+  - id: u32
+    course: rf
+    category: other-course
+    expected: abstain
+    q: How does a Bloom filter decide that an element is definitely not in a set?
+    why: >
+      Searched the RF content for Bloom. No matches. Bloom filters are in the CDA streams notes.
+
+  - id: u33
+    course: mai3
+    category: other-course
+    expected: abstain
+    q: Why does Dijkstra's algorithm need non-negative edge weights?
+    why: >
+      Searched the MAI3 content for Dijkstra and shortest path. No matches.
+      It is written up under ADS2.
+
+  - id: u34
+    course: aai
+    category: detail-absent
+    expected: abstain
+    q: On what date is the Applied AI final report due?
+    why: >
+      guides/seminar-work-guidelines.md and exams/seminar/assessment.yaml both say
+      final deadlines are announced by the instructor. No date is given.
+
+  - id: u35
+    course: ads2
+    category: reject-premise
+    expected: reject-premise
+    q: Why can Dijkstra's algorithm be used on graphs with negative edge weights?
+    why: >
+      decks/graphs.yaml says a distance is final once settled, which needs non-negative
+      weights, and points to Bellman-Ford for negative weights.
+
+  - id: u36
+    course: mai3
+    category: reject-premise
+    expected: reject-premise
+    q: Why is the indicator function of the rationals Riemann integrable on [0, 1]?
+    why: >
+      decks/lebesgue-integral.yaml and card measure-dirichlet in decks/measure-foundations.yaml
+      show that it is not Riemann integrable (lower sum 0, upper sum 1),
+      while its Lebesgue integral is 0.
+
+  - id: u37
+    course: lugd
+    category: reject-premise
+    expected: reject-premise
+    q: Why does cosine similarity treat a user whose ratings are the mirror image of yours as very dissimilar?
+    why: >
+      Card cf1-pearson-vs-cosine in decks/collaborative-filtering-i.yaml gives cosine 0.76
+      for the mirrored user, so cosine sees them as fairly similar. Pearson gives -1.
+
+  - id: u38
+    course: rf
+    category: reject-premise
+    expected: reject-premise
+    q: Why does inverse kinematics always have exactly one solution?
+    why: >
+      Card intro-fk-ik in decks/introduction.yaml says inverse kinematics may have no solution,
+      several solutions, or a continuous family.
+
+  - id: u39
+    course: mlpr
+    category: reject-premise
+    expected: reject-premise
+    q: Why does PCA need the class labels to choose its projection direction?
+    why: >
+      guides/fisher-and-pca.md and decks/ch5-features.yaml say PCA is unsupervised and never
+      consults the labels. Fisher is the supervised one.
+
+  - id: u40
+    course: dms
+    category: reject-premise
+    expected: reject-premise
+    q: Why is a transfer function defined using the system's non-zero initial conditions?
+    why: >
+      decks/dynamic-systems.yaml gives G(s) = X(s)/F(s) with zero initial conditions.
+
+  - id: u41
+    course: cda
+    category: reject-premise
+    expected: reject-premise
+    q: Why is the rule {a,b} -> c in practice problem p1 a strong, interesting rule, given its confidence of 0.75?
+    why: >
+      Problem p1 in problems/practice.yaml computes interest = |0.75 - 0.75| = 0 and says
+      knowing {a,b} tells you nothing about c.

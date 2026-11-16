@@ -1,3 +1,22 @@
+# Applied AI project: a course study assistant (team Fine-Tuners)
+
+Kemal Sivro and Volodymyr Rodin, Applied AI 2026-27. The assistant answers a student's
+question from one DSAI course's notes: it retrieves the relevant notes (BM25, a frozen
+embedding model, or both) and puts them in the prompt of Qwen3-4B-Instruct-2507. Notation,
+answer format and citations are handled in the prompt first; a LoRA fine-tuned copy of
+the model is the fallback if that is not enough. The course files it answers from
+are `courses/`, the content of the DSAI Vault site this repository was copied from.
+
+| File | What it is |
+|---|---|
+| [docs/Week_06_Handout_Sivro_Rodin.docx](docs/Week_06_Handout_Sivro_Rodin.docx) | Week 6 handout, submitted in Week 7: literature matrix, data cards, the dataset opened, the Week 3 required change |
+| [docs/data-cards.md](docs/data-cards.md) | The handout's data cards, readable here |
+| [notebooks/01_open_vault.ipynb](notebooks/01_open_vault.ipynb) | Opens `courses/`, counts notes, cards and problems per course, shows the data-quality problems, writes the split. Run it from `notebooks/`; PyYAML is the only extra package |
+| [docs/held-out-split.yaml](docs/held-out-split.yaml) | Topic-based dev/test split of the 1,091 questions (seed 2026), written by the notebook |
+| [data/unanswerable-questions.yaml](data/unanswerable-questions.yaml) | 41 questions the notes deliberately do not answer, or answer the other way |
+
+Everything below this section is the DSAI Vault site's own README.
+
 # DSAI Vault
 
 One site for all your courses: lecture notes, labs, flashcards with honest grading,
